@@ -4,6 +4,12 @@ let appInitialized = false;
 let expressApp: any;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Handle OPTIONS preflight requests immediately
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   try {
     // Lazy load and cache the Express app
     if (!appInitialized) {
