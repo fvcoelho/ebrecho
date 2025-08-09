@@ -1,0 +1,443 @@
+import axios from 'axios';
+
+// Determine the correct API URL based on where the code is running
+const getApiUrl = () => {
+  // Server-side: use internal Docker network URL
+  if (typeof window === 'undefined') {
+    return process.env.API_URL || 'http://api:3001/api';
+  }
+  // Client-side: use external URL
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+};
+
+const API_URL = getApiUrl();
+
+// Log the API URL in development
+if (process.env.NODE_ENV !== 'production') {
+  console.log('API URL configured as:', API_URL, typeof window === 'undefined' ? '(server-side)' : '(client-side)');
+}
+
+// Create axios instance with dynamic base URL
+export const api = axios.create({
+  baseURL: typeof window === 'undefined' ? (process.env.API_URL || 'http://api:3001/api') : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'),
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add debugging interceptors
+api.interceptors.request.use(
+  (config) => {
+    console.log('[DEBUG] API Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`
+    });
+    return config;
+  },
+  (error) => {
+    console.error('[DEBUG] API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => {
+    console.log('[DEBUG] API Response Success:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.error('[DEBUG] API Response Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      data: error.response?.data,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
+);
+
+// Add auth token to requests (only on client-side)
+if (typeof window !== 'undefined') {
+  api.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      console.log('[AUTH DEBUG] Request interceptor:', {
+        url: config.url,
+        hasToken: !!token,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : null,
+        user: user ? JSON.parse(user) : null
+      });
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  // Handle auth errors (only on client-side)
+  api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      // Only redirect to login on 401 if not already on login/register pages
+      if (error.response?.status === 401 && 
+          !window.location.pathname.includes('/login') &&
+          !window.location.pathname.includes('/cadastro')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+  );
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  role?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+}
+
+export interface OnboardingStatus {
+  isComplete: boolean;
+  requiresPartnerSetup: boolean;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    partnerId: string | null;
+  };
+  partner: Record<string, unknown> | null;
+}
+
+export interface PartnerSetupData {
+  name: string;
+  email: string;
+  phone: string;
+  document: string;
+  documentType: 'CPF' | 'CNPJ';
+  description?: string;
+  hasPhysicalStore: boolean;
+  address?: {
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  } | null;
+}
+
+export const authService = {
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    try {
+      const response = await api.post('/auth/login', credentials);
+      
+      // Handle both response structures for compatibility
+      const authData = response.data.data || response.data;
+      
+      if (!authData.token || !authData.user) {
+        throw new Error('Invalid response structure from server');
+      }
+      
+      return authData;
+    } catch (error: unknown) {
+      // Re-throw with cleaner error structure
+      const axiosError = error as { response?: { data?: { error?: string }; status?: number } };
+      if (axiosError.response?.data?.error) {
+        throw new Error(axiosError.response.data.error);
+      }
+      if (axiosError.response?.status === 401) {
+        throw new Error('Email ou senha inválidos');
+      }
+      throw new Error('Erro ao fazer login. Tente novamente.');
+    }
+  },
+
+  async register(data: RegisterData): Promise<AuthResponse> {
+    const response = await api.post('/auth/register', data);
+    return response.data.data; // API returns {success: true, data: {user, token}}
+  },
+
+  async me(): Promise<AuthResponse['user']> {
+    const response = await api.get('/auth/me');
+    return response.data.data; // API returns {success: true, data: user}
+  },
+
+  async logout(): Promise<void> {
+    await api.post('/auth/logout');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+  },
+
+  async verifyEmail(token: string): Promise<void> {
+    const response = await api.post('/auth/verify-email', { token });
+    return response.data;
+  },
+
+  async resendVerification(email: string): Promise<void> {
+    const response = await api.post('/auth/resend-verification', { email });
+    return response.data;
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async refreshToken(): Promise<AuthResponse> {
+    try {
+      const response = await api.post('/auth/refresh');
+      const authData = response.data.data || response.data;
+      
+      if (!authData.token || !authData.user) {
+        throw new Error('Invalid response structure from server');
+      }
+      
+      return authData;
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: string }; status?: number } };
+      if (axiosError.response?.data?.error) {
+        throw new Error(axiosError.response.data.error);
+      }
+      if (axiosError.response?.status === 401) {
+        throw new Error('Invalid or expired refresh token');
+      }
+      throw new Error('Error refreshing token. Please login again.');
+    }
+  },
+};
+
+export const onboardingService = {
+  async getStatus(): Promise<OnboardingStatus> {
+    const response = await api.get('/onboarding/status');
+    return response.data.data;
+  },
+
+  async completePartnerSetup(data: PartnerSetupData): Promise<{ token?: string }> {
+    const response = await api.post('/onboarding/complete-partner', data);
+    return response.data;
+  }
+};
+
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  sku?: string;
+  category: string;
+  brand?: string;
+  size?: string;
+  color?: string;
+  condition: 'NEW' | 'LIKE_NEW' | 'GOOD' | 'FAIR';
+  status: 'AVAILABLE' | 'SOLD' | 'RESERVED' | 'INACTIVE';
+  images: ProductImage[];
+  partnerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductImage {
+  id: string;
+  originalUrl: string;
+  processedUrl: string;
+  thumbnailUrl: string;
+  order: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ProductsResponse {
+  products: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ProductFilters {
+  page?: number;
+  limit?: number;
+  status?: Product['status'];
+  category?: string;
+  search?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'price';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface CreateProductData {
+  name: string;
+  description?: string;
+  price: string;
+  sku?: string;
+  category: string;
+  brand?: string;
+  size?: string;
+  color?: string;
+  condition: Product['condition'];
+  status?: Product['status'];
+}
+
+export interface Category {
+  name: string;
+  count: number;
+}
+
+export const productService = {
+  async getProducts(filters: ProductFilters = {}): Promise<ProductsResponse> {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, value.toString());
+      }
+    });
+    
+    const response = await api.get(`/products?${params.toString()}`);
+    return response.data.data;
+  },
+
+  async getProductById(id: string): Promise<Product> {
+    const response = await api.get(`/products/${id}`);
+    return response.data.data;
+  },
+
+  async createProduct(data: CreateProductData): Promise<Product> {
+    const response = await api.post('/products', data);
+    return response.data.data;
+  },
+
+  async updateProduct(id: string, data: Partial<CreateProductData>): Promise<Product> {
+    const response = await api.put(`/products/${id}`, data);
+    return response.data.data;
+  },
+
+  async updateProductStatus(id: string, status: Product['status']): Promise<Product> {
+    const response = await api.patch(`/products/${id}/status`, { status });
+    return response.data.data;
+  },
+
+  async deleteProduct(id: string): Promise<void> {
+    await api.delete(`/products/${id}`);
+  },
+
+  async getCategories(): Promise<Category[]> {
+    const response = await api.get('/products/categories');
+    return response.data.data;
+  }
+};
+
+export interface Partner {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  document: string;
+  documentType: 'CPF' | 'CNPJ';
+  description?: string;
+  logo?: string;
+  hasPhysicalStore: boolean;
+  // Fields for public storefront (will be added via migration)
+  slug?: string;
+  publicDescription?: string;
+  isPublicActive?: boolean;
+  publicBanner?: string;
+  publicLogo?: string;
+  whatsappNumber?: string;
+  publicEmail?: string;
+  businessHours?: Record<string, unknown>;
+  socialLinks?: Record<string, unknown>;
+  isActive: boolean;
+  address?: {
+    id: string;
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdatePartnerData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  document?: string;
+  documentType?: 'CPF' | 'CNPJ';
+  description?: string;
+  slug?: string;
+  publicDescription?: string;
+  isPublicActive?: boolean;
+  hasPhysicalStore?: boolean;
+  whatsappNumber?: string;
+  publicEmail?: string;
+  businessHours?: Record<string, unknown>;
+  socialLinks?: Record<string, unknown>;
+  address?: {
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  } | null;
+}
+
+export const partnerService = {
+  async getCurrentPartner(): Promise<Partner> {
+    const response = await api.get('/dashboard/partner');
+    return response.data.data;
+  },
+
+  async updateCurrentPartner(data: UpdatePartnerData): Promise<Partner> {
+    const response = await api.put('/dashboard/partner', data);
+    return response.data.data;
+  },
+
+  async getPartnerById(id: string): Promise<Partner> {
+    const response = await api.get(`/partners/${id}`);
+    return response.data.data;
+  },
+
+  async updatePartner(id: string, data: UpdatePartnerData): Promise<Partner> {
+    const response = await api.put(`/partners/${id}`, data);
+    return response.data.data;
+  }
+};
