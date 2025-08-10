@@ -17,8 +17,9 @@ export const login = async (
     // Trim whitespace
     const trimmedEmail = email.trim().toLowerCase();
 
-    // Find user with optimized query (only include partner if needed)
-    const user = await prisma.user.findUnique({
+    // Find user with optimized query - simplified without partner join
+    // Add timeout to prevent hanging
+    const userPromise = prisma.user.findUnique({
       where: { email: trimmedEmail },
       select: {
         id: true,
@@ -31,16 +32,17 @@ export const login = async (
         createdAt: true,
         updatedAt: true,
         partnerId: true,
-        partner: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            logo: true,
-            isActive: true,
-          }
-        }
       }
+    });
+
+    // Timeout after 10 seconds
+    const timeoutPromise = new Promise<null>((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 10000);
+    });
+
+    const user = await Promise.race([userPromise, timeoutPromise]).catch((error) => {
+      console.error('Login database query error:', error);
+      throw new Error('Database connection error');
     });
 
     if (!user || !user.isActive) {
@@ -59,14 +61,38 @@ export const login = async (
       });
     }
 
+    // Load partner data if user has partnerId (separate query to avoid timeout)
+    let partner = null;
+    if (user.partnerId) {
+      try {
+        partner = await prisma.partner.findUnique({
+          where: { id: user.partnerId },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+            isActive: true,
+          }
+        });
+      } catch (partnerError) {
+        console.error('Failed to load partner data:', partnerError);
+        // Continue without partner data
+      }
+    }
+
     // Generate token
     const token = generateToken(user as any);
 
-    // Remove password from response
+    // Remove password from response and add partner
     const { password: _, ...userWithoutPassword } = user;
+    const userWithPartner = {
+      ...userWithoutPassword,
+      partner
+    };
 
     const response: LoginResponse = {
-      user: userWithoutPassword as any,
+      user: userWithPartner as any,
       token,
     };
 
