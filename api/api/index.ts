@@ -1,7 +1,30 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { prisma } from '../src/prisma';
 
-let appInitialized = false;
-let expressApp: any;
+// Pre-initialize Prisma Client outside the handler
+// This helps with cold starts in serverless
+const initPrisma = async () => {
+  try {
+    await prisma.$connect();
+    return true;
+  } catch (error) {
+    console.error('Failed to connect to database:', error);
+    return false;
+  }
+};
+
+// Initialize on cold start
+let expressApp: any = null;
+let isInitialized = false;
+
+// Pre-load the Express app module
+const loadApp = async () => {
+  if (!expressApp) {
+    const module = await import('../src/app');
+    expressApp = module.app;
+  }
+  return expressApp;
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle OPTIONS preflight requests immediately
@@ -11,66 +34,78 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Lazy load and cache the Express app
-    if (!appInitialized) {
-      const module = await import('../src/app');
-      expressApp = module.app;
+    // Initialize on first request only
+    if (!isInitialized) {
+      // Load Express app and connect to database in parallel
+      const [app, dbConnected] = await Promise.all([
+        loadApp(),
+        initPrisma()
+      ]);
       
-      // Initialize database connection with retry logic
-      const { initDatabase } = module;
-      let retries = 3;
-      while (retries > 0) {
-        try {
-          await initDatabase();
-          console.log('Database initialized successfully');
-          break;
-        } catch (error) {
-          retries--;
-          console.error(`Failed to initialize database (${3 - retries}/3):`, error);
-          if (retries === 0) {
-            console.error('Database initialization failed after 3 attempts');
-          } else {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
+      if (!dbConnected) {
+        // Try once more with a shorter timeout
+        const retryConnected = await Promise.race([
+          initPrisma(),
+          new Promise<boolean>(resolve => setTimeout(() => resolve(false), 5000))
+        ]);
+        
+        if (!retryConnected) {
+          console.error('Database connection failed, proceeding anyway');
         }
       }
       
-      appInitialized = true;
+      expressApp = app;
+      isInitialized = true;
     }
 
-    // Forward the request to Express with timeout handling
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        if (!res.headersSent) {
-          res.status(504).json({ 
-            error: 'Gateway Timeout', 
-            message: 'Request processing took too long' 
-          });
-        }
-        resolve(undefined);
-      }, 29000); // Set timeout to 29 seconds (Vercel limit is 30)
+    // Set a hard timeout of 25 seconds (leaving 5 seconds buffer for Vercel's 30s limit)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Request timeout'));
+      }, 25000);
+    });
 
+    // Handle the request
+    const requestPromise = new Promise((resolve) => {
       expressApp(req as any, res as any, (err: any) => {
-        clearTimeout(timeout);
         if (err) {
-          console.error('Express app error:', err);
+          console.error('Express error:', err);
           if (!res.headersSent) {
             res.status(500).json({ 
-              error: 'Internal server error', 
-              message: err.message 
+              error: 'Internal server error',
+              message: process.env.NODE_ENV === 'production' ? 'An error occurred' : err.message
             });
           }
         }
         resolve(undefined);
       });
     });
+
+    // Race between request completion and timeout
+    await Promise.race([requestPromise, timeoutPromise]).catch((err) => {
+      if (!res.headersSent) {
+        res.status(504).json({ 
+          error: 'Gateway Timeout',
+          message: 'The request took too long to process. Please try again.'
+        });
+      }
+    });
+
   } catch (error) {
     console.error('Handler error:', error);
     if (!res.headersSent) {
       res.status(500).json({ 
-        error: 'Handler initialization failed', 
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Handler initialization failed',
+        message: process.env.NODE_ENV === 'production' 
+          ? 'Service temporarily unavailable' 
+          : (error instanceof Error ? error.message : 'Unknown error')
       });
     }
   }
+}
+
+// Warm up the function by pre-loading dependencies
+if (process.env.VERCEL === '1') {
+  loadApp().catch(console.error);
+  initPrisma().catch(console.error);
 }
