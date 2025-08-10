@@ -106,6 +106,12 @@ export default function ApiTestPage() {
         jsonData = data;
       }
 
+      // Handle token extraction for login endpoint
+      if (endpoint === '/api/auth/login' && response.ok && jsonData?.data?.token && typeof window !== 'undefined') {
+        localStorage.setItem('token', jsonData.data.token);
+        console.log('Token saved to localStorage');
+      }
+
       addResult({
         endpoint,
         method,
@@ -150,26 +156,19 @@ export default function ApiTestPage() {
     // Test 3: Login (this is the problematic one)
     console.log('Testing login endpoint...');
     try {
-      const loginResponse = await testEndpoint('/auth/login', 'POST', {
+      await testEndpoint('/api/auth/login', 'POST', {
         email,
         password,
       });
-
-      if (loginResponse.ok) {
-        const data = await loginResponse.json();
-        if (data.data?.token && typeof window !== 'undefined') {
-          localStorage.setItem('token', data.data.token);
-        }
-      }
     } catch (error) {
       console.error('Login test failed:', error);
     }
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Test 4: Public product endpoint
-    console.log('Testing public products endpoint...');
-    await testEndpoint('/api/public/products');
+    // Test 4: Public test endpoint  
+    console.log('Testing public API endpoint...');
+    await testEndpoint('/api/public/test');
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -288,7 +287,7 @@ export default function ApiTestPage() {
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => testSingleEndpoint('/auth/login', 'POST', { email, password })}
+              onClick={() => testSingleEndpoint('/api/auth/login', 'POST', { email, password })}
               disabled={loading}
             >
               Test Login

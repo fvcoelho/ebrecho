@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { type Product } from '@/lib/api';
 import { imageApi } from '@/lib/api/images';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 interface Model {
   id: string;
@@ -44,7 +45,7 @@ export function TryOnComponent({ product, model, onClose }: TryOnComponentProps)
     }));
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const API_BASE = getApiBaseUrl();
       
       // Get the product image URL - use the first image
       const productImageUrl = product.images[0]?.processedUrl || product.images[0]?.originalUrl;
@@ -65,7 +66,7 @@ export function TryOnComponent({ product, model, onClose }: TryOnComponentProps)
       });
 
       // Use URL mode for try-on
-      const response = await fetch(`${apiUrl}/tryon/url`, {
+      const response = await fetch(`${API_BASE}/tryon/url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -115,8 +116,8 @@ export function TryOnComponent({ product, model, onClose }: TryOnComponentProps)
         attempts++;
         console.log(`🎨 Polling attempt ${attempts}/${maxAttempts} for event_id: ${eventId}`);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const response = await fetch(`${apiUrl}/tryon/${eventId}`);
+        const API_BASE = getApiBaseUrl();
+        const response = await fetch(`${API_BASE}/tryon/${eventId}`);
         
         if (!response.ok) {
           throw new Error(`Polling failed: ${response.statusText}`);

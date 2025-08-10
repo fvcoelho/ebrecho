@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Upload, Loader2, CheckCircle, AlertCircle, User, Shirt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 interface TryOnState {
   personImage: File | null;
@@ -68,13 +69,13 @@ export default function TestTryOnPage() {
 
     try {
       // Step 1: Generate try-on request
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const API_BASE = getApiBaseUrl();
       let response: Response;
 
       if (tryOnState.useUrlMode) {
         // URL mode - send JSON with URLs
         console.log('Initiating try-on request with URLs...');
-        response = await fetch(`${apiUrl}/tryon/url`, {
+        response = await fetch(`${API_BASE}/tryon/url`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -93,7 +94,7 @@ export default function TestTryOnPage() {
         formData.append('garment', tryOnState.garmentImage!);
         formData.append('mask_type', 'overall');
 
-        response = await fetch(`${apiUrl}/tryon`, {
+        response = await fetch(`${API_BASE}/tryon`, {
           method: 'POST',
           body: formData
         });
@@ -137,8 +138,8 @@ export default function TestTryOnPage() {
         attempts++;
         console.log(`Polling attempt ${attempts}/${maxAttempts} for event_id: ${eventId}`);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const response = await fetch(`${apiUrl}/tryon/${eventId}`);
+        const API_BASE = getApiBaseUrl();
+        const response = await fetch(`${API_BASE}/tryon/${eventId}`);
         
         if (!response.ok) {
           throw new Error(`Polling failed: ${response.statusText}`);
