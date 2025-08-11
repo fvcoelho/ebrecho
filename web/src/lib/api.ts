@@ -317,12 +317,12 @@ export const productService = {
       }
     });
     
-    const response = await api.get(`/products?${params.toString()}`);
+    const response = await api.get(`/api/products?${params.toString()}`);
     return response.data.data;
   },
 
   async getProductById(id: string): Promise<Product> {
-    const response = await api.get(`/products/${id}`);
+    const response = await api.get(`/api/products/${id}`);
     return response.data.data;
   },
 
@@ -332,17 +332,17 @@ export const productService = {
   },
 
   async updateProduct(id: string, data: Partial<CreateProductData>): Promise<Product> {
-    const response = await api.put(`/products/${id}`, data);
+    const response = await api.put(`/api/products/${id}`, data);
     return response.data.data;
   },
 
   async updateProductStatus(id: string, status: Product['status']): Promise<Product> {
-    const response = await api.patch(`/products/${id}/status`, { status });
+    const response = await api.patch(`/api/products/${id}/status`, { status });
     return response.data.data;
   },
 
   async deleteProduct(id: string): Promise<void> {
-    await api.delete(`/products/${id}`);
+    await api.delete(`/api/products/${id}`);
   },
 
   async getCategories(): Promise<Category[]> {
@@ -424,12 +424,12 @@ export const partnerService = {
   },
 
   async getPartnerById(id: string): Promise<Partner> {
-    const response = await api.get(`/partners/${id}`);
+    const response = await api.get(`/api/partners/${id}`);
     return response.data.data;
   },
 
   async updatePartner(id: string, data: UpdatePartnerData): Promise<Partner> {
-    const response = await api.put(`/partners/${id}`, data);
+    const response = await api.put(`/api/partners/${id}`, data);
     return response.data.data;
   }
 };

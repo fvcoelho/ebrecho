@@ -159,7 +159,7 @@ export const dashboardService = {
 
 export const databaseService = {
   async getStats() {
-    const response = await api.get('/database/stats');
+    const response = await api.get('/api/database/stats');
     return response.data.data;
   }
 };
