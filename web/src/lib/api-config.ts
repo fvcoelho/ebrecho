@@ -15,6 +15,8 @@ export function getApiBaseUrl(): string {
     // Environment-based URL detection
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:3001';
+    } else if (hostname === 'dev.ebrecho.com.br') {
+      return 'http://dev.ebrecho.com.br:3001';
     } else if (hostname === 'www.ebrecho.com.br' || hostname === 'ebrecho.com.br') {
       return 'https://api.ebrecho.com.br';
     } else if (hostname.includes('vercel.app')) {
@@ -44,7 +46,7 @@ export function detectEnvironment(): 'development' | 'production' | 'preview' | 
   
   const hostname = window.location.hostname;
   
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === 'dev.ebrecho.com.br') {
     return 'development';
   } else if (hostname === 'www.ebrecho.com.br' || hostname === 'ebrecho.com.br') {
     return 'production';

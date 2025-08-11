@@ -53,6 +53,7 @@ app.use(cors({
       'https://www.ebrecho.com.br',
       'https://dev.ebrecho.com.br',
       'http://dev.ebrecho.com.br',
+      'http://dev.ebrecho.com.br:3000',
       'https://api.ebrecho.com.br' // Allow production Swagger UI
     ].filter(Boolean); // Remove undefined values
     

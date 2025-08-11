@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Star, Phone, Globe, Navigation } from 'lucide-react';
 import { Button, Card, CardContent, Badge } from '@/components/ui';
+import { loadGoogleMapsAPI } from '@/lib/google-maps-loader';
 
 interface BrechoBusiness {
   id: string;
@@ -73,32 +74,19 @@ export function BrechoMap({
     visibleCount: visibleBusinesses.size
   });
 
-  // Load Google Maps script
+  // Load Google Maps script using centralized loader
   useEffect(() => {
-    if (window.google) {
-      setIsLoaded(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.onload = () => {
-      console.log('✅ Google Maps script loaded');
-      setIsLoaded(true);
-    };
-    script.onerror = () => {
-      console.error('❌ Failed to load Google Maps script');
-    };
-    
-    document.head.appendChild(script);
-
-    return () => {
-      const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`);
-      if (existingScript) {
-        document.head.removeChild(existingScript);
+    const initMaps = async () => {
+      try {
+        await loadGoogleMapsAPI();
+        console.log('✅ Google Maps script loaded');
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('❌ Failed to load Google Maps script:', error);
       }
     };
+
+    initMaps();
   }, []);
 
   // Initialize map

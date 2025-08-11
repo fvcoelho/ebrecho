@@ -24,6 +24,10 @@ const options: swaggerJsdoc.Options = {
         description: 'Development server'
       },
       {
+        url: 'http://dev.ebrecho.com.br:3001',
+        description: 'Development server'
+      },
+      {
         url: 'https://api.ebrecho.com.br',
         description: 'Production server'
       }
@@ -389,6 +393,10 @@ const options: swaggerJsdoc.Options = {
         description: 'Public endpoints (no auth required)'
       },
       {
+        name: 'Public Store',
+        description: 'Public store endpoints (no auth required)'
+      },
+      {
         name: 'Images',
         description: 'Image upload and processing'
       },
@@ -411,15 +419,18 @@ const options: swaggerJsdoc.Options = {
     './src/routes/*.js',
     './src/routes/**/*.js', 
     './src/controllers/*.js',
+    './src/controllers/**/*.js',
     './src/schemas/*.js',
     './dist/src/routes/*.js',
     './dist/src/routes/**/*.js',
     './dist/src/controllers/*.js',
+    './dist/src/controllers/**/*.js',
     './dist/src/schemas/*.js'
   ] : [
     './src/routes/*.ts',
     './src/routes/**/*.ts',
     './src/controllers/*.ts',
+    './src/controllers/**/*.ts',
     './src/schemas/*.ts'
   ]
 };
