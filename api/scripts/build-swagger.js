@@ -48,6 +48,10 @@ const options = {
         description: 'Development server'
       },
       {
+        url: 'http://dev.ebrecho.com.br:3001',
+        description: 'Development server'
+      },
+      {
         url: 'https://api.ebrecho.com.br',
         description: 'Production server'
       }
@@ -434,6 +438,7 @@ const options = {
     './src/routes/*.ts',
     './src/routes/**/*.ts',
     './src/controllers/*.ts',
+    './src/controllers/**/*.ts',
     './src/schemas/*.ts'
   ]
 };

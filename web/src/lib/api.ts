@@ -1,25 +1,17 @@
 import axios from 'axios';
+import { getApiBaseUrl } from './api-config';
 
-// Determine the correct API URL based on where the code is running
-const getApiUrl = () => {
-  // Server-side: use internal Docker network URL
-  if (typeof window === 'undefined') {
-    return process.env.API_URL || 'http://api:3001/api';
-  }
-  // Client-side: use external URL
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-};
-
-const API_URL = getApiUrl();
+// Use centralized API configuration
+const API_BASE = getApiBaseUrl();
 
 // Log the API URL in development
 if (process.env.NODE_ENV !== 'production') {
-  console.log('API URL configured as:', API_URL, typeof window === 'undefined' ? '(server-side)' : '(client-side)');
+  console.log('API URL configured as:', API_BASE, typeof window === 'undefined' ? '(server-side)' : '(client-side)');
 }
 
 // Create axios instance with dynamic base URL
 export const api = axios.create({
-  baseURL: typeof window === 'undefined' ? (process.env.API_URL || 'http://api:3001/api') : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'),
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -160,7 +152,7 @@ export interface PartnerSetupData {
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await api.post('/auth/login', credentials);
+      const response = await api.post('/api/auth/login', credentials);
       
       // Handle both response structures for compatibility
       const authData = response.data.data || response.data;
@@ -184,17 +176,17 @@ export const authService = {
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await api.post('/auth/register', data);
+    const response = await api.post('/api/auth/register', data);
     return response.data.data; // API returns {success: true, data: {user, token}}
   },
 
   async me(): Promise<AuthResponse['user']> {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/api/auth/me');
     return response.data.data; // API returns {success: true, data: user}
   },
 
   async logout(): Promise<void> {
-    await api.post('/auth/logout');
+    await api.post('/api/auth/logout');
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -202,23 +194,23 @@ export const authService = {
   },
 
   async verifyEmail(token: string): Promise<void> {
-    const response = await api.post('/auth/verify-email', { token });
+    const response = await api.post('/api/auth/verify-email', { token });
     return response.data;
   },
 
   async resendVerification(email: string): Promise<void> {
-    const response = await api.post('/auth/resend-verification', { email });
+    const response = await api.post('/api/auth/resend-verification', { email });
     return response.data;
   },
 
   async forgotPassword(email: string): Promise<void> {
-    const response = await api.post('/auth/forgot-password', { email });
+    const response = await api.post('/api/auth/forgot-password', { email });
     return response.data;
   },
 
   async refreshToken(): Promise<AuthResponse> {
     try {
-      const response = await api.post('/auth/refresh');
+      const response = await api.post('/api/auth/refresh');
       const authData = response.data.data || response.data;
       
       if (!authData.token || !authData.user) {
@@ -241,12 +233,12 @@ export const authService = {
 
 export const onboardingService = {
   async getStatus(): Promise<OnboardingStatus> {
-    const response = await api.get('/onboarding/status');
+    const response = await api.get('/api/onboarding/status');
     return response.data.data;
   },
 
   async completePartnerSetup(data: PartnerSetupData): Promise<{ token?: string }> {
-    const response = await api.post('/onboarding/complete-partner', data);
+    const response = await api.post('/api/onboarding/complete-partner', data);
     return response.data;
   }
 };
@@ -325,36 +317,36 @@ export const productService = {
       }
     });
     
-    const response = await api.get(`/products?${params.toString()}`);
+    const response = await api.get(`/api/products?${params.toString()}`);
     return response.data.data;
   },
 
   async getProductById(id: string): Promise<Product> {
-    const response = await api.get(`/products/${id}`);
+    const response = await api.get(`/api/products/${id}`);
     return response.data.data;
   },
 
   async createProduct(data: CreateProductData): Promise<Product> {
-    const response = await api.post('/products', data);
+    const response = await api.post('/api/products', data);
     return response.data.data;
   },
 
   async updateProduct(id: string, data: Partial<CreateProductData>): Promise<Product> {
-    const response = await api.put(`/products/${id}`, data);
+    const response = await api.put(`/api/products/${id}`, data);
     return response.data.data;
   },
 
   async updateProductStatus(id: string, status: Product['status']): Promise<Product> {
-    const response = await api.patch(`/products/${id}/status`, { status });
+    const response = await api.patch(`/api/products/${id}/status`, { status });
     return response.data.data;
   },
 
   async deleteProduct(id: string): Promise<void> {
-    await api.delete(`/products/${id}`);
+    await api.delete(`/api/products/${id}`);
   },
 
   async getCategories(): Promise<Category[]> {
-    const response = await api.get('/products/categories');
+    const response = await api.get('/api/products/categories');
     return response.data.data;
   }
 };
@@ -422,22 +414,22 @@ export interface UpdatePartnerData {
 
 export const partnerService = {
   async getCurrentPartner(): Promise<Partner> {
-    const response = await api.get('/dashboard/partner');
+    const response = await api.get('/api/dashboard/partner');
     return response.data.data;
   },
 
   async updateCurrentPartner(data: UpdatePartnerData): Promise<Partner> {
-    const response = await api.put('/dashboard/partner', data);
+    const response = await api.put('/api/dashboard/partner', data);
     return response.data.data;
   },
 
   async getPartnerById(id: string): Promise<Partner> {
-    const response = await api.get(`/partners/${id}`);
+    const response = await api.get(`/api/partners/${id}`);
     return response.data.data;
   },
 
   async updatePartner(id: string, data: UpdatePartnerData): Promise<Partner> {
-    const response = await api.put(`/partners/${id}`, data);
+    const response = await api.put(`/api/partners/${id}`, data);
     return response.data.data;
   }
 };

@@ -28,7 +28,7 @@ export default function TestPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/database/stats', { timeout: 10000 });
+      const response = await api.get('/api/database/stats', { timeout: 10000 });
       
       if (response.data.success && response.data.data) {
         const stats: DatabaseStats = {

@@ -1,4 +1,5 @@
-import { api } from '@/lib/api'
+import { api } from '@/lib/api';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 export interface ProductImage {
   id: string
@@ -110,17 +111,14 @@ export const imageApi = {
       return relativeUrl
     }
     
-    // Get the API base URL and remove /api suffix since uploads are served from server root
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-    const baseUrl = apiUrl.replace('/api', '')
-    const fullUrl = `${baseUrl}${relativeUrl}`;
+    // Get the API base URL - no need to remove /api suffix as getApiBaseUrl returns clean base URL
+    const API_BASE = getApiBaseUrl();
+    const fullUrl = `${API_BASE}${relativeUrl}`;
     
     console.log('🔗 Constructed image URL:', {
       relativeUrl,
-      apiUrl,
-      baseUrl,
-      fullUrl,
-      env: process.env.NEXT_PUBLIC_API_URL
+      API_BASE,
+      fullUrl
     });
     
     return fullUrl;

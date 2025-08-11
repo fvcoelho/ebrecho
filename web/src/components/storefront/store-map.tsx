@@ -5,6 +5,7 @@ import { MapPin, Navigation, ExternalLink } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PublicStore } from '@/lib/api/public'
+import { loadGoogleMapsAPI } from '@/lib/google-maps-loader'
 
 interface StoreMapProps {
   store: PublicStore
@@ -23,31 +24,18 @@ export function StoreMap({ store, height = '300px' }: StoreMapProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null)
 
-  // Load Google Maps script
+  // Load Google Maps script using centralized loader
   useEffect(() => {
-    if (window.google) {
-      setIsLoaded(true)
-      return
-    }
-
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-    script.async = true
-    script.onload = () => {
-      setIsLoaded(true)
-    }
-    script.onerror = () => {
-      console.error('Failed to load Google Maps script')
-    }
-    
-    document.head.appendChild(script)
-
-    return () => {
-      const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`)
-      if (existingScript) {
-        document.head.removeChild(existingScript)
+    const initMaps = async () => {
+      try {
+        await loadGoogleMapsAPI()
+        setIsLoaded(true)
+      } catch (error) {
+        console.error('Failed to load Google Maps:', error)
       }
     }
+
+    initMaps()
   }, [])
 
   // Geocode the address

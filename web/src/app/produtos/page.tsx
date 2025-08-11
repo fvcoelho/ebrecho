@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { imageApi } from '@/lib/api/images';
 import { aiEnhancementAPI } from '@/lib/api/ai-enhancement';
 import { TryOnComponent } from '@/components/products/try-on-component';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 const CONDITION_LABELS = {
   NEW: 'Novo',
@@ -233,7 +234,7 @@ function ProductsPageContent() {
     }));
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const API_BASE = getApiBaseUrl();
       
       // Get the product image URL - use the first image (prefer processedUrl for better quality)
       const firstImage = product.images[0];
@@ -287,7 +288,7 @@ function ProductsPageContent() {
         formData.append('garment', garmentFile);
         formData.append('mask_type', 'overall');
 
-        response = await fetch(`${apiUrl}/tryon`, {
+        response = await fetch(`${API_BASE}/tryon`, {
           method: 'POST',
           body: formData
         });
@@ -295,7 +296,7 @@ function ProductsPageContent() {
         console.log('🎨 File download failed (likely CORS), using URL mode:', downloadError);
         
         // Fallback to URL mode for CORS-protected images
-        response = await fetch(`${apiUrl}/tryon/url`, {
+        response = await fetch(`${API_BASE}/tryon/url`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -357,7 +358,7 @@ function ProductsPageContent() {
         resultImageUrl
       });
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const API_BASE = getApiBaseUrl();
       
       // Download the result image and convert to blob
       const imageResponse = await fetch(resultImageUrl);
@@ -372,7 +373,7 @@ function ProductsPageContent() {
       const formData = new FormData();
       formData.append('images', imageFile);
       
-      const uploadResponse = await fetch(`${apiUrl}/images/products/${productId}/images`, {
+      const uploadResponse = await fetch(`${API_BASE}/images/products/${productId}/images`, {
         method: 'POST',
         body: formData
       });
@@ -390,7 +391,7 @@ function ProductsPageContent() {
         const newImageId = uploadedImages[0].id;
         
         // Get current product to know all image IDs
-        const productResponse = await fetch(`${apiUrl}/products/${productId}`);
+        const productResponse = await fetch(`${API_BASE}/products/${productId}`);
         if (productResponse.ok) {
           const productData = await productResponse.json();
           const product = productData.data || productData;
@@ -400,7 +401,7 @@ function ProductsPageContent() {
           const newOrder = [newImageId, ...allImageIds.filter((id: string) => id !== newImageId)];
           
           // Reorder images to make the try-on result the main image
-          const reorderResponse = await fetch(`${apiUrl}/images/products/${productId}/images/reorder`, {
+          const reorderResponse = await fetch(`${API_BASE}/images/products/${productId}/images/reorder`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json'
@@ -435,8 +436,8 @@ function ProductsPageContent() {
         attempts++;
         console.log(`🎨 Polling attempt ${attempts}/${maxAttempts} for event_id: ${eventId}, modelKey: ${modelKey}`);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const response = await fetch(`${apiUrl}/tryon/${eventId}`);
+        const API_BASE = getApiBaseUrl();
+        const response = await fetch(`${API_BASE}/tryon/${eventId}`);
         
         if (!response.ok) {
           throw new Error(`Polling failed: ${response.statusText}`);

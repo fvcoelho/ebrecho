@@ -1,3 +1,5 @@
+import { getApiBaseUrl, getApiDebugInfo } from '../api-config';
+
 interface EnhancementOptions {
   quality: 'standard' | 'premium';
   backgroundRemoval: boolean;
@@ -126,7 +128,7 @@ interface UsageStats {
   };
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = getApiBaseUrl();
 
 console.log('[AI Enhancement API] Initializing with base URL:', API_BASE);
 

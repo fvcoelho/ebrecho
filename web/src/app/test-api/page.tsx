@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import { getApiBaseUrl, getApiDebugInfo } from '@/lib/api-config';
 
 interface ErrorInfo {
   message?: string;
@@ -56,16 +57,31 @@ export default function TestApiPage() {
     setResult(null);
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const baseUrl = apiUrl.replace('/api', '');
-      const response = await fetch(`${baseUrl}/health`);
+      const API_BASE = getApiBaseUrl();
+      console.log('Testing health endpoint:', `${API_BASE}/health`);
+      
+      const response = await fetch(`${API_BASE}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json() as Record<string, unknown>;
-      setResult(data);
+      setResult({
+        ...data,
+        _debug: getApiDebugInfo()
+      });
     } catch (err) {
       const errorObj = err as { message?: string; stack?: string };
       setError({
         message: errorObj.message,
-        stack: errorObj.stack
+        stack: errorObj.stack,
+        _debug: getApiDebugInfo()
       });
     } finally {
       setLoading(false);
@@ -78,7 +94,8 @@ export default function TestApiPage() {
       
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold">API URL: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}</h2>
+          <h2 className="text-lg font-semibold">API URL: {getApiBaseUrl()}</h2>
+          <p className="text-sm text-gray-600">Environment: {typeof window !== 'undefined' ? getApiDebugInfo().environment : 'server'}</p>
         </div>
         
         <div className="flex gap-4">

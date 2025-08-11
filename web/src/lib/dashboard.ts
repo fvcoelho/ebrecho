@@ -90,36 +90,36 @@ export interface SalesData {
 
 export const adminService = {
   async getStats(): Promise<AdminStats> {
-    const response = await api.get('/admin/stats');
+    const response = await api.get('/api/admin/stats');
     return response.data.data;
   },
 
   async getUserStats(period: string = '30d') {
-    const response = await api.get('/admin/users/stats', { params: { period } });
+    const response = await api.get('/api/admin/users/stats', { params: { period } });
     return response.data.data;
   },
 
   async getPartnerStats() {
-    const response = await api.get('/admin/partners/stats');
+    const response = await api.get('/api/admin/partners/stats');
     return response.data.data;
   },
 
   async getProductStats() {
-    const response = await api.get('/admin/products/stats');
+    const response = await api.get('/api/admin/products/stats');
     return response.data.data;
   },
 
   async getSalesStats(period: string = '30d'): Promise<SalesData> {
-    const response = await api.get('/admin/sales/stats', { params: { period } });
+    const response = await api.get('/api/admin/sales/stats', { params: { period } });
     return response.data.data;
   }
 };
 
 export const dashboardService = {
   async getStats(): Promise<PartnerStats> {
-    console.log('dashboardService.getStats - Making API request to /dashboard/stats');
+    console.log('dashboardService.getStats - Making API request to /api/dashboard/stats');
     try {
-      const response = await api.get('/dashboard/stats');
+      const response = await api.get('/api/dashboard/stats');
       console.log('dashboardService.getStats - API response:', {
         status: response.status,
         statusText: response.statusText,
@@ -142,24 +142,24 @@ export const dashboardService = {
     page?: number;
     limit?: number;
   } = {}) {
-    const response = await api.get('/dashboard/sales', { params });
+    const response = await api.get('/api/dashboard/sales', { params });
     return response.data.data;
   },
 
   async getProductStats() {
-    const response = await api.get('/dashboard/products/stats');
+    const response = await api.get('/api/dashboard/products/stats');
     return response.data.data;
   },
 
   async getCustomerInsights() {
-    const response = await api.get('/dashboard/insights/customers');
+    const response = await api.get('/api/dashboard/insights/customers');
     return response.data.data;
   }
 };
 
 export const databaseService = {
   async getStats() {
-    const response = await api.get('/database/stats');
+    const response = await api.get('/api/database/stats');
     return response.data.data;
   }
 };

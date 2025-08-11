@@ -28,6 +28,7 @@ import {
   Badge,
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { loadGoogleMapsAPI } from '@/lib/google-maps-loader';
 
 // Extend window object to include Google Maps API
 declare global {
@@ -145,42 +146,6 @@ const searchLocationWithGoogle = async (input: string): Promise<LocationSuggesti
   });
 };
 
-// Load Google Maps API if not already loaded
-const loadGoogleMapsAPI = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    // Check if already loaded
-    if (window.google && window.google.maps && window.google.maps.places) {
-      resolve();
-      return;
-    }
-
-    // Check if script is already loading
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => resolve());
-      existingScript.addEventListener('error', () => reject(new Error('Failed to load Google Maps API')));
-      return;
-    }
-
-    // Load the script
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&language=pt-BR&region=BR`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      console.log('✅ Google Maps API loaded for autocomplete');
-      resolve();
-    };
-    
-    script.onerror = () => {
-      console.error('❌ Failed to load Google Maps API');
-      reject(new Error('Failed to load Google Maps API'));
-    };
-
-    document.head.appendChild(script);
-  });
-};
 
 export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }: BrechoSearchFormProps) {
   // State for location handling
@@ -231,7 +196,7 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
     timestamp: new Date().toISOString()
   });
 
-  // Load Google Maps API on component mount
+  // Load Google Maps API on component mount using centralized loader
   useEffect(() => {
     const initializeGoogleMaps = async () => {
       try {

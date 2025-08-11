@@ -70,10 +70,10 @@ export interface ProductQuery {
 // Get public store by slug
 export async function getPublicStore(slug: string): Promise<PublicStore> {
   console.log('[DEBUG] getPublicStore called with slug:', slug)
-  console.log('[DEBUG] Making request to:', `/public/store/${slug}`)
+  console.log('[DEBUG] Making request to:', `/api/public/store/${slug}`)
   
   try {
-    const response = await api.get(`/public/store/${slug}`)
+    const response = await api.get(`/api/public/store/${slug}`)
     console.log('[DEBUG] getPublicStore response status:', response.status)
     console.log('[DEBUG] getPublicStore response data:', JSON.stringify(response.data, null, 2))
     return response.data.data
@@ -88,7 +88,7 @@ export async function getPublicStore(slug: string): Promise<PublicStore> {
 
 // Get store categories
 export async function getStoreCategories(slug: string): Promise<Array<{ category: string; count: number }>> {
-  const response = await api.get(`/public/store/${slug}/categories`)
+  const response = await api.get(`/api/public/store/${slug}/categories`)
   return response.data.data
 }
 
@@ -107,7 +107,7 @@ export async function getPublicProducts(
   if (query?.min_price) params.append('min_price', query.min_price.toString())
   if (query?.max_price) params.append('max_price', query.max_price.toString())
   
-  const response = await api.get(`/public/store/${slug}/products?${params.toString()}`)
+  const response = await api.get(`/api/public/store/${slug}/products?${params.toString()}`)
   return response.data.data
 }
 
@@ -127,16 +127,16 @@ export async function getPublicProduct(storeSlug: string, productSlug: string): 
     images: Array<{ thumbnailUrl?: string }>
   }>
 }> {
-  const response = await api.get(`/public/store/${storeSlug}/product/${productSlug}`)
+  const response = await api.get(`/api/public/store/${storeSlug}/product/${productSlug}`)
   return response.data.data
 }
 
 // Register store view (analytics)
 export async function registerStoreView(slug: string): Promise<void> {
-  await api.post(`/public/store/${slug}/view`)
+  await api.post(`/api/public/store/${slug}/view`)
 }
 
 // Register product view (analytics)
 export async function registerProductView(storeSlug: string, productId: string): Promise<void> {
-  await api.post(`/public/store/${storeSlug}/product/${productId}/view`)
+  await api.post(`/api/public/store/${storeSlug}/product/${productId}/view`)
 }
