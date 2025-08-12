@@ -277,6 +277,86 @@ const options: swaggerJsdoc.Options = {
               format: 'date-time'
             }
           }
+        },
+        ProductImage: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Product image ID'
+            },
+            productId: {
+              type: 'string',
+              description: 'Associated product ID'
+            },
+            originalUrl: {
+              type: 'string',
+              format: 'uri',
+              description: 'Original image URL'
+            },
+            processedUrl: {
+              type: 'string',
+              format: 'uri',
+              description: 'Processed image URL'
+            },
+            thumbnailUrl: {
+              type: 'string',
+              format: 'uri',
+              description: 'Thumbnail image URL'
+            },
+            order: {
+              type: 'integer',
+              description: 'Display order'
+            },
+            metadata: {
+              type: 'object',
+              description: 'Image metadata (dimensions, size, etc.)',
+              nullable: true
+            },
+            blobId: {
+              type: 'string',
+              description: 'Vercel Blob pathname for deletion',
+              nullable: true
+            },
+            uploadMethod: {
+              type: 'string',
+              enum: ['local', 'blob'],
+              description: 'Upload method used'
+            },
+            aiEnhanced: {
+              type: 'boolean',
+              description: 'Whether image has been AI enhanced'
+            },
+            enhancementProvider: {
+              type: 'string',
+              description: 'AI enhancement provider used',
+              nullable: true
+            },
+            qualityScore: {
+              type: 'number',
+              description: 'AI quality score (0-1)',
+              nullable: true
+            },
+            processingCost: {
+              type: 'number',
+              description: 'Processing cost in USD',
+              nullable: true
+            },
+            enhancedUrl: {
+              type: 'string',
+              format: 'uri',
+              description: 'AI enhanced image URL',
+              nullable: true
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
         }
       },
       responses: {

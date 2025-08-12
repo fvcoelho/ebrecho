@@ -28,8 +28,9 @@ import {
 import { DashboardLayout } from '@/components/dashboard';
 import { productService, type CreateProductData } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
-import { ImageUpload } from '@/components/products/image-upload';
+import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
+import { productRefreshManager } from '@/lib/product-refresh';
 
 const productFormSchema = z.object({
   name: z.string()
@@ -104,6 +105,7 @@ export default function NewProductPage() {
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [createdProductId, setCreatedProductId] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isReorganizationComplete, setIsReorganizationComplete] = useState(false);
 
   // Debug logging initialization
   console.log('🔧 NewProductPage initialized with debug logging enabled. Look for these emojis in console:', {
@@ -141,7 +143,15 @@ export default function NewProductPage() {
       console.log('🔍 Submitting product form:', {
         formData: data,
         hasImages: productImages.length > 0,
-        imageCount: productImages.length
+        imageCount: productImages.length,
+        uploadedFilesCount: uploadedFiles.length,
+        currentProductId: createdProductId,
+        productImagesDetails: productImages.map(img => ({
+          id: img.id,
+          hasOriginalUrl: !!img.originalUrl,
+          hasThumbnailUrl: !!img.thumbnailUrl,
+          isTemp: img.originalUrl?.includes('/temp-') || false
+        }))
       });
       
       const productData: CreateProductData = {
@@ -150,6 +160,12 @@ export default function NewProductPage() {
       };
 
       console.log('📤 Creating product with data:', productData);
+      console.log('📊 Current state before product creation:', {
+        uploadedImages: productImages.length,
+        uploadedFiles: uploadedFiles.length,
+        tempImages: productImages.filter(img => img.originalUrl?.includes('/temp-')).length,
+        finalImages: productImages.filter(img => !img.originalUrl?.includes('/temp-')).length
+      });
       
       // Create product first
       const product = await productService.createProduct(productData);
@@ -161,23 +177,58 @@ export default function NewProductPage() {
         product
       });
       
-      // If no images were uploaded, just redirect
-      if (productImages.length === 0) {
-        router.push('/produtos');
-        return;
-      }
-
-      // Upload images if any were selected
+      // The BlobImageUpload component will automatically handle temp image reorganization
+      // when it detects that productId has changed from undefined to a real value
+      console.log('🔄 Product created, BlobImageUpload will auto-reorganize any temp images');
+      
+      // Handle legacy uploadedFiles if any (backup system)
       if (uploadedFiles.length > 0) {
         try {
           await imageApi.uploadImages(productId, uploadedFiles);
         } catch (uploadError) {
-          console.error('Erro ao fazer upload das imagens:', uploadError);
-          alert('Produto criado, mas houve erro no upload das imagens. Você pode adicioná-las editando o produto.');
+          console.error('Erro ao fazer upload das imagens legadas:', uploadError);
         }
       }
       
-      router.push('/produtos');
+      // Wait for image reorganization if there are uploaded images
+      if (productImages.length > 0) {
+        console.log('🔄 Waiting for image reorganization to complete before navigation...');
+        setIsReorganizationComplete(false);
+        
+        // Wait for reorganization with a timeout
+        const waitForReorganization = async () => {
+          return new Promise<void>((resolve) => {
+            let timeoutReached = false;
+            
+            // Set a maximum wait time of 10 seconds
+            const timeout = setTimeout(() => {
+              timeoutReached = true;
+              console.log('⏰ Timeout reached, proceeding with navigation');
+              resolve();
+            }, 10000);
+            
+            // Check periodically if reorganization is complete
+            const checkInterval = setInterval(() => {
+              if (isReorganizationComplete && !timeoutReached) {
+                clearTimeout(timeout);
+                clearInterval(checkInterval);
+                console.log('✅ Image reorganization completed, proceeding with navigation');
+                resolve();
+              }
+            }, 500);
+          });
+        };
+        
+        await waitForReorganization();
+      }
+      
+      // Trigger products list refresh
+      productRefreshManager.refresh();
+      
+      // Add small delay to allow refresh to propagate
+      setTimeout(() => {
+        router.push('/produtos');
+      }, 500);
     } catch (error: any) {
       console.error('Erro ao criar produto:', error);
       
@@ -539,21 +590,26 @@ export default function NewProductPage() {
                     </div>
                   </div>
                   
-                  <ImageUpload
+                  <BlobImageUpload
                     productId={createdProductId || undefined}
-                    images={productImages}
+                    existingImages={productImages}
                     onImagesChange={(newImages) => {
-                      console.log('🖼️ Standard Upload onImagesChange called:', {
+                      console.log('🖼️ Blob Upload onImagesChange called:', {
                         newImagesCount: newImages.length,
-                        previousCount: productImages.length,
-                        newImageIds: newImages.map(img => ({ id: img.id, order: img.order }))
+                        previousCount: productImages.length
                       });
                       setProductImages(newImages);
                     }}
-                    onUpload={handleImageUpload}
-                    onDelete={handleImageDelete}
-                    onReorder={handleImageReorder}
+                    onUploadComplete={(uploadedImages) => {
+                      console.log('✅ Upload completed in NewProductPage:', uploadedImages);
+                      setProductImages(prev => [...prev, ...uploadedImages]);
+                    }}
+                    onReorganizationComplete={() => {
+                      console.log('🎉 Image reorganization completed in NewProductPage');
+                      setIsReorganizationComplete(true);
+                    }}
                     maxImages={10}
+                    disabled={false}
                   />
                 </div>
 

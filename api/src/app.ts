@@ -23,6 +23,8 @@ import userRoutes from './routes/user.routes';
 import orderRoutes from './routes/order.routes';
 import customerRoutes from './routes/customer.routes';
 import systemRoutes from './routes/system.routes';
+import blobUploadRoutes from './routes/blob-upload.routes';
+import testBlobRoutes from './routes/test-blob.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
@@ -448,6 +450,14 @@ app.use('/api/customers', customerRoutes);
 
 // System API Routes (admin auth required)
 app.use('/api/system', systemRoutes);
+
+// Blob Upload Routes
+app.use('/api/blob', blobUploadRoutes);
+
+// Test Blob Routes (development only)
+if (process.env.NODE_ENV === 'development') {
+  app.use('/api/test-blob', testBlobRoutes);
+}
 
 // Public API Routes (no auth required)
 app.use('/api/public', publicRoutes);

@@ -22,10 +22,33 @@ export const errorHandler = (
   // Prisma errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
-      const field = err.meta?.target as string[];
+      const fields = err.meta?.target as string[];
+      
+      // Handle specific constraint combinations
+      if (fields?.includes('partnerId') && fields?.includes('sku')) {
+        return res.status(409).json({
+          success: false,
+          error: 'Este SKU já está em uso para este parceiro. Por favor, escolha um SKU diferente.',
+        });
+      }
+      
+      // Handle single field constraints
+      const fieldName = fields?.[0] || 'Campo';
+      let friendlyName = fieldName;
+      
+      // Map field names to user-friendly names
+      const fieldMappings: { [key: string]: string } = {
+        'email': 'E-mail',
+        'sku': 'SKU',
+        'slug': 'Nome do produto (já existe um produto com nome similar)',
+        'partnerId': 'Parceiro'
+      };
+      
+      friendlyName = fieldMappings[fieldName] || fieldName;
+      
       return res.status(409).json({
         success: false,
-        error: `${field?.[0] || 'Campo'} já está em uso`,
+        error: `${friendlyName} já está em uso`,
       });
     }
 
