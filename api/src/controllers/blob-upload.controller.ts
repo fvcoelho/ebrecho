@@ -868,7 +868,8 @@ export const directUpload = async (
         // Upload directly to Vercel Blob
         const blob = await put(organizedPath, req.file.buffer, {
           access: 'public',
-          contentType: req.file.mimetype
+          contentType: req.file.mimetype,
+          token: process.env.BLOB_READ_WRITE_TOKEN
         });
 
         logger.info('Direct upload successful', {
@@ -931,7 +932,8 @@ export const testDirectUpload = async (
     // Upload directly to Vercel Blob
     const blob = await put(testPath, buffer, {
       access: 'public',
-      contentType: 'image/jpeg'
+      contentType: 'image/jpeg',
+      token: process.env.BLOB_READ_WRITE_TOKEN
     });
     
     logger.info('Direct upload successful', { 
