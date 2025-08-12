@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, Plus, Filter, Grid, List, Eye, Edit, Trash2, Sparkles, User, UserPlus, Shirt } from 'lucide-react';
+import { Search, Plus, Filter, Grid, List, Eye, Edit, Trash2, Sparkles, User, UserPlus, Shirt, RefreshCw } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -32,6 +32,7 @@ import { imageApi } from '@/lib/api/images';
 import { aiEnhancementAPI } from '@/lib/api/ai-enhancement';
 import { TryOnComponent } from '@/components/products/try-on-component';
 import { getApiBaseUrl } from '@/lib/api-config';
+import { productRefreshManager } from '@/lib/product-refresh';
 
 const CONDITION_LABELS = {
   NEW: 'Novo',
@@ -112,6 +113,22 @@ function ProductsPageContent() {
           firstImageUrl: response.products[0].images[0]?.thumbnailUrl
         } : null
       });
+      
+      // Log each product before setting state
+      response.products.forEach((product, index) => {
+        console.log(`📦 Product ${index + 1}:`, {
+          id: product.id,
+          name: product.name,
+          imagesCount: product.images.length,
+          images: product.images.map(img => ({
+            id: img.id,
+            thumbnailUrl: img.thumbnailUrl,
+            processedUrl: img.processedUrl,
+            originalUrl: img.originalUrl
+          }))
+        });
+      });
+      
       setProducts(response.products);
       setPagination(response.pagination);
     } catch (error) {
@@ -507,6 +524,16 @@ function ProductsPageContent() {
     loadProducts();
   }, [filters]);
 
+  // Subscribe to product refresh events
+  useEffect(() => {
+    const unsubscribe = productRefreshManager.subscribe(() => {
+      console.log('🔄 Products page: Received refresh event, reloading products');
+      loadProducts();
+    });
+
+    return unsubscribe;
+  }, []);
+
   // Redirect if not authenticated
   if (!user) {
     return null;
@@ -523,10 +550,16 @@ function ProductsPageContent() {
               Gerencie o catálogo de produtos do seu brechó
             </p>
           </div>
-          <Button onClick={() => router.push('/produtos/novo')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Produto
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={loadProducts} disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+            <Button onClick={() => router.push('/produtos/novo')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Produto
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

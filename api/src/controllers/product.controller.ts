@@ -31,15 +31,40 @@ export const createProduct = async (
       status = 'AVAILABLE'
     } = req.body;
 
+    // Handle SKU - make it optional and generate if needed
+    let finalSku = sku;
+    
+    // If SKU is provided, check if it exists for this partner
+    if (finalSku && finalSku.trim() !== '') {
+      const existingProduct = await prisma.product.findUnique({
+        where: {
+          partnerId_sku: {
+            partnerId,
+            sku: finalSku
+          }
+        }
+      });
+      
+      if (existingProduct) {
+        return res.status(409).json({
+          success: false,
+          error: `O SKU "${finalSku}" já está em uso. Por favor, escolha um SKU diferente.`
+        });
+      }
+    } else {
+      // If no SKU provided or empty, set to null (database allows null SKUs)
+      finalSku = null;
+    }
+
     // Generate unique slug for product
-    const slug = generateProductSlug(name, sku);
+    const slug = generateProductSlug(name, finalSku);
 
     const product = await prisma.product.create({
       data: {
         name,
         description,
         price,
-        sku,
+        sku: finalSku,
         category,
         brand,
         size,

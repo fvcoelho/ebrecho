@@ -29,7 +29,7 @@ import {
 import { DashboardLayout } from '@/components/dashboard';
 import { productService, type CreateProductData, type Product } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
-import { ImageUpload } from '@/components/products/image-upload';
+import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
 
 const productFormSchema = z.object({
@@ -491,13 +491,14 @@ export default function EditProductPage() {
                     </div>
                   </div>
                   
-                  <ImageUpload
+                  <BlobImageUpload
                     productId={productId}
-                    images={productImages}
+                    existingImages={productImages}
                     onImagesChange={setProductImages}
-                    onUpload={handleImageUpload}
-                    onDelete={handleImageDelete}
-                    onReorder={handleImageReorder}
+                    onUploadComplete={(uploadedImages) => {
+                      console.log('✅ Upload completed in EditProductPage:', uploadedImages);
+                      setProductImages(prev => [...prev, ...uploadedImages]);
+                    }}
                     maxImages={10}
                   />
                 </div>

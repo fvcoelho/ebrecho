@@ -318,27 +318,84 @@ export const productService = {
     });
     
     const response = await api.get(`/api/products?${params.toString()}`);
-    return response.data.data;
+    const data = response.data.data;
+    
+    // Ensure price is a number for all products
+    if (data.products) {
+      data.products = data.products.map((product: any) => ({
+        ...product,
+        price: typeof product.price === 'string' ? parseFloat(product.price) : product.price
+      }));
+    }
+    
+    return data;
   },
 
   async getProductById(id: string): Promise<Product> {
     const response = await api.get(`/api/products/${id}`);
-    return response.data.data;
+    const product = response.data.data;
+    
+    // Ensure price is a number
+    if (product && typeof product.price === 'string') {
+      product.price = parseFloat(product.price);
+    }
+    
+    return product;
   },
 
   async createProduct(data: CreateProductData): Promise<Product> {
+    console.log('📤 productService.createProduct called with data:', {
+      name: data.name,
+      price: data.price,
+      category: data.category,
+      condition: data.condition,
+      status: data.status,
+      hasSku: !!data.sku,
+      hasBrand: !!data.brand,
+      hasDescription: !!data.description
+    });
+
     const response = await api.post('/api/products', data);
-    return response.data.data;
+    console.log('✅ productService.createProduct API response:', {
+      success: response.data.success,
+      productId: response.data.data?.id,
+      productName: response.data.data?.name,
+      imagesCount: response.data.data?.images?.length || 0,
+      status: response.status
+    });
+
+    const product = response.data.data;
+    
+    // Ensure price is a number
+    if (product && typeof product.price === 'string') {
+      product.price = parseFloat(product.price);
+    }
+    
+    return product;
   },
 
   async updateProduct(id: string, data: Partial<CreateProductData>): Promise<Product> {
     const response = await api.put(`/api/products/${id}`, data);
-    return response.data.data;
+    const product = response.data.data;
+    
+    // Ensure price is a number
+    if (product && typeof product.price === 'string') {
+      product.price = parseFloat(product.price);
+    }
+    
+    return product;
   },
 
   async updateProductStatus(id: string, status: Product['status']): Promise<Product> {
     const response = await api.patch(`/api/products/${id}/status`, { status });
-    return response.data.data;
+    const product = response.data.data;
+    
+    // Ensure price is a number
+    if (product && typeof product.price === 'string') {
+      product.price = parseFloat(product.price);
+    }
+    
+    return product;
   },
 
   async deleteProduct(id: string): Promise<void> {
