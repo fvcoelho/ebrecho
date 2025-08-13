@@ -25,9 +25,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "mcp:start": "node scripts/start-mcp-server.js",
+    "mcp:start:http": "node scripts/start-mcp-server.js --http",
+    "mcp:test": "node tests/mcp.test.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "@prisma/client": "^6.9.0",
     "@types/bcrypt": "^6.0.0",
     "@vercel/blob": "^1.1.1",

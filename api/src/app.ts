@@ -25,6 +25,7 @@ import customerRoutes from './routes/customer.routes';
 import systemRoutes from './routes/system.routes';
 import blobUploadRoutes from './routes/blob-upload.routes';
 import testBlobRoutes from './routes/test-blob.routes';
+import mcpRoutes from './routes/mcp.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
@@ -56,7 +57,9 @@ app.use(cors({
       'https://dev.ebrecho.com.br',
       'http://dev.ebrecho.com.br',
       'http://dev.ebrecho.com.br:3000',
-      'https://api.ebrecho.com.br' // Allow production Swagger UI
+      'https://api.ebrecho.com.br', // Allow production Swagger UI
+      'https://claude.ai', // Allow Claude Code MCP client
+      'https://docs.anthropic.com' // Allow Anthropic MCP clients
     ].filter(Boolean); // Remove undefined values
     
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -68,6 +71,8 @@ app.use(cors({
     }
   },
   credentials: true,
+  exposedHeaders: ['Mcp-Session-Id'], // Expose MCP session headers
+  allowedHeaders: ['Content-Type', 'Authorization', 'mcp-session-id'], // Allow MCP headers
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -461,6 +466,9 @@ if (process.env.NODE_ENV === 'development') {
 
 // Public API Routes (no auth required)
 app.use('/api/public', publicRoutes);
+
+// MCP API Routes
+app.use('/api/mcp', mcpRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
