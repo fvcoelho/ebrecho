@@ -1,0 +1,40 @@
+{
+  "name": "ebrecho-api-copilot",
+  "version": "1.0.0",
+  "description": "MCP server para o sistema de Copilot da API eBrecho",
+  "author": "eBrecho Team",
+  "license": "MIT",
+  "runtime": {
+    "node": ">=18.0.0"
+  },
+  "capabilities": {
+    "tools": true,
+    "prompts": true,
+    "resources": false,
+    "logging": true
+  },
+  "tools": {
+    "description": "Ferramentas para automação da API eBrecho baseadas na especificação OpenAPI",
+    "auto_generate": true,
+    "base_url": "/api",
+    "auth_header": "Authorization",
+    "supported_methods": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+  },
+  "prompts": {
+    "system": {
+      "name": "Assistente eBrecho",
+      "description": "Sistema inteligente para automação da plataforma de moda segunda mão",
+      "language": "pt-BR",
+      "context": "marketplace_fashion"
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  },
+  "security": {
+    "jwt_required": true,
+    "role_based_access": true,
+    "rate_limiting": true
+  }
+}
