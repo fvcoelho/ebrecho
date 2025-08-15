@@ -5,8 +5,22 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Label } from '@/components/ui';
-import { Store, MapPin, Globe, AlertCircle, Loader2 } from 'lucide-react';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  Button, 
+  Input, 
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Checkbox
+} from '@/components/ui';
+import { Store, MapPin, Globe, AlertCircle, Loader2, CheckCircle2, ExternalLink } from 'lucide-react';
 import { 
   maskCEP, 
   maskCPF, 
@@ -50,6 +64,7 @@ function StoreConfigForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [partner, setPartner] = useState<Partner | null>(null);
+  const [slugError, setSlugError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<StoreConfigData>({
     name: '',
@@ -83,44 +98,26 @@ function StoreConfigForm() {
     try {
       setInitialLoading(true);
       const partnerData = await partnerService.getCurrentPartner();
-      console.log('[DEBUG] Partner data loaded:', partnerData);
-      console.log('[DEBUG] Document:', partnerData.document);
-      console.log('[DEBUG] Document Type:', partnerData.documentType);
       setPartner(partnerData);
       
       // Ensure document and documentType are properly handled
       const documentType = partnerData.documentType || 'CNPJ';
       const rawDocument = partnerData.document || '';
       
-      console.log('[DEBUG] Raw document before masking:', JSON.stringify(rawDocument));
-      console.log('[DEBUG] Document type:', documentType);
-      console.log('[DEBUG] Document exists?', !!rawDocument);
-      console.log('[DEBUG] Document length:', rawDocument.length);
-      
       // Apply appropriate mask based on document type
       let maskedDocument = '';
       if (rawDocument && rawDocument.trim() !== '') {
-        console.log('[DEBUG] Applying mask to:', rawDocument);
         maskedDocument = documentType === 'CNPJ' 
           ? maskCNPJ(rawDocument) 
           : maskCPF(rawDocument);
-        console.log('[DEBUG] Result after masking:', maskedDocument);
-      } else {
-        console.log('[DEBUG] No document to mask - field will be empty');
       }
-      
-      console.log('[DEBUG] Final masked document:', maskedDocument);
-      
-      // Test masking functions with sample data
-      console.log('[DEBUG] Testing maskCPF with "12345678901":', maskCPF('12345678901'));
-      console.log('[DEBUG] Testing maskCNPJ with "12345678901234":', maskCNPJ('12345678901234'));
       
       // Pre-populate form with existing data
       const formData = {
         name: partnerData.name || '',
         email: partnerData.email || '',
         phone: maskPhone(partnerData.phone || ''),
-        document: maskedDocument || rawDocument || (documentType === 'CNPJ' ? '12.345.678/0001-00' : '123.456.789-00'), // Fallback with test value
+        document: maskedDocument || '',
         documentType: documentType,
         description: partnerData.description || '',
         slug: partnerData.slug || '',
@@ -139,15 +136,7 @@ function StoreConfigForm() {
         }
       };
       
-      console.log('[DEBUG] Form data to set:', formData);
-      console.log('[DEBUG] Specifically - document field will be set to:', JSON.stringify(formData.document));
       setFormData(formData);
-      
-      // Verify state was set correctly
-      setTimeout(() => {
-        console.log('[DEBUG] Form data after setState (1s delay):', formData);
-      }, 1000);
-      
       setInitialLoadComplete(true);
     } catch (err: unknown) {
       console.error('Error loading partner data:', err);
@@ -235,7 +224,6 @@ function StoreConfigForm() {
   
   // Handle document type change manually in the select onChange
   const handleDocumentTypeChange = (newType: 'CNPJ' | 'CPF') => {
-    console.log('[DEBUG] User manually changed document type to:', newType);
     setFormData(prev => ({
       ...prev,
       documentType: newType,
@@ -250,9 +238,9 @@ function StoreConfigForm() {
     setSuccess(null);
 
     // Validate slug
-    const slugError = validateSlug(formData.slug);
-    if (slugError) {
-      setError(slugError);
+    const slugValidationError = validateSlug(formData.slug);
+    if (slugValidationError) {
+      setError(slugValidationError);
       setLoading(false);
       return;
     }
@@ -276,11 +264,21 @@ function StoreConfigForm() {
       return;
     }
 
-    // Skip address validation if no physical store
-    if (formData.hasPhysicalStore && formData.address && !isValidCEP(formData.address.zipCode)) {
-      setError('CEP inválido. Deve conter 8 dígitos.');
-      setLoading(false);
-      return;
+    // Validate address if physical store is enabled
+    if (formData.hasPhysicalStore) {
+      if (!formData.address.street || !formData.address.number || 
+          !formData.address.neighborhood || !formData.address.city || 
+          !formData.address.state || !formData.address.zipCode) {
+        setError('Por favor, preencha todos os campos obrigatórios do endereço.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!isValidCEP(formData.address.zipCode)) {
+        setError('CEP inválido. Deve conter 8 dígitos.');
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -314,6 +312,11 @@ function StoreConfigForm() {
       
       setSuccess('Configurações atualizadas com sucesso!');
       setError(null);
+      
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
     } catch (err: unknown) {
       console.error('Error updating store configuration:', err);
       const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Erro ao atualizar configurações. Tente novamente.';
@@ -356,7 +359,8 @@ function StoreConfigForm() {
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
+            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg flex items-center">
+              <CheckCircle2 className="h-5 w-5 mr-2" />
               {success}
             </div>
           )}
@@ -424,16 +428,18 @@ function StoreConfigForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="documentType">Tipo de Documento *</Label>
-                  <select
-                    id="documentType"
+                  <Select
                     value={formData.documentType}
-                    onChange={(e) => handleDocumentTypeChange(e.target.value as 'CNPJ' | 'CPF')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    onValueChange={(value) => handleDocumentTypeChange(value as 'CNPJ' | 'CPF')}
                   >
-                    <option value="CNPJ">CNPJ</option>
-                    <option value="CPF">CPF</option>
-                  </select>
+                    <SelectTrigger id="documentType">
+                      <SelectValue placeholder="Selecione o tipo de documento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CNPJ">CNPJ</SelectItem>
+                      <SelectItem value="CPF">CPF</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="document">
@@ -450,11 +456,6 @@ function StoreConfigForm() {
                     maxLength={formData.documentType === 'CNPJ' ? 18 : 14}
                     required
                   />
-                  {process.env.NODE_ENV === 'development' && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      Debug: Current value = &quot;{formData.document}&quot; | Type = {formData.documentType}
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -471,14 +472,15 @@ function StoreConfigForm() {
               </div>
 
               <div className="flex items-center space-x-2 pt-4">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id="hasPhysicalStore"
                   checked={formData.hasPhysicalStore}
-                  onChange={(e) => handleInputChange('hasPhysicalStore', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  onCheckedChange={(checked) => handleInputChange('hasPhysicalStore', checked as boolean)}
                 />
-                <Label htmlFor="hasPhysicalStore" className="text-sm font-medium text-gray-700">
+                <Label 
+                  htmlFor="hasPhysicalStore" 
+                  className="text-sm font-medium text-gray-700 cursor-pointer"
+                >
                   Minha loja possui endereço físico
                 </Label>
               </div>
@@ -494,6 +496,7 @@ function StoreConfigForm() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+
               <div>
                 <Label htmlFor="slug">URL da Loja *</Label>
                 <div className="flex items-center space-x-2">
@@ -503,52 +506,76 @@ function StoreConfigForm() {
                   <Input
                     id="slug"
                     value={formData.slug}
-                    onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase())}
+                    onChange={(e) => {
+                      const newSlug = e.target.value.toLowerCase();
+                      handleInputChange('slug', newSlug);
+                      // Validate slug in real-time
+                      if (newSlug) {
+                        const error = validateSlug(newSlug);
+                        setSlugError(error);
+                      } else {
+                        setSlugError(null);
+                      }
+                    }}
                     placeholder="minha-loja"
-                    className="rounded-l-none"
+                    className={`rounded-l-none ${slugError ? 'border-red-500' : ''}`}
                     required
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   Este será o endereço da sua vitrine pública. Use apenas letras minúsculas, números e hífens.
                 </p>
-                {formData.slug && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Sua loja estará disponível em: <strong>ebrecho.com.br/{formData.slug}</strong>
+                {slugError && (
+                  <p className="text-xs text-red-600 mt-1">{slugError}</p>
+                )}
+                {formData.slug && !slugError && (
+                  <p className="text-xs mt-1">
+                    <a 
+                      href={`https://ebrecho.com.br/${formData.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      Clique para ver sua loja: <strong>ebrecho.com.br/{formData.slug}</strong>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </p>
                 )}
               </div>
 
               <div>
-                <Label htmlFor="publicDescription">Descrição Pública</Label>
+                <Label htmlFor="publicDescription">Descrição da loja</Label>
                 <textarea
                   id="publicDescription"
                   value={formData.publicDescription}
                   onChange={(e) => handleInputChange('publicDescription', e.target.value)}
-                  placeholder="Descrição que aparecerá na sua vitrine pública para os visitantes..."
+                  placeholder="Descrição que aparecerá na sua vitrine para os visitantes..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Esta descrição aparecerá na sua vitrine pública para os visitantes
+                  Esta descrição aparecerá na sua vitrine para os visitantes
                 </p>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isPublicActive"
-                  checked={Boolean(formData.isPublicActive)}
-                  onChange={(e) => handleInputChange('isPublicActive', e.target.checked.toString())}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <Label htmlFor="isPublicActive" className="text-sm">
-                  Ativar vitrine pública
-                </Label>
-              </div>
-              <p className="text-xs text-gray-500">
-                Quando ativada, sua loja ficará visível publicamente na URL personalizada
-              </p>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isPublicActive"
+                    checked={formData.isPublicActive}
+                    onCheckedChange={(checked) => handleInputChange('isPublicActive', checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="isPublicActive" 
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    Ativar vitrine
+                  </Label>
+                </div>
+                <p className="text-xs text-gray-500 ml-6">
+                  Quando ativada, sua loja ficará visível na URL personalizada
+                </p>
+              </div> 
             </CardContent>
           </Card>
 
@@ -660,7 +687,7 @@ function StoreConfigForm() {
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || !!slugError}
               className="bg-blue-600 hover:bg-blue-700"
             >
               {loading ? 'Salvando...' : 'Salvar Configurações'}

@@ -59,9 +59,11 @@ export function StoreHero({ store }: StoreHeroProps) {
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 drop-shadow-lg">
                 {store.name}
               </h1>
-              <p className="text-sm md:text-base lg:text-lg drop-shadow-lg line-clamp-2 max-w-2xl">
-                {store.publicDescription || ''}
-              </p>
+              {store.publicDescription && (
+                <p className="text-sm md:text-base lg:text-lg drop-shadow-lg line-clamp-2 max-w-3xl">
+                  {store.publicDescription}
+                </p>
+              )}
             </div>
           </div>
         </div>
