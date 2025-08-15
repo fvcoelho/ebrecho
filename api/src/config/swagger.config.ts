@@ -357,6 +357,200 @@ const options: swaggerJsdoc.Options = {
               format: 'date-time'
             }
           }
+        },
+        Order: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string'
+            },
+            orderNumber: {
+              type: 'string'
+            },
+            customerId: {
+              type: 'string'
+            },
+            partnerId: {
+              type: 'string'
+            },
+            status: {
+              type: 'string',
+              enum: ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+            },
+            paymentMethod: {
+              type: 'string',
+              enum: ['CREDIT_CARD', 'DEBIT_CARD', 'PIX', 'BOLETO']
+            },
+            paymentStatus: {
+              type: 'string',
+              enum: ['PENDING', 'CONFIRMED', 'FAILED', 'REFUNDED']
+            },
+            subtotal: {
+              type: 'number'
+            },
+            shippingCost: {
+              type: 'number'
+            },
+            total: {
+              type: 'number'
+            },
+            trackingNumber: {
+              type: 'string',
+              nullable: true
+            },
+            notes: {
+              type: 'string',
+              nullable: true
+            },
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: {
+                    type: 'string'
+                  },
+                  productId: {
+                    type: 'string'
+                  },
+                  quantity: {
+                    type: 'integer'
+                  },
+                  price: {
+                    type: 'number'
+                  },
+                  total: {
+                    type: 'number'
+                  }
+                }
+              }
+            },
+            customer: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string'
+                },
+                name: {
+                  type: 'string'
+                },
+                email: {
+                  type: 'string'
+                }
+              }
+            },
+            shippingAddress: {
+              type: 'object',
+              properties: {
+                street: {
+                  type: 'string'
+                },
+                number: {
+                  type: 'string'
+                },
+                complement: {
+                  type: 'string'
+                },
+                neighborhood: {
+                  type: 'string'
+                },
+                city: {
+                  type: 'string'
+                },
+                state: {
+                  type: 'string'
+                },
+                zipCode: {
+                  type: 'string'
+                }
+              }
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
+        },
+        Customer: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string'
+            },
+            email: {
+              type: 'string',
+              format: 'email'
+            },
+            name: {
+              type: 'string'
+            },
+            phone: {
+              type: 'string'
+            },
+            cpf: {
+              type: 'string',
+              nullable: true
+            },
+            birthDate: {
+              type: 'string',
+              format: 'date',
+              nullable: true
+            },
+            partnerId: {
+              type: 'string',
+              nullable: true
+            },
+            isActive: {
+              type: 'boolean'
+            },
+            addresses: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: {
+                    type: 'string'
+                  },
+                  street: {
+                    type: 'string'
+                  },
+                  number: {
+                    type: 'string'
+                  },
+                  complement: {
+                    type: 'string'
+                  },
+                  neighborhood: {
+                    type: 'string'
+                  },
+                  city: {
+                    type: 'string'
+                  },
+                  state: {
+                    type: 'string'
+                  },
+                  zipCode: {
+                    type: 'string'
+                  },
+                  isDefault: {
+                    type: 'boolean'
+                  }
+                }
+              }
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time'
+            }
+          }
         }
       },
       responses: {

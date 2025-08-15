@@ -5,7 +5,34 @@ import publicInvitationRoutes from './public-invitation.routes';
 
 const router = Router();
 
-// Simple test endpoint for API connectivity
+/**
+ * @swagger
+ * /api/public/test:
+ *   get:
+ *     summary: Test public API connectivity
+ *     description: Simple endpoint to test if the public API is accessible
+ *     tags: [Public]
+ *     responses:
+ *       200:
+ *         description: API is working
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Public API endpoint is working
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 environment:
+ *                   type: string
+ *                   example: development
+ */
 router.get('/test', (req, res) => {
   res.json({
     success: true,

@@ -42,8 +42,56 @@ const ExecuteToolSchema = z.object({
 });
 
 /**
- * GET /api/mcp/tools
- * Lista todas as ferramentas disponíveis baseadas na API
+ * @swagger
+ * /api/mcp/tools:
+ *   get:
+ *     summary: List available AI copilot tools
+ *     description: Get all available tools that the AI copilot can execute based on the API
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tools retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         tools:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                                 description: Tool name
+ *                               description:
+ *                                 type: string
+ *                                 description: Tool description
+ *                               endpoint:
+ *                                 type: object
+ *                                 properties:
+ *                                   method:
+ *                                     type: string
+ *                                     enum: [GET, POST, PUT, PATCH, DELETE]
+ *                                   path:
+ *                                     type: string
+ *                               inputSchema:
+ *                                 type: object
+ *                                 description: JSON schema for tool parameters
+ *                         count:
+ *                           type: integer
+ *                           description: Total number of available tools
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
 router.get('/tools', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -74,8 +122,73 @@ router.get('/tools', authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/mcp/execute
- * Executa uma ferramenta específica
+ * @swagger
+ * /api/mcp/execute:
+ *   post:
+ *     summary: Execute AI copilot tool
+ *     description: Execute a specific tool available to the AI copilot
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - toolName
+ *             properties:
+ *               toolName:
+ *                 type: string
+ *                 description: Name of the tool to execute
+ *                 example: getProducts
+ *               parameters:
+ *                 type: object
+ *                 description: Parameters to pass to the tool
+ *                 additionalProperties: true
+ *                 example:
+ *                   page: 1
+ *                   limit: 10
+ *                   category: "clothing"
+ *     responses:
+ *       200:
+ *         description: Tool executed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   description: Tool execution result
+ *                 executionTime:
+ *                   type: number
+ *                   description: Execution time in milliseconds
+ *                 error:
+ *                   type: string
+ *                   description: Error message if execution failed
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Tool not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Tool 'invalidTool' not found"
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
 router.post('/execute', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -126,8 +239,98 @@ router.post('/execute', authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/mcp/chat
- * Endpoint principal do chat do copilot
+ * @swagger
+ * /api/mcp/chat:
+ *   post:
+ *     summary: AI copilot chat
+ *     description: Chat with the AI copilot that can execute tools and provide assistance
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 description: User message to the AI copilot
+ *                 example: "Show me the latest products in my store"
+ *               conversationId:
+ *                 type: string
+ *                 description: Optional conversation ID to maintain context
+ *                 example: "conv_123456"
+ *               context:
+ *                 type: object
+ *                 description: Additional context for the AI
+ *                 properties:
+ *                   userRole:
+ *                     type: string
+ *                     description: User role override
+ *                     example: "PARTNER_ADMIN"
+ *                   partnerId:
+ *                     type: string
+ *                     nullable: true
+ *                     description: Partner ID for context
+ *                   currentPage:
+ *                     type: string
+ *                     description: Current page/section in the app
+ *                     example: "/dashboard/products"
+ *     responses:
+ *       200:
+ *         description: Server-Sent Events stream with AI responses
+ *         headers:
+ *           Content-Type:
+ *             schema:
+ *               type: string
+ *               example: text/event-stream
+ *           Cache-Control:
+ *             schema:
+ *               type: string
+ *               example: no-cache
+ *           Connection:
+ *             schema:
+ *               type: string
+ *               example: keep-alive
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               description: |
+ *                 Stream of events including:
+ *                 - start: Chat session started
+ *                 - content: AI response content chunks
+ *                 - tool_call_start: AI started calling a tool
+ *                 - tool_executing: Tool is being executed
+ *                 - tool_result: Tool execution result
+ *                 - tool_error: Tool execution error
+ *                 - end: Chat session ended
+ *                 - error: Error occurred
+ *               example: |
+ *                 event: start
+ *                 data: {"conversationId":"conv_123","message":"Show me products"}
+ *                 
+ *                 event: content
+ *                 data: {"content":"I'll help you find products..."}
+ *                 
+ *                 event: tool_call_start
+ *                 data: {"toolId":"call_1","toolName":"getProducts"}
+ *                 
+ *                 event: tool_result
+ *                 data: {"toolName":"getProducts","success":true,"result":{...}}
+ *                 
+ *                 event: end
+ *                 data: {"conversationId":"conv_123","message":"Here are your products..."}
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
 router.post('/chat', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -302,8 +505,68 @@ router.post('/chat', authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/mcp/health
- * Health check do serviço MCP
+ * @swagger
+ * /api/mcp/health:
+ *   get:
+ *     summary: MCP service health check
+ *     description: Check the health status of the AI copilot service components
+ *     tags: [AI]
+ *     responses:
+ *       200:
+ *         description: Health check successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         parser:
+ *                           type: object
+ *                           properties:
+ *                             status:
+ *                               type: string
+ *                               enum: [ok, error]
+ *                             toolsCount:
+ *                               type: integer
+ *                               description: Number of parsed tools
+ *                         executor:
+ *                           type: object
+ *                           properties:
+ *                             status:
+ *                               type: string
+ *                               enum: [ok, error]
+ *                         ai:
+ *                           type: object
+ *                           properties:
+ *                             provider:
+ *                               type: string
+ *                               example: OpenRouter
+ *                             model:
+ *                               type: string
+ *                               example: anthropic/claude-3.5-sonnet
+ *                             status:
+ *                               type: string
+ *                               enum: [configured, not_configured]
+ *                         timestamp:
+ *                           type: string
+ *                           format: date-time
+ *       500:
+ *         description: Health check failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Health check failed
  */
 router.get('/health', async (req: Request, res: Response) => {
   try {
@@ -336,8 +599,53 @@ router.get('/health', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/mcp/prompts
- * Lista os prompts do sistema (apenas admin)
+ * @swagger
+ * /api/mcp/prompts:
+ *   get:
+ *     summary: List system prompts (Admin only)
+ *     description: Get available system prompts used by the AI copilot
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Prompts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         prompts:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 description: Prompt identifier
+ *                               name:
+ *                                 type: string
+ *                                 description: Prompt name
+ *                               description:
+ *                                 type: string
+ *                                 description: Prompt description
+ *                               category:
+ *                                 type: string
+ *                                 description: Prompt category
+ *                               template:
+ *                                 type: string
+ *                                 description: Prompt template
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
 router.get('/prompts', authMiddleware, requireAdminRole, async (req: Request, res: Response) => {
   try {
