@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PublicStore } from '@/lib/api/public'
 import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
+import { PixQRCode } from '@/components/storefront/pix-qrcode'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -227,6 +228,18 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                   <MessageCircle className="mr-2 h-5 w-5" />
                   Conversar no WhatsApp
                 </Button>
+              )}
+              
+              {/* PIX QR Code */}
+              {store.pixKey && (
+                <div className="flex justify-center">
+                  <PixQRCode
+                    pixKey={store.pixKey}
+                    amount={product.price}
+                    productName={product.name}
+                    storeName={store.name}
+                  />
+                </div>
               )}
               
               <Card className="p-4 bg-muted/50">

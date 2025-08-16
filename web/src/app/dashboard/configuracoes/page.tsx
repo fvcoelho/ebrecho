@@ -45,6 +45,7 @@ interface StoreConfigData {
   publicDescription: string;
   isPublicActive: boolean;
   hasPhysicalStore: boolean;
+  pixKey: string;
   address: {
     street: string;
     number: string;
@@ -78,6 +79,7 @@ function StoreConfigForm() {
     publicDescription: '',
     isPublicActive: true,
     hasPhysicalStore: true,
+    pixKey: '',
     address: {
       street: '',
       number: '',
@@ -125,6 +127,7 @@ function StoreConfigForm() {
         publicDescription: partnerData.publicDescription || '',
         isPublicActive: partnerData.isPublicActive ?? true,
         hasPhysicalStore: partnerData.hasPhysicalStore ?? true,
+        pixKey: partnerData.pixKey || '',
         address: {
           street: partnerData.address?.street || '',
           number: partnerData.address?.number || '',
@@ -295,6 +298,7 @@ function StoreConfigForm() {
         publicDescription: formData.publicDescription,
         isPublicActive: Boolean(formData.isPublicActive),
         hasPhysicalStore: Boolean(formData.hasPhysicalStore),
+        pixKey: formData.pixKey || undefined,
         address: formData.hasPhysicalStore ? {
           street: formData.address.street,
           number: formData.address.number,
@@ -421,6 +425,22 @@ function StoreConfigForm() {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Será usado para contato direto na vitrine pública
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="pixKey">Chave PIX</Label>
+                  <Input
+                    id="pixKey"
+                    value={formData.pixKey}
+                    onChange={(e) => handleInputChange('pixKey', e.target.value)}
+                    placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
+                    maxLength={255}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Será usada para gerar QR codes de pagamento nos produtos
                   </p>
                 </div>
               </div>

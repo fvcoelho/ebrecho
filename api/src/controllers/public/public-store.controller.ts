@@ -68,6 +68,10 @@ import { prisma } from '../../prisma';
  *                       type: object
  *                       nullable: true
  *                       example: {"instagram": "@ecofashion", "facebook": "ecofashion"}
+ *                     pixKey:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "user@example.com"
  *                     productCount:
  *                       type: integer
  *                       example: 42
@@ -166,6 +170,7 @@ export const getPublicStoreBySlug = async (req: Request, res: Response) => {
         publicEmail: true,
         businessHours: true,
         socialLinks: true,
+        pixKey: true,
         address: {
           select: {
             street: true,
