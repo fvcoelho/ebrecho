@@ -238,6 +238,8 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                     amount={product.price}
                     productName={product.name}
                     storeName={store.name}
+                    productId={product.id}
+                    partnerId={store.id}
                   />
                 </div>
               )}

@@ -25,6 +25,7 @@ import customerRoutes from './routes/customer.routes';
 import systemRoutes from './routes/system.routes';
 import blobUploadRoutes from './routes/blob-upload.routes';
 import testBlobRoutes from './routes/test-blob.routes';
+import pixTransactionRoutes from './routes/pix-transaction.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
@@ -461,6 +462,9 @@ if (process.env.NODE_ENV === 'development') {
 
 // Public API Routes (no auth required)
 app.use('/api/public', publicRoutes);
+
+// PIX Transaction routes
+app.use('/api/pix-transactions', pixTransactionRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

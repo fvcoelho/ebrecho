@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { QrCode, Copy, Check } from 'lucide-react'
 import { PixCanvas, payload } from '@/lib/pix'
 import { copyToClipboard } from '@/lib/clipboard'
+import { pixTransactionService } from '@/lib/api/pix-transactions'
 
 interface PixQRCodeProps {
   pixKey: string
@@ -13,6 +14,8 @@ interface PixQRCodeProps {
   productName: string
   storeName: string
   merchantCity?: string
+  productId: string
+  partnerId: string
 }
 
 export function PixQRCode({ 
@@ -20,15 +23,20 @@ export function PixQRCode({
   amount, 
   productName, 
   storeName, 
-  merchantCity = 'SAO PAULO' 
+  merchantCity = 'SAO PAULO',
+  productId,
+  partnerId
 }: PixQRCodeProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [pixPayloadData, setPixPayloadData] = useState('')
-  const [transactionCode] = useState(`PROD-${Date.now().toString().slice(-6)}`)
+  const [transactionCode] = useState(() => {
+    const env = process.env.NODE_ENV === 'production' ? 'P' : 'D'
+    return `${env}${Date.now().toString().slice(-10)}`
+  })
   
   // Generate PIX payload using the proper Brazilian PIX standard
-  const generatePixPayload = () => {
+  const generatePixPayload = async () => {
     try {
       const payloadStr = payload({
         pixkey: pixKey,
@@ -39,6 +47,25 @@ export function PixQRCode({
         ignoreErrors: false
       })
       setPixPayloadData(payloadStr)
+      
+      // Create transaction record in database
+      try {
+        await pixTransactionService.createPixTransaction({
+          transactionCode,
+          productId,
+          pixKey,
+          amount,
+          merchantName: storeName,
+          merchantCity,
+          pixPayload: payloadStr,
+          expiresIn: 30 // 30 minutes expiration
+        })
+        console.log('PIX transaction created:', transactionCode)
+      } catch (transactionError) {
+        console.warn('Failed to create PIX transaction record:', transactionError)
+        // Continue with payload generation even if transaction creation fails
+      }
+      
       return payloadStr
     } catch (error) {
       console.error('Error generating PIX payload:', error)
@@ -78,8 +105,8 @@ export function PixQRCode({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => {
-          generatePixPayload()
+        onClick={async () => {
+          await generatePixPayload()
           setIsOpen(true)
         }}
         className="gap-2"

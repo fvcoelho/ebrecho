@@ -195,6 +195,8 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
               amount={product.price}
               productName={product.name}
               storeName={store.name}
+              productId={product.id}
+              partnerId={store.id}
             />
           )}
         </CardContent>
