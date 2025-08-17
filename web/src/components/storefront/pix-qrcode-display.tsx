@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, QrCode } from 'lucide-react'
+import { Copy, Check, QrCode, MessageCircle } from 'lucide-react'
 import { PixCanvas, payload } from '@/lib/pix'
 import { copyToClipboard } from '@/lib/clipboard'
 import { pixTransactionService } from '@/lib/api/pix-transactions'
@@ -137,10 +137,11 @@ export function PixQRCodeDisplay({
           /* PIX Button */
           <button
             onClick={handleToggleQR}
-            className="flex items-center gap-1 text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+            className="relative flex items-center justify-center gap-2 text-sm bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pulse-large animate-pix-glow min-w-[140px]"
           >
-            <QrCode className="h-3 w-3" />
+            <QrCode className="h-4 w-4" />
             PIX {formatPrice(amount)}
+            <span className="animate-ping absolute -top-1 -right-1 h-2 w-2 bg-green-300 rounded-full opacity-75"></span>
           </button>
         ) : (
           /* QR Code Display */
@@ -185,6 +186,24 @@ export function PixQRCodeDisplay({
                   )}
                 </button>
               </div>
+              
+              {/* Payment instruction */}
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Após realizar o pagamento, envie o comprovante à loja para confirmação.
+              </p>
+              
+              {/* WhatsApp button for payment confirmation */}
+              <button
+                onClick={() => {
+                  const message = `Olá! Realizei o pagamento PIX para o produto "${productName}" (ID: ${productId}) no valor de ${formatPrice(amount)}. Segue o comprovante para confirmação da compra.`
+                  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+                  window.open(whatsappUrl, '_blank')
+                }}
+                className="flex items-center justify-center gap-1 text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors mt-2 animate-pulse-large"
+              >
+                <MessageCircle className="h-3 w-3" />
+                Enviar Comprovante
+              </button>
               
               {/* Toggle back button */}
               <button
