@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PublicStore } from '@/lib/api/public'
 import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
-import { PixQRCode } from '@/components/storefront/pix-qrcode'
+import { PixQRCodeDisplay } from '@/components/storefront/pix-qrcode-display'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -237,8 +237,8 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
               
               {/* PIX QR Code */}
               {store.pixKey && (
-                <div className="flex justify-center">
-                  <PixQRCode
+                  <PixQRCodeDisplay
+                    buttonText='Pagar com PIX'
                     pixKey={store.pixKey}
                     amount={product.price}
                     productName={product.name}
@@ -246,7 +246,6 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                     productId={product.id}
                     partnerId={store.id}
                   />
-                </div>
               )}
               
               <Card className="p-4 bg-muted/50">
