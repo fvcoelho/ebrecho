@@ -10,3 +10,5 @@ export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 export { Skeleton } from './skeleton';
 export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './table';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export { Textarea } from './textarea';
+export { Separator } from './separator';

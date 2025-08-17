@@ -231,7 +231,7 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                   onClick={handleWhatsAppClick}
                 >
                   <MessageCircle className="h-6 w-6" />
-                  Conversar no WhatsApp
+                  Conversar sobre esse item
                 </Button>
               )}
               

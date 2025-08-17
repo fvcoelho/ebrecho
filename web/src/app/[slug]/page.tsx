@@ -80,7 +80,7 @@ export default async function StorePage({ params }: StorePageProps) {
           <div className="lg:col-span-3">
             <section>
               <h2 className="text-2xl font-bold mb-6">Produtos em Destaque</h2>
-              <ProductGrid products={featuredProducts} storeSlug={slug} />
+              <ProductGrid products={featuredProducts} storeSlug={slug} store={store} />
               
               {featuredProducts.length > 0 && (
                 <div className="mt-8 text-center">
