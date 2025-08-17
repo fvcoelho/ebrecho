@@ -684,7 +684,7 @@ function ProductsPageContent() {
         </Card>
 
         {/* Modelos Section */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -787,7 +787,7 @@ function ProductsPageContent() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Products Grid */}
         {loading ? (
@@ -883,7 +883,7 @@ function ProductsPageContent() {
                           R$ {Number(product.price).toFixed(2)}
                         </span>
                         <div className="flex gap-1">
-                          {product.images.length > 0 && (
+                          {/* {product.images.length > 0 && (
                             <Button 
                               size="sm" 
                               variant="outline" 
@@ -897,7 +897,7 @@ function ProductsPageContent() {
                                 <Sparkles className="h-4 w-4" />
                               )}
                             </Button>
-                          )}
+                          )} */}
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button size="sm" variant="outline" onClick={() => setSelectedProduct(product)}>

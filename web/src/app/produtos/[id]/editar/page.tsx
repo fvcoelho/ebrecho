@@ -31,6 +31,7 @@ import { productService, type CreateProductData, type Product } from '@/lib/api'
 import { useAuth } from '@/contexts/auth-context';
 import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
+import { CATEGORY_OPTIONS } from '@/lib/constants/categories';
 
 const productFormSchema = z.object({
   name: z.string()
@@ -80,23 +81,6 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'Inativo' }
 ];
 
-const CATEGORY_OPTIONS = [
-  'Roupas',
-  'Calças',
-  'Camisetas',
-  'Vestidos',
-  'Jaquetas',
-  'Acessórios',
-  'Bolsas',
-  'Sapatos',
-  'Joias',
-  'Livros',
-  'Eletrônicos',
-  'Casa & Decoração',
-  'Esportes',
-  'Infantil',
-  'Outros'
-];
 
 export default function EditProductPage() {
   const router = useRouter();

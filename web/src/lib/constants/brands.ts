@@ -1,4 +1,4 @@
-export const BRAND_OPTIONS = [
+export const BRAND_LIST = [
   'Zara',
   'Adidas',
   'Arezzo',
@@ -15,4 +15,9 @@ export const BRAND_OPTIONS = [
   'Levi\'s'
 ] as const;
 
-export type Brand = typeof BRAND_OPTIONS[number];
+export const BRAND_OPTIONS = BRAND_LIST.map(brand => ({
+  value: brand,
+  label: brand
+}));
+
+export type Brand = typeof BRAND_LIST[number];

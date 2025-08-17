@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { DashboardLayout } from '@/components/dashboard';
@@ -20,6 +21,7 @@ import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
 import { productRefreshManager } from '@/lib/product-refresh';
 import { BRAND_OPTIONS } from '@/lib/constants/brands';
+import { CATEGORY_OPTIONS } from '@/lib/constants/categories';
 
 const productFormSchema = z.object({
   name: z.string()
@@ -69,23 +71,6 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'Inativo' }
 ];
 
-const CATEGORY_OPTIONS = [
-  'Roupas',
-  'Calças',
-  'Camisetas',
-  'Vestidos',
-  'Jaquetas',
-  'Acessórios',
-  'Bolsas',
-  'Sapatos',
-  'Joias',
-  'Livros',
-  'Eletrônicos',
-  'Casa & Decoração',
-  'Esportes',
-  'Infantil',
-  'Outros'
-];
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -495,46 +480,20 @@ export default function NewProductPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Marca</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma marca" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {BRAND_OPTIONS.map((brand) => (
-                              <SelectItem key={brand} value={brand}>
-                                {brand}
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="other">Outra marca</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Combobox
+                            options={BRAND_OPTIONS}
+                            value={field.value || ""}
+                            onValueChange={field.onChange}
+                            placeholder="Selecione ou digite uma marca"
+                            searchPlaceholder="Buscar marca..."
+                            emptyMessage="Nenhuma marca encontrada."
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
-                  {/* Show text input if "other" is selected */}
-                  {form.watch("brand") === "other" && (
-                    <FormField
-                      control={form.control}
-                      name="brand"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Digite a marca</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Ex: Supreme, Off-White..." 
-                              {...field}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
 
                   <FormField
                     control={form.control}
