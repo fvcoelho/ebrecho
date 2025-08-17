@@ -86,7 +86,11 @@ export const createPixTransaction = async (req: Request, res: Response) => {
     });
 
     if (existingTransaction) {
-      return res.status(409).json({ error: 'Transaction code already exists' });
+      return res.status(409).json({ 
+        error: 'Transaction code already exists',
+        message: `Transaction code ${transactionCode} is already in use. Please regenerate the QR code.`,
+        code: 'DUPLICATE_TRANSACTION_CODE'
+      });
     }
 
     // Calculate expiration time if provided
