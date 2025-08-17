@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { Copy, Check, QrCode, MessageCircle } from 'lucide-react'
 import { PixIcon } from '@/components/ui/pix-icon'
 import { PixCanvas, payload } from '@/lib/pix'
@@ -26,8 +28,8 @@ export function PixQRCodeDisplay({
   productId,
   partnerId
 }: PixQRCodeDisplayProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [showQR, setShowQR] = useState(false)
   const [pixPayloadData, setPixPayloadData] = useState('')
   const [transactionCode] = useState(() => {
     const env = process.env.NODE_ENV === 'production' ? 'P' : 'D'
@@ -87,10 +89,7 @@ export function PixQRCodeDisplay({
     }
   }
   
-  const handleCopyPix = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
+  const handleCopyPix = async () => {
     // Use existing payload data, don't regenerate
     const success = await copyToClipboard(pixPayloadData)
     
@@ -99,7 +98,7 @@ export function PixQRCodeDisplay({
       setTimeout(() => setCopied(false), 2000)
     } else {
       // Show user feedback that copy failed
-      alert('Falha ao copiar. Por favor, selecione o texto na caixa abaixo e copie manualmente.')
+      alert('Falha ao copiar. Por favor, selecione o texto na caixa "PIX Copia e Cola" e copie manualmente.')
     }
   }
   
@@ -110,14 +109,11 @@ export function PixQRCodeDisplay({
     }).format(price)
   }
   
-  const handleToggleQR = async (e: React.MouseEvent) => {
+  const handleOpenModal = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setShowQR(!showQR)
-    if (!showQR) {
-      // Generate payload when showing QR
-      await generatePixPayload()
-    }
+    await generatePixPayload()
+    setIsOpen(true)
   }
   
   
@@ -126,35 +122,51 @@ export function PixQRCodeDisplay({
   }
   
   return (
-    <div 
-      className="mt-2 bg-gray-50 p-2 rounded-lg border"
-      onClick={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      }}
-    >
-      <div className="flex flex-col items-center space-y-2">
-        {!showQR ? (
-          /* PIX Button */
-          <button
-            onClick={handleToggleQR}
-            className="relative flex items-center justify-center gap-2 text-sm bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pulse-large animate-pix-glow min-w-[140px]"
+    <>
+      <div 
+        className="mt-2 bg-gray-50 p-2 rounded-lg border"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+      >
+        <div className="flex flex-col items-center space-y-2">
+          {/* PIX Button */}
+          <Button
+            onClick={handleOpenModal}
+            className="relative w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-full px-10 py-6 text-lg"
           >
             <PixIcon className="h-4 w-4" />
-            PIX {formatPrice(amount)}
-            <span className="animate-ping absolute -top-1 -right-1 h-2 w-2 bg-green-300 rounded-full opacity-75"></span>
-          </button>
-        ) : (
-          /* QR Code Display */
-          <div className="flex flex-col items-center space-y-2">
-            <div className="bg-white p-1 rounded border">
+            Pagar com PIX
+          </Button>
+        </div>
+      </div>
+      
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pagamento via PIX</DialogTitle>
+            <DialogDescription>
+              Escaneie o QR Code ou copie o código PIX para realizar o pagamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center space-y-4">
+            {/* Product info */}
+            <div className="w-full text-center space-y-1">
+              <p className="text-sm text-muted-foreground">{productName}</p>
+              <p className="text-2xl font-bold">{formatPrice(amount)}</p>
+            </div>
+            
+            {/* QR Code using new PIX library */}
+            <div className="bg-white p-4 rounded-lg border">
               <PixCanvas
                 pixkey={pixKey}
                 merchant={storeName}
                 city={merchantCity}
                 amount={amount}
                 code={transactionCode}
-                size={120}
+                size={256}
                 ignoreErrors={true}
               />
             </div>
@@ -168,55 +180,48 @@ export function PixQRCodeDisplay({
               tabIndex={-1}
             />
             
-            {/* Price and PIX info */}
-            <div className="text-center">
-              <p className="text-xs font-medium text-green-700">PIX {formatPrice(amount)}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-gray-600 truncate max-w-[80px]">
-                  {pixKey.length > 15 ? `${pixKey.substring(0, 15)}...` : pixKey}
-                </span>
-                <button
+            {/* PIX Key display */}
+            <div className="w-full space-y-2">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex-1 text-sm">
+                  <p className="font-medium">Chave PIX:</p>
+                  <p className="text-muted-foreground break-all">{pixKey}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={handleCopyPix}
-                  className="p-1 hover:bg-gray-200 rounded"
-                  title="Copiar dados PIX"
+                  className="ml-2"
                 >
                   {copied ? (
-                    <Check className="h-3 w-3 text-green-600" />
+                    <Check className="h-4 w-4 text-green-600" />
                   ) : (
-                    <Copy className="h-3 w-3 text-gray-500" />
+                    <Copy className="h-4 w-4" />
                   )}
-                </button>
+                </Button>
               </div>
               
-              {/* Payment instruction */}
-              <p className="text-xs text-muted-foreground text-center mt-2">
+              <p className="text-xs text-muted-foreground text-center">
                 Após realizar o pagamento, envie o comprovante à loja para confirmação.
               </p>
               
               {/* WhatsApp button for payment confirmation */}
-              <button
+              <Button 
                 onClick={() => {
                   const message = `Olá! Realizei o pagamento PIX para o produto "${productName}" (ID: ${productId}) no valor de ${formatPrice(amount)}. Segue o comprovante para confirmação da compra.`
                   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
                   window.open(whatsappUrl, '_blank')
                 }}
-                className="flex items-center justify-center gap-1 text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors mt-2 animate-pulse-large"
+                className="w-full bg-green-600 hover:bg-green-700 text-white animate-pulse-glow"
+                size="sm"
               >
-                <MessageCircle className="h-3 w-3" />
-                Enviar Comprovante
-              </button>
-              
-              {/* Toggle back button */}
-              <button
-                onClick={handleToggleQR}
-                className="text-xs text-gray-500 hover:text-gray-700 mt-1"
-              >
-                Ocultar QR
-              </button>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Enviar Comprovante via WhatsApp
+              </Button>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

@@ -121,7 +121,7 @@ export function PixQRCode({
           await generatePixPayload()
           setIsOpen(true)
         }}
-        className="relative gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pix-glow px-8 py-4 text-lg font-semibold"
+        className="relative gap-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 px-8 py-4 text-lg font-semibold"
         size="lg"
       >
         <PixIcon className="h-6 w-6" />

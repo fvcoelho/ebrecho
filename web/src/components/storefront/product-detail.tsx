@@ -227,7 +227,7 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
               {store.whatsappNumber && (
                 <Button
                   size="lg"
-                  className="relative w-full gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pix-glow px-8 py-4 text-lg font-semibold"
+                  className="relative w-full gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 px-8 py-4 text-lg font-semibold"
                   onClick={handleWhatsAppClick}
                 >
                   <MessageCircle className="h-6 w-6" />
