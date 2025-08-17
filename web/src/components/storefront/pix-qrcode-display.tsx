@@ -30,11 +30,18 @@ export function PixQRCodeDisplay({
   const [pixPayloadData, setPixPayloadData] = useState('')
   const [transactionCode] = useState(() => {
     const env = process.env.NODE_ENV === 'production' ? 'P' : 'D'
-    return `${env}-${Date.now().toString().slice(-6)}`
+    const timestamp = Date.now().toString()
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+    return `${env}${timestamp.slice(-8)}${random}`
   })
   
   // Generate PIX payload using the proper Brazilian PIX standard
   const generatePixPayload = async () => {
+    // If payload already exists, don't regenerate
+    if (pixPayloadData) {
+      return pixPayloadData
+    }
+    
     try {
       const payloadStr = payload({
         pixkey: pixKey,
@@ -59,8 +66,14 @@ export function PixQRCodeDisplay({
           expiresIn: 30 // 30 minutes expiration
         })
         console.log('PIX transaction created:', transactionCode)
-      } catch (transactionError) {
+      } catch (transactionError: any) {
         console.warn('Failed to create PIX transaction record:', transactionError)
+        
+        // If it's a duplicate transaction code error, notify user to refresh
+        if (transactionError?.response?.status === 409) {
+          console.log('Duplicate transaction code detected. Please refresh the page to generate a new QR code.')
+          // You could also automatically regenerate here by updating the transaction code state
+        }
         // Continue with payload generation even if transaction creation fails
       }
       
