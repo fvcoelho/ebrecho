@@ -6,6 +6,18 @@ const PORT = process.env.PORT || 3001;
 // Start server (for local development)
 async function startServer() {
   try {
+    // Log environment variables during startup
+    console.log('🔧 Environment Configuration:');
+    console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
+    if (process.env.DATABASE_URL) {
+      // Show only the host part for security
+      const dbUrl = new URL(process.env.DATABASE_URL);
+      console.log(`   Database Host: ${dbUrl.hostname}`);
+      console.log(`   Database Name: ${dbUrl.pathname.slice(1)}`);
+    }
+    console.log('');
+
     // Connect to database
     await initDatabase();
 

@@ -72,7 +72,7 @@ export default function Home() {
               <Button asChild size="lg" className="rounded-full px-10 py-6 text-lg">
                 <Link href="/dashboard">
                   <Rocket className="mr-2 h-5 w-5" />
-                  Acessar Dashboard
+                  Acessar Loja
                 </Link>
               </Button>
             </div>

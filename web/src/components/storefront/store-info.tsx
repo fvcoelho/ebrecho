@@ -28,6 +28,15 @@ export function StoreInfo({ store }: StoreInfoProps) {
         <CardTitle>Informações da Loja</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Store Description */}
+        {store.publicDescription && (
+          <div className="pb-4 border-b">
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {store.publicDescription}
+            </p>
+          </div>
+        )}
+        
         {/* Contact info */}
         <div className="space-y-3">
           {store.whatsappNumber && (

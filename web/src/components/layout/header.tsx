@@ -29,7 +29,7 @@ export function Header() {
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
                 <Button asChild variant="default" size="sm" className="rounded-full">
-                  <Link href="/dashboard">Dashboard</Link>
+                  <Link href="/dashboard">Minha Loja</Link>
                 </Button>
                 <Button 
                   variant="outline" 

@@ -428,6 +428,7 @@ export interface Partner {
   publicEmail?: string;
   businessHours?: Record<string, unknown>;
   socialLinks?: Record<string, unknown>;
+  pixKey?: string;
   isActive: boolean;
   address?: {
     id: string;
@@ -458,6 +459,7 @@ export interface UpdatePartnerData {
   publicEmail?: string;
   businessHours?: Record<string, unknown>;
   socialLinks?: Record<string, unknown>;
+  pixKey?: string;
   address?: {
     street: string;
     number: string;

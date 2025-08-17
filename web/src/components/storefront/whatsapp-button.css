@@ -1,0 +1,38 @@
+.whatsapp-button {
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  box-shadow: none;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  animation: rotate 3s linear infinite;
+}
+
+.whatsapp-button::after {
+  display: none;
+}
+
+/* Simple hover effect without animation */
+.whatsapp-button:hover {
+  transform: scale(1.15);
+}
+
+/* Ensure button stays above all content */
+.whatsapp-button {
+  z-index: 9999 !important;
+}
+
+/* Remove the rotating effect since we have a GIF now */
+.whatsapp-button::before {
+  display: none;
+}

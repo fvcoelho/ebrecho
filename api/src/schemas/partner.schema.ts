@@ -30,7 +30,8 @@ export const updatePartnerSchema = z.object({
     documentType: z.enum(['CPF', 'CNPJ']).optional(),
     description: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').optional(),
     logo: z.string().url('Logo deve ser uma URL válida').optional(),
-    isActive: z.boolean().optional()
+    isActive: z.boolean().optional(),
+    pixKey: z.string().max(255, 'Chave PIX deve ter no máximo 255 caracteres').optional()
   }).refine(
     (data) => {
       // If document is provided, documentType must also be provided

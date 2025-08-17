@@ -3,18 +3,20 @@
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { PublicProduct } from '@/lib/api/public'
+import { PublicProduct, PublicStore } from '@/lib/api/public'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { imageApi } from '@/lib/api/images'
 import { ShoppingBagIcon } from './shopping-bag-icon'
+import { PixQRCodeDisplay } from './pix-qrcode-display'
 
 interface ProductCardProps {
   product: PublicProduct
   storeSlug: string
+  store?: PublicStore
 }
 
-export function ProductCard({ product, storeSlug }: ProductCardProps) {
+export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
   const [imageError, setImageError] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
@@ -101,7 +103,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
   return (
     <Link href={`/${storeSlug}/produto/${product.slug}`}>
       <Card 
-        className="group h-full overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+        className="group h-full overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => {
           setIsHovered(false)
@@ -160,7 +162,7 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
           )}
         </div>
 
-        <CardContent className="p-2">
+        <CardContent className="p-2 flex-1 flex flex-col">
           {/* Price */}
           <div className="flex items-baseline gap-1 mb-1">
             <span className="text-base font-bold text-gray-900">{formatPrice(product.price)}</span>
@@ -177,11 +179,26 @@ export function ProductCard({ product, storeSlug }: ProductCardProps) {
           </h3>
 
           {/* Brand and Size */}
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
             <span>{product.category || 'sem marca'}</span>
             <span>•</span>
             <span>{product.size || 'P'}</span>
           </div>
+          
+          {/* Spacer */}
+          <div className="flex-1"></div>
+          
+          {/* PIX QR Code Display */}
+          {store?.pixKey && (
+            <PixQRCodeDisplay
+              pixKey={store.pixKey}
+              amount={product.price}
+              productName={product.name}
+              storeName={store.name}
+              productId={product.id}
+              partnerId={store.id}
+            />
+          )}
         </CardContent>
       </Card>
     </Link>

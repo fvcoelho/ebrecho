@@ -357,6 +357,169 @@ const options: swaggerJsdoc.Options = {
               format: 'date-time'
             }
           }
+        },
+        PixTransaction: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Transaction ID'
+            },
+            transactionCode: {
+              type: 'string',
+              description: 'Unique transaction code (e.g., PROD-123456)'
+            },
+            partnerId: {
+              type: 'string',
+              description: 'Partner store ID'
+            },
+            productId: {
+              type: 'string',
+              description: 'Product ID'
+            },
+            pixKey: {
+              type: 'string',
+              description: 'PIX key used for transaction'
+            },
+            amount: {
+              type: 'number',
+              description: 'Transaction amount in BRL'
+            },
+            merchantName: {
+              type: 'string',
+              description: 'Merchant name for PIX payment'
+            },
+            merchantCity: {
+              type: 'string',
+              description: 'Merchant city for PIX payment'
+            },
+            status: {
+              type: 'string',
+              enum: ['PENDING', 'PAID', 'EXPIRED', 'CANCELLED', 'REFUNDED'],
+              description: 'Transaction status'
+            },
+            customerId: {
+              type: 'string',
+              nullable: true,
+              description: 'Customer ID (if authenticated)'
+            },
+            customerEmail: {
+              type: 'string',
+              nullable: true,
+              description: 'Customer email'
+            },
+            customerPhone: {
+              type: 'string',
+              nullable: true,
+              description: 'Customer phone'
+            },
+            pixPayload: {
+              type: 'string',
+              description: 'Full PIX BR Code payload'
+            },
+            qrCodeUrl: {
+              type: 'string',
+              nullable: true,
+              description: 'URL to QR code image'
+            },
+            orderId: {
+              type: 'string',
+              nullable: true,
+              description: 'Order ID if transaction leads to order'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Transaction creation timestamp'
+            },
+            expiresAt: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description: 'Transaction expiration timestamp'
+            },
+            paidAt: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description: 'Payment confirmation timestamp'
+            },
+            cancelledAt: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description: 'Cancellation timestamp'
+            },
+            metadata: {
+              type: 'object',
+              nullable: true,
+              description: 'Additional transaction metadata'
+            }
+          }
+        },
+        CreatePixTransactionRequest: {
+          type: 'object',
+          required: ['transactionCode', 'productId', 'pixKey', 'amount', 'merchantName', 'merchantCity', 'pixPayload'],
+          properties: {
+            transactionCode: {
+              type: 'string',
+              description: 'Unique transaction code'
+            },
+            productId: {
+              type: 'string',
+              description: 'Product ID'
+            },
+            pixKey: {
+              type: 'string',
+              description: 'PIX key for transaction'
+            },
+            amount: {
+              type: 'number',
+              minimum: 0.01,
+              description: 'Transaction amount in BRL'
+            },
+            merchantName: {
+              type: 'string',
+              description: 'Merchant name'
+            },
+            merchantCity: {
+              type: 'string',
+              description: 'Merchant city'
+            },
+            pixPayload: {
+              type: 'string',
+              description: 'PIX BR Code payload'
+            },
+            customerEmail: {
+              type: 'string',
+              format: 'email',
+              description: 'Customer email (optional)'
+            },
+            customerPhone: {
+              type: 'string',
+              description: 'Customer phone (optional)'
+            },
+            expiresIn: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Expiration time in minutes (optional)'
+            }
+          }
+        },
+        UpdatePixTransactionStatusRequest: {
+          type: 'object',
+          required: ['status'],
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['PENDING', 'PAID', 'EXPIRED', 'CANCELLED', 'REFUNDED'],
+              description: 'New transaction status'
+            },
+            orderId: {
+              type: 'string',
+              description: 'Order ID (required when status is PAID)'
+            }
+          }
         }
       },
       responses: {
@@ -491,6 +654,10 @@ const options: swaggerJsdoc.Options = {
       {
         name: 'System',
         description: 'System administration and testing endpoints'
+      },
+      {
+        name: 'PIX Transactions',
+        description: 'PIX payment transaction management'
       }
     ]
   },

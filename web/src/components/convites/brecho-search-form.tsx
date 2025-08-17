@@ -676,14 +676,14 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
                       <FormLabel>Avaliação Mínima</FormLabel>
                       <FormControl>
                         <Select
-                          value={field.value?.toString() || ''}
-                          onValueChange={(value) => field.onChange(value ? parseFloat(value) : undefined)}
+                          value={field.value?.toString() || 'any'}
+                          onValueChange={(value) => field.onChange(value && value !== 'any' ? parseFloat(value) : undefined)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Qualquer" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Qualquer</SelectItem>
+                            <SelectItem value="any">Qualquer</SelectItem>
                             <SelectItem value="1">⭐ 1 estrela</SelectItem>
                             <SelectItem value="2">⭐ 2 estrelas</SelectItem>
                             <SelectItem value="3">⭐ 3 estrelas</SelectItem>
@@ -705,14 +705,14 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
                       <FormLabel>Avaliação Máxima</FormLabel>
                       <FormControl>
                         <Select
-                          value={field.value?.toString() || ''}
-                          onValueChange={(value) => field.onChange(value ? parseFloat(value) : undefined)}
+                          value={field.value?.toString() || 'any'}
+                          onValueChange={(value) => field.onChange(value && value !== 'any' ? parseFloat(value) : undefined)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Qualquer" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Qualquer</SelectItem>
+                            <SelectItem value="any">Qualquer</SelectItem>
                             <SelectItem value="2">⭐ 2 estrelas</SelectItem>
                             <SelectItem value="3">⭐ 3 estrelas</SelectItem>
                             <SelectItem value="4">⭐ 4 estrelas</SelectItem>

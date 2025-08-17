@@ -11,6 +11,7 @@ export interface PublicStore {
   publicLogo?: string
   businessHours?: any
   socialLinks?: any
+  pixKey?: string
   isPublicActive: boolean
   createdAt: string
   productCount: number

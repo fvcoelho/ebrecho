@@ -36,6 +36,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Initialize on first request only
     if (!isInitialized) {
+      // Log environment variables during startup
+      console.log('🔧 Vercel Environment Configuration:');
+      console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
+      if (process.env.DATABASE_URL) {
+        // Show only the host part for security
+        const dbUrl = new URL(process.env.DATABASE_URL);
+        console.log(`   Database Host: ${dbUrl.hostname}`);
+        console.log(`   Database Name: ${dbUrl.pathname.slice(1)}`);
+      }
+      console.log('');
+
       // Load Express app and connect to database in parallel
       const [app, dbConnected] = await Promise.all([
         loadApp(),

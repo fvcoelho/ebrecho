@@ -125,6 +125,14 @@ enum PaymentMethod {
   CASH
 }
 
+enum PixTransactionStatus {
+  PENDING     // QR Code generated, awaiting payment
+  PAID        // Payment confirmed
+  EXPIRED     // Transaction expired
+  CANCELLED   // Transaction cancelled
+  REFUNDED    // Payment refunded
+}
+
 // Models
 model User {
   id         String   @id @default(cuid())
@@ -174,6 +182,7 @@ model Partner {
   publicEmail       String?
   businessHours     Json?
   socialLinks       Json?
+  pixKey            String?
   
   address      Address?
   users        User[]
@@ -182,6 +191,9 @@ model Partner {
   
   // AI Enhancement relations
   aiEnhancementUsage AIEnhancementUsage[]
+  
+  // PIX Transaction relations
+  pixTransactions    PixTransaction[]
   
   // PROMOTER system relations
   invitedBy          PartnerInvitation? @relation("InvitedPartner")
@@ -240,6 +252,7 @@ model Product {
   images      ProductImage[]
   orderItems  OrderItem[]
   wishlist    Wishlist[]
+  pixTransactions PixTransaction[]
   
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -604,6 +617,7 @@ model Customer {
   addresses         CustomerAddress[]
   orders            Order[]
   wishlist          Wishlist[]
+  pixTransactions   PixTransaction[]
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -665,6 +679,7 @@ model Order {
   // Relations
   items               OrderItem[]
   payments            Payment[]
+  pixTransaction      PixTransaction?
   
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -733,4 +748,54 @@ model Wishlist {
   @@unique([customerId, productId])
   @@index([customerId])
   @@index([productId])
+}
+
+model PixTransaction {
+  id                String               @id @default(cuid())
+  transactionCode   String               @unique  // Unique GUI transaction code (e.g., PROD-123456)
+  
+  // Partner and Product Relations
+  partnerId         String
+  partner           Partner              @relation(fields: [partnerId], references: [id])
+  productId         String
+  product           Product              @relation(fields: [productId], references: [id])
+  
+  // PIX Payment Details
+  pixKey            String               // PIX key used for the transaction
+  amount            Decimal              @db.Decimal(10, 2)
+  merchantName      String
+  merchantCity      String
+  
+  // Transaction Status
+  status            PixTransactionStatus @default(PENDING)
+  
+  // Customer Information (optional)
+  customerId        String?
+  customer          Customer?            @relation(fields: [customerId], references: [id])
+  customerEmail     String?
+  customerPhone     String?
+  
+  // PIX Payload Data
+  pixPayload        String               @db.Text  // Full PIX BR Code payload
+  qrCodeUrl         String?              // URL to stored QR code image if generated
+  
+  // Order Reference (if transaction leads to order)
+  orderId           String?              @unique
+  order             Order?               @relation(fields: [orderId], references: [id])
+  
+  // Timestamps
+  createdAt         DateTime             @default(now())  // When QR code was generated
+  expiresAt         DateTime?            // Optional expiration time
+  paidAt            DateTime?            // When payment was confirmed
+  cancelledAt       DateTime?            // If transaction was cancelled
+  
+  // Additional metadata
+  metadata          Json?                // Any additional transaction data
+  
+  @@index([transactionCode])
+  @@index([partnerId])
+  @@index([productId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerId])
 }
