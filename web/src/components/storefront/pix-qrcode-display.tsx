@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Copy, Check, QrCode, MessageCircle } from 'lucide-react'
+import { PixIcon } from '@/components/ui/pix-icon'
 import { PixCanvas, payload } from '@/lib/pix'
 import { copyToClipboard } from '@/lib/clipboard'
 import { pixTransactionService } from '@/lib/api/pix-transactions'
@@ -139,7 +140,7 @@ export function PixQRCodeDisplay({
             onClick={handleToggleQR}
             className="relative flex items-center justify-center gap-2 text-sm bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pulse-large animate-pix-glow min-w-[140px]"
           >
-            <QrCode className="h-4 w-4" />
+            <PixIcon className="h-4 w-4" />
             PIX {formatPrice(amount)}
             <span className="animate-ping absolute -top-1 -right-1 h-2 w-2 bg-green-300 rounded-full opacity-75"></span>
           </button>

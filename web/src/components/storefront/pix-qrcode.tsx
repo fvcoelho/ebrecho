@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { QrCode, Copy, Check, MessageCircle } from 'lucide-react'
+import { PixIcon } from '@/components/ui/pix-icon'
 import { PixCanvas, payload } from '@/lib/pix'
 import { copyToClipboard } from '@/lib/clipboard'
 import { pixTransactionService } from '@/lib/api/pix-transactions'
@@ -123,7 +124,7 @@ export function PixQRCode({
         className="relative gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pix-glow px-8 py-4 text-lg font-semibold"
         size="lg"
       >
-        <QrCode className="h-6 w-6" />
+        <PixIcon className="h-6 w-6" />
         Pagar com PIX
     </Button>
       

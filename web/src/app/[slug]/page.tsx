@@ -6,6 +6,7 @@ import { ProductGrid } from '@/components/storefront/product-grid'
 import { StoreInfo } from '@/components/storefront/store-info'
 import { StoreMap } from '@/components/storefront/store-map'
 import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
+import { Footer } from '@/components/layout/footer'
 
 interface StorePageProps {
   params: Promise<{ slug: string }>
@@ -113,6 +114,8 @@ export default async function StorePage({ params }: StorePageProps) {
       {store.whatsappNumber && (
         <WhatsAppButton phoneNumber={store.whatsappNumber} />
       )}
+      
+      <Footer />
     </>
   )
 }
