@@ -189,9 +189,14 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
 
             {/* Brand */}
             {product.brand && (
-              <div>
+              <div className="relative">
                 <h3 className="font-semibold mb-1">Marca</h3>
-                <p className="text-muted-foreground">{product.brand}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-muted-foreground">{product.brand}</p>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 animate-pulse-large">
+                    🏷️ Brand
+                  </span>
+                </div>
               </div>
             )}
 
@@ -222,10 +227,10 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
               {store.whatsappNumber && (
                 <Button
                   size="lg"
-                  className="w-full"
+                  className="relative w-full gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pix-glow px-8 py-4 text-lg font-semibold"
                   onClick={handleWhatsAppClick}
                 >
-                  <MessageCircle className="mr-2 h-5 w-5" />
+                  <MessageCircle className="h-6 w-6" />
                   Conversar no WhatsApp
                 </Button>
               )}

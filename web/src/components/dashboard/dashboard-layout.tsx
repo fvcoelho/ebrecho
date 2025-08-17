@@ -39,9 +39,9 @@ const storeOwnerNavItems = [
   { icon: Home, label: 'Meu Brechó', href: '/dashboard' },
   { icon: ShoppingBag, label: 'Produtos', href: '/produtos' },
   { icon: ShoppingBag, label: 'Pedidos', href: '/dashboard/pedidos' },
-  { icon: BarChart3, label: 'Vendas', href: '/dashboard/vendas' },
+  { icon: BarChart3, label: 'Vendas', href: '/vendas' },
   { icon: Users, label: 'Clientes', href: '/dashboard/clientes' },
-  { icon: Settings, label: 'Configurações', href: '/dashboard/configuracoes' },
+  { icon: Settings, label:'Configurações', href: '/dashboard/configuracoes' },
 ];
 
 const promoterNavItems = [

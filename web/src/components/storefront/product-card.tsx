@@ -132,6 +132,15 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
             </div>
           )}
           
+          {/* Brand badge */}
+          {product.brand && (
+            <div className="absolute bottom-2 left-2">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-600 text-white animate-pulse-large">
+                🏷️ {product.brand}
+              </span>
+            </div>
+          )}
+
           {/* Condition badge - styled like in the image */}
           <div className="absolute top-2 right-2">
             <Badge 
@@ -143,9 +152,9 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
           </div>
           
           {/* Shopping bag icon with count - bottom right */}
-          <div className="absolute bottom-2 right-2">
+          {/* <div className="absolute bottom-2 right-2">
             <ShoppingBagIcon productId={product.id} />
-          </div>
+          </div> */}
           
           {/* Image navigation dots for multiple images */}
           {product.images.length > 1 && (

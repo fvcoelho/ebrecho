@@ -219,7 +219,7 @@ export default function ProductsPage({ params }: ProductsPageProps) {
               </div>
             ) : products.length > 0 ? (
               <div className="space-y-8">
-                <ProductGrid products={products} storeSlug={slug} />
+                <ProductGrid products={products} storeSlug={slug} store={store} />
                 
                 {/* Pagination */}
                 {totalPages > 1 && (

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { QrCode, Copy, Check } from 'lucide-react'
+import { QrCode, Copy, Check, MessageCircle } from 'lucide-react'
 import { PixCanvas, payload } from '@/lib/pix'
 import { copyToClipboard } from '@/lib/clipboard'
 import { pixTransactionService } from '@/lib/api/pix-transactions'
@@ -116,17 +116,16 @@ export function PixQRCode({
   return (
     <>
       <Button
-        variant="outline"
-        size="sm"
         onClick={async () => {
           await generatePixPayload()
           setIsOpen(true)
         }}
-        className="gap-2"
+        className="relative gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pix-glow px-8 py-4 text-lg font-semibold"
+        size="lg"
       >
-        <QrCode className="h-4 w-4" />
+        <QrCode className="h-6 w-6" />
         Pagar com PIX
-      </Button>
+    </Button>
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
@@ -188,8 +187,23 @@ export function PixQRCode({
               </div>
               
               <p className="text-xs text-muted-foreground text-center">
-                Após o pagamento, entre em contato com a loja para confirmar
+                Após realizar o pagamento, envie o comprovante à loja para confirmação.
               </p>
+              
+              {/* WhatsApp button for payment confirmation */}
+              <Button 
+                onClick={() => {
+                  const message = `Olá! Realizei o pagamento PIX para o produto "${productName}" (ID: ${productId}) no valor de ${formatPrice(amount)}. Segue o comprovante para confirmação da compra.`
+                  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+                  window.open(whatsappUrl, '_blank')
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white animate-pulse-glow"
+                
+                size="sm"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Enviar Comprovante via WhatsApp
+              </Button>
             </div>
           </div>
         </DialogContent>
