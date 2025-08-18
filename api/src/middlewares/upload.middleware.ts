@@ -58,3 +58,16 @@ const upload = multer({
 export const uploadProductImages = upload.array('images', 10);
 
 export const uploadSingleImage = upload.single('image');
+
+// Memory storage for processing with Sharp
+const memoryStorage = multer.memoryStorage();
+
+const uploadMemory = multer({
+  storage: memoryStorage,
+  fileFilter,
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || '5242880'), // 5MB default
+  }
+});
+
+export const uploadSingle = (fieldName: string) => uploadMemory.single(fieldName);

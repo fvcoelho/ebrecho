@@ -10,6 +10,12 @@ async function startServer() {
     console.log('🔧 Environment Configuration:');
     console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
     console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
+
+    console.log(`   BLOB_READ_WRITE_TOKEN: ${process.env.BLOB_READ_WRITE_TOKEN}`);
+    console.log(`   BLOB_BASE_URL: ${process.env.BLOB_BASE_URL}`);
+
+
+
     if (process.env.DATABASE_URL) {
       // Show only the host part for security
       const dbUrl = new URL(process.env.DATABASE_URL);

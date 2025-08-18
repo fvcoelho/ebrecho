@@ -1,6 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { CreatePartnerInput, UpdatePartnerInput } from '../schemas/partner.schema';
+import { AuthRequest } from '../types';
+import sharp from 'sharp';
+import { put } from '@vercel/blob';
+import { BlobPathUtils } from './blob-upload.controller';
 
 // Create a new partner with address
 export const createPartner = async (
@@ -331,6 +335,106 @@ export const deletePartner = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'
+    });
+  }
+};
+
+// Upload partner logo (Vercel Blob storage only)
+export const uploadPartnerLogo = async (req: AuthRequest, res: Response) => {
+  try {
+    // Validate file upload
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum arquivo foi enviado'
+      });
+    }
+
+    // Validate user has partner access
+    const partnerId = req.user?.partnerId;
+    if (!partnerId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Usuário não associado a um parceiro'
+      });
+    }
+
+    // Verify partner exists
+    const partner = await prisma.partner.findUnique({
+      where: { id: partnerId }
+    });
+
+    if (!partner) {
+      return res.status(404).json({
+        success: false,
+        error: 'Parceiro não encontrado'
+      });
+    }
+
+    // Check Vercel Blob token configuration
+    if (!process.env.BLOB_READ_WRITE_TOKEN || 
+        process.env.BLOB_READ_WRITE_TOKEN === 'vercel_blob_rw_REPLACE_WITH_YOUR_TOKEN') {
+      return res.status(500).json({
+        success: false,
+        error: 'Configuração de armazenamento em nuvem não encontrada. Configure BLOB_READ_WRITE_TOKEN.'
+      });
+    }
+
+    // Process image with Sharp
+    const processedImage = await sharp(req.file.buffer)
+      .resize(400, 400, { 
+        fit: 'cover',
+        position: 'center'
+      })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+
+    // Upload to Vercel Blob with environment-aware path
+    const timestamp = Date.now();
+    const filename = `logo-${timestamp}.jpg`;
+    const pathname = BlobPathUtils.createPartnerLogoPath(partnerId, filename);
+    
+    console.log(`[Logo Upload] Uploading to Vercel Blob: ${pathname}`);
+    
+    const blob = await put(pathname, processedImage, {
+      access: 'public',
+      contentType: 'image/jpeg',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
+    
+    console.log(`[Logo Upload] Successfully uploaded to: ${blob.url}`);
+
+    // Update partner with new logo URL
+    const updatedPartner = await prisma.partner.update({
+      where: { id: partnerId },
+      data: { 
+        publicLogo: blob.url,
+        logo: blob.url
+      },
+      include: { address: true }
+    });
+
+    res.json({
+      success: true,
+      data: updatedPartner
+    });
+
+  } catch (error) {
+    console.error('[Logo Upload] Error:', error);
+    
+    // Provide specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('BLOB_READ_WRITE_TOKEN')) {
+        return res.status(500).json({
+          success: false,
+          error: 'Token de armazenamento em nuvem inválido ou não configurado'
+        });
+      }
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao fazer upload do logo. Verifique a configuração do Vercel Blob.'
     });
   }
 };
