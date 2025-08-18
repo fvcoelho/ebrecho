@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { QrCode, Copy, Check, MessageCircle } from 'lucide-react'
+import { Copy, Check, MessageCircle } from 'lucide-react'
+import { PixIcon } from '@/components/ui/pix-icon'
 import { PixCanvas, payload } from '@/lib/pix'
 import { copyToClipboard } from '@/lib/clipboard'
 import { pixTransactionService } from '@/lib/api/pix-transactions'
 
-interface PixQRCodeProps {
+interface PixPaymentBaseProps {
   pixKey: string
   amount: number
   productName: string
@@ -16,17 +17,27 @@ interface PixQRCodeProps {
   merchantCity?: string
   productId: string
   partnerId: string
+  buttonClassName?: string
+  buttonText?: string
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon'
+  containerClassName?: string
+  onButtonClick?: (e: React.MouseEvent) => void
 }
 
-export function PixQRCode({ 
+export function PixPaymentBase({ 
   pixKey, 
   amount, 
   productName, 
   storeName, 
   merchantCity = 'SAO PAULO',
   productId,
-  partnerId
-}: PixQRCodeProps) {
+  partnerId,
+  buttonClassName = "relative gap-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 px-8 py-4 text-lg font-semibold",
+  buttonText = "Pagar com PIX",
+  buttonSize = "lg",
+  containerClassName = "",
+  onButtonClick
+}: PixPaymentBaseProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [pixPayloadData, setPixPayloadData] = useState('')
@@ -74,7 +85,6 @@ export function PixQRCode({
         // If it's a duplicate transaction code error, notify user to refresh
         if (transactionError?.response?.status === 409) {
           console.log('Duplicate transaction code detected. Please refresh the page to generate a new QR code.')
-          // You could also automatically regenerate here by updating the transaction code state
         }
         // Continue with payload generation even if transaction creation fails
       }
@@ -83,7 +93,7 @@ export function PixQRCode({
     } catch (error) {
       console.error('Error generating PIX payload:', error)
       // Fallback to simple format
-      const fallback = `PIX\nChave: ${pixKey}\nValor: R$ ${amount.toFixed(2)}\nDescrição: ${productName}\nLoja: ${storeName}`
+      const fallback = `PIX\nChave: ${pixKey}\nValor: R$ ${amount.toFixed(2)}\nProduto: ${productName}\nLoja: ${storeName}`
       setPixPayloadData(fallback)
       return fallback
     }
@@ -109,6 +119,20 @@ export function PixQRCode({
     }).format(price)
   }
   
+  const handleOpenModal = async (e: React.MouseEvent) => {
+    if (containerClassName) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    if (onButtonClick) {
+      onButtonClick(e)
+    }
+    
+    await generatePixPayload()
+    setIsOpen(true)
+  }
+  
   if (!pixKey) {
     return null
   }
@@ -116,17 +140,14 @@ export function PixQRCode({
   return (
     <>
       <Button
-        onClick={async () => {
-          await generatePixPayload()
-          setIsOpen(true)
-        }}
-        className="relative gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pix-glow px-8 py-4 text-lg font-semibold"
-        size="lg"
+        onClick={handleOpenModal}
+        className={buttonClassName}
+        size={buttonSize}
       >
-        <QrCode className="h-6 w-6" />
-        Pagar com PIX
-    </Button>
-      
+        <PixIcon className={buttonText === '' ? "h-6 w-6" : "h-4 w-4"} />
+        {buttonText && buttonText}
+      </Button>
+
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -197,8 +218,7 @@ export function PixQRCode({
                   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
                   window.open(whatsappUrl, '_blank')
                 }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white animate-pulse-glow"
-                
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
                 size="sm"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />

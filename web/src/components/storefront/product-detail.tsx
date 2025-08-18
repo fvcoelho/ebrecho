@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PublicStore } from '@/lib/api/public'
 import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
-import { PixQRCode } from '@/components/storefront/pix-qrcode'
+import { PixQRCodeDisplay } from '@/components/storefront/pix-qrcode-display'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -227,18 +227,18 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
               {store.whatsappNumber && (
                 <Button
                   size="lg"
-                  className="relative w-full gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-pix-glow px-8 py-4 text-lg font-semibold"
+                  className="relative w-full gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 px-8 py-4 text-lg font-semibold"
                   onClick={handleWhatsAppClick}
                 >
                   <MessageCircle className="h-6 w-6" />
-                  Conversar no WhatsApp
+                  Conversar sobre esse item
                 </Button>
               )}
               
               {/* PIX QR Code */}
               {store.pixKey && (
-                <div className="flex justify-center">
-                  <PixQRCode
+                  <PixQRCodeDisplay
+                    buttonText='Pagar com PIX'
                     pixKey={store.pixKey}
                     amount={product.price}
                     productName={product.name}
@@ -246,7 +246,6 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                     productId={product.id}
                     partnerId={store.id}
                   />
-                </div>
               )}
               
               <Card className="p-4 bg-muted/50">

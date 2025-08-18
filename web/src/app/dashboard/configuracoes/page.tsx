@@ -507,99 +507,7 @@ function StoreConfigForm() {
             </CardContent>
           </Card>
 
-          {/* Vitrine Pública */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Globe className="h-5 w-5 mr-2 text-green-600" />
-                Vitrine Pública
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-
-              <div>
-                <Label htmlFor="slug">URL da Loja *</Label>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 border border-gray-300 rounded-l-md">
-                    ebrecho.com.br/
-                  </span>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => {
-                      const newSlug = e.target.value.toLowerCase();
-                      handleInputChange('slug', newSlug);
-                      // Validate slug in real-time
-                      if (newSlug) {
-                        const error = validateSlug(newSlug);
-                        setSlugError(error);
-                      } else {
-                        setSlugError(null);
-                      }
-                    }}
-                    placeholder="minha-loja"
-                    className={`rounded-l-none ${slugError ? 'border-red-500' : ''}`}
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Este será o endereço da sua vitrine pública. Use apenas letras minúsculas, números e hífens.
-                </p>
-                {slugError && (
-                  <p className="text-xs text-red-600 mt-1">{slugError}</p>
-                )}
-                {formData.slug && !slugError && (
-                  <p className="text-xs mt-1">
-                    <a 
-                      href={`https://ebrecho.com.br/${formData.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline inline-flex items-center gap-1"
-                    >
-                      Clique para ver sua loja: <strong>ebrecho.com.br/{formData.slug}</strong>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="publicDescription">Descrição da loja</Label>
-                <textarea
-                  id="publicDescription"
-                  value={formData.publicDescription}
-                  onChange={(e) => handleInputChange('publicDescription', e.target.value)}
-                  placeholder="Descrição que aparecerá na sua vitrine para os visitantes..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Esta descrição aparecerá na sua vitrine para os visitantes
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isPublicActive"
-                    checked={formData.isPublicActive}
-                    onCheckedChange={(checked) => handleInputChange('isPublicActive', checked as boolean)}
-                  />
-                  <Label 
-                    htmlFor="isPublicActive" 
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    Ativar vitrine
-                  </Label>
-                </div>
-                <p className="text-xs text-gray-500 ml-6">
-                  Quando ativada, sua loja ficará visível na URL personalizada
-                </p>
-              </div> 
-            </CardContent>
-          </Card>
-
-          {/* Endereço */}
+                    {/* Endereço */}
           {formData.hasPhysicalStore && (
             <Card>
               <CardHeader>
@@ -694,6 +602,98 @@ function StoreConfigForm() {
             </CardContent>
           </Card>
           )}
+
+          {/* Vitrine Pública */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Globe className="h-5 w-5 mr-2 text-green-600" />
+                Vitrine Pública
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+
+              <div>
+                <Label htmlFor="slug">URL da Loja *</Label>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 border border-gray-300 rounded-l-md">
+                    ebrecho.com.br/
+                  </span>
+                  <Input
+                    id="slug"
+                    value={formData.slug}
+                    onChange={(e) => {
+                      const newSlug = e.target.value.toLowerCase();
+                      handleInputChange('slug', newSlug);
+                      // Validate slug in real-time
+                      if (newSlug) {
+                        const error = validateSlug(newSlug);
+                        setSlugError(error);
+                      } else {
+                        setSlugError(null);
+                      }
+                    }}
+                    placeholder="minha-loja"
+                    className={`rounded-l-none ${slugError ? 'border-red-500' : ''}`}
+                    required
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Este será o endereço da sua vitrine pública. Use apenas letras minúsculas, números e hífens.
+                </p>
+                {slugError && (
+                  <p className="text-xs text-red-600 mt-1">{slugError}</p>
+                )}
+                {formData.slug && !slugError && (
+                  <p className="text-xs mt-1">
+                    <a 
+                      href={`https://ebrecho.com.br/${formData.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      Clique para ver sua loja: <strong>ebrecho.com.br/{formData.slug}</strong>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="publicDescription">Descrição da loja</Label>
+                <textarea
+                  id="publicDescription"
+                  value={formData.publicDescription}
+                  onChange={(e) => handleInputChange('publicDescription', e.target.value)}
+                  placeholder="Descrição que aparecerá na sua vitrine para os visitantes..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Esta descrição aparecerá na sua vitrine para os visitantes
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isPublicActive"
+                    checked={formData.isPublicActive}
+                    onCheckedChange={(checked) => handleInputChange('isPublicActive', checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="isPublicActive" 
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    Ativar vitrine
+                  </Label>
+                </div>
+                <p className="text-xs text-gray-500 ml-6">
+                  Quando ativada, sua loja ficará visível na URL personalizada
+                </p>
+              </div> 
+            </CardContent>
+          </Card>
 
           {/* Botões */}
           <div className="flex justify-end space-x-4">

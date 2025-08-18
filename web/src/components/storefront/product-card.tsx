@@ -101,17 +101,17 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
   }
 
   return (
-    <Link href={`/${storeSlug}/produto/${product.slug}`}>
-      <Card 
-        className="group h-full overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => {
-          setIsHovered(false)
-          resetImageIndex()
-        }}
-      >
+    <Card 
+      className="group h-full overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false)
+        resetImageIndex()
+      }}
+    >
+      <Link href={`/${storeSlug}/produto/${product.slug}`} className="flex-1 flex flex-col">
         {/* Image container */}
-        <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
+        <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 cursor-pointer">
           {currentImage && !imageError ? (
             <img
               src={getImageUrl(currentImage)}
@@ -170,8 +170,10 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
             </div>
           )}
         </div>
+      </Link>
 
-        <CardContent className="p-2 flex-1 flex flex-col">
+      <CardContent className="p-2 flex flex-col">
+        <Link href={`/${storeSlug}/produto/${product.slug}`} className="flex-1 flex flex-col">
           {/* Price */}
           <div className="flex items-baseline gap-1 mb-1">
             <span className="text-base font-bold text-gray-900">{formatPrice(product.price)}</span>
@@ -196,20 +198,21 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
           
           {/* Spacer */}
           <div className="flex-1"></div>
-          
-          {/* PIX QR Code Display */}
-          {store?.pixKey && (
-            <PixQRCodeDisplay
-              pixKey={store.pixKey}
-              amount={product.price}
-              productName={product.name}
-              storeName={store.name}
-              productId={product.id}
-              partnerId={store.id}
-            />
-          )}
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+        
+        {/* PIX QR Code Display - Outside the Link */}
+        {store?.pixKey && (
+          <PixQRCodeDisplay
+            buttonText=''
+            pixKey={store.pixKey}
+            amount={product.price}
+            productName={product.name}
+            storeName={store.name}
+            productId={product.id}
+            partnerId={store.id}
+          />
+        )}
+      </CardContent>
+    </Card>
   )
 }

@@ -25,12 +25,15 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  Combobox,
 } from '@/components/ui';
 import { DashboardLayout } from '@/components/dashboard';
 import { productService, type CreateProductData, type Product } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
+import { CATEGORY_OPTIONS } from '@/lib/constants/categories';
+import { BRAND_OPTIONS } from '@/lib/constants/brands';
 
 const productFormSchema = z.object({
   name: z.string()
@@ -80,23 +83,6 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'Inativo' }
 ];
 
-const CATEGORY_OPTIONS = [
-  'Roupas',
-  'Calças',
-  'Camisetas',
-  'Vestidos',
-  'Jaquetas',
-  'Acessórios',
-  'Bolsas',
-  'Sapatos',
-  'Joias',
-  'Livros',
-  'Eletrônicos',
-  'Casa & Decoração',
-  'Esportes',
-  'Infantil',
-  'Outros'
-];
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -391,7 +377,14 @@ export default function EditProductPage() {
                       <FormItem>
                         <FormLabel>Marca</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Nike, Zara..." {...field} />
+                          <Combobox
+                            options={BRAND_OPTIONS}
+                            value={field.value || ""}
+                            onValueChange={field.onChange}
+                            placeholder="Selecione ou digite uma marca"
+                            searchPlaceholder="Buscar marca..."
+                            emptyMessage="Nenhuma marca encontrada."
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

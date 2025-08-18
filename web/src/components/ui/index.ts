@@ -10,3 +10,8 @@ export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 export { Skeleton } from './skeleton';
 export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './table';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export { Textarea } from './textarea';
+export { Separator } from './separator';
+export { Combobox } from './combobox';
+export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator } from './command';
+export { Popover, PopoverTrigger, PopoverContent } from './popover';

@@ -6,31 +6,22 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { DashboardLayout } from '@/components/dashboard';
 import { productService, type CreateProductData } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
 import { productRefreshManager } from '@/lib/product-refresh';
+import { BRAND_OPTIONS } from '@/lib/constants/brands';
+import { CATEGORY_OPTIONS } from '@/lib/constants/categories';
 
 const productFormSchema = z.object({
   name: z.string()
@@ -80,23 +71,6 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'Inativo' }
 ];
 
-const CATEGORY_OPTIONS = [
-  'Roupas',
-  'Calças',
-  'Camisetas',
-  'Vestidos',
-  'Jaquetas',
-  'Acessórios',
-  'Bolsas',
-  'Sapatos',
-  'Joias',
-  'Livros',
-  'Eletrônicos',
-  'Casa & Decoração',
-  'Esportes',
-  'Infantil',
-  'Outros'
-];
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -379,9 +353,11 @@ export default function NewProductPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Informações Básicas</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="name"
@@ -420,9 +396,14 @@ export default function NewProductPage() {
                       </FormItem>
                     )}
                   />
+                  </div>
                 </div>
 
+                <Separator />
+
                 {/* Description */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Descrição</h3>
                 <FormField
                   control={form.control}
                   name="description"
@@ -430,9 +411,9 @@ export default function NewProductPage() {
                     <FormItem>
                       <FormLabel>Descrição</FormLabel>
                       <FormControl>
-                        <textarea
-                          className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        <Textarea
                           placeholder="Descreva o produto, suas características, estado de conservação..."
+                          className="min-h-[120px]"
                           {...field}
                         />
                       </FormControl>
@@ -440,8 +421,13 @@ export default function NewProductPage() {
                     </FormItem>
                   )}
                 />
+                </div>
 
-                {/* Price and SKU */}
+                <Separator />
+
+                {/* Pricing */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Preço e Identificação</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -479,9 +465,14 @@ export default function NewProductPage() {
                       </FormItem>
                     )}
                   />
+                  </div>
                 </div>
 
+                <Separator />
+
                 {/* Product Details */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Detalhes do Produto</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
@@ -490,7 +481,14 @@ export default function NewProductPage() {
                       <FormItem>
                         <FormLabel>Marca</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Nike, Zara..." {...field} />
+                          <Combobox
+                            options={BRAND_OPTIONS}
+                            value={field.value || ""}
+                            onValueChange={field.onChange}
+                            placeholder="Selecione ou digite uma marca"
+                            searchPlaceholder="Buscar marca..."
+                            emptyMessage="Nenhuma marca encontrada."
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -524,9 +522,14 @@ export default function NewProductPage() {
                       </FormItem>
                     )}
                   />
+                  </div>
                 </div>
 
-                {/* Condition and Status */}
+                <Separator />
+
+                {/* Status */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Status e Condição</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -577,9 +580,12 @@ export default function NewProductPage() {
                       </FormItem>
                     )}
                   />
+                  </div>
                 </div>
 
-                {/* Image Upload Section */}
+                <Separator />
+
+                {/* Image Upload */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -613,8 +619,8 @@ export default function NewProductPage() {
                   />
                 </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-end gap-4">
+                {/* Submit Buttons */}
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
                   <Button type="button" variant="outline" onClick={() => router.back()}>
                     Cancelar
                   </Button>

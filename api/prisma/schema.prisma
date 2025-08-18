@@ -200,6 +200,11 @@ model Partner {
   eventParticipations EventParticipant[]
   commissions        PromoterCommission[]
   
+  // Analytics relations
+  userSessions       UserSession[]
+  pageViews          PageView[]
+  userActivities     UserActivity[]
+  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -798,4 +803,73 @@ model PixTransaction {
   @@index([status])
   @@index([createdAt])
   @@index([customerId])
+}
+
+// Analytics Models
+model UserSession {
+  id               String         @id @default(cuid())
+  sessionId        String         @unique
+  ipAddress        String?
+  userAgent        String?
+  referrer         String?
+  landingPage      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  browser          String?
+  city             String?
+  country          String?
+  device           String?
+  headers          Json?
+  language         String?
+  os               String?
+  region           String?
+  colorDepth       Int?
+  screenResolution String?
+  timezone         String?
+  viewport         String?
+  partnerId        String?        // Link to partner for multi-tenancy
+  partner          Partner?       @relation(fields: [partnerId], references: [id])
+  pageViews        PageView[]
+  activities       UserActivity[]
+
+  @@index([sessionId])
+  @@index([partnerId])
+  @@index([ipAddress])
+  @@index([createdAt])
+}
+
+model PageView {
+  id        String      @id @default(cuid())
+  sessionId String
+  page      String
+  title     String?
+  timeSpent Int?
+  createdAt DateTime    @default(now())
+  partnerId String?
+  partner   Partner?    @relation(fields: [partnerId], references: [id])
+  session   UserSession @relation(fields: [sessionId], references: [sessionId])
+
+  @@index([sessionId])
+  @@index([partnerId])
+  @@index([page])
+  @@index([createdAt])
+}
+
+model UserActivity {
+  id          String      @id @default(cuid())
+  sessionId   String
+  page        String
+  elementId   String?
+  elementText String?
+  elementType String?
+  createdAt   DateTime    @default(now())
+  partnerId   String?
+  partner     Partner?    @relation(fields: [partnerId], references: [id])
+  session     UserSession @relation(fields: [sessionId], references: [sessionId])
+
+  @@index([sessionId])
+  @@index([partnerId])
+  @@index([page])
+  @@index([elementType])
+  @@index([createdAt])
 }

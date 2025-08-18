@@ -26,6 +26,7 @@ import systemRoutes from './routes/system.routes';
 import blobUploadRoutes from './routes/blob-upload.routes';
 import testBlobRoutes from './routes/test-blob.routes';
 import pixTransactionRoutes from './routes/pix-transaction.routes';
+import analyticsRoutes from './routes/analytics.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
@@ -449,6 +450,8 @@ app.use('/api/test-upload', testUploadRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
+// Analytics routes
+app.use('/api/analytics', analyticsRoutes);
 
 // System API Routes (admin auth required)
 app.use('/api/system', systemRoutes);
