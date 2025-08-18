@@ -490,5 +490,14 @@ export const partnerService = {
   async updatePartner(id: string, data: UpdatePartnerData): Promise<Partner> {
     const response = await api.put(`/api/partners/${id}`, data);
     return response.data.data;
+  },
+
+  async uploadLogo(formData: FormData): Promise<Partner> {
+    const response = await api.put('/api/partners/logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
   }
 };

@@ -24,6 +24,12 @@ console.log(`   Server-side API: ${serverApiUrl}`);
 
 console.log('');
 console.log('🔑 Other Environment Variables:');
+//console.log(`   BLOB_READ_WRITE_TOKEN: ${process.env.BLOB_READ_WRITE_TOKEN ? '✅ Running on Vercel' : '❌ Not on Vercel'}`);
+//console.log(`   BLOB_BASE_URL: ${process.env.BLOB_BASE_URL ? '✅ Running on Vercel' : '❌ Not on Vercel'}`);
+
+console.log(`   BLOB_READ_WRITE_TOKEN: ${process.env.BLOB_READ_WRITE_TOKEN}`);
+console.log(`   BLOB_BASE_URL: ${process.env.BLOB_BASE_URL}`);
+
 console.log(`   VERCEL: ${process.env.VERCEL ? '✅ Running on Vercel' : '❌ Not on Vercel'}`);
 console.log(`   DOCKER_ENV: ${process.env.DOCKER_ENV ? '✅ Running in Docker' : '❌ Not in Docker'}`);
 console.log(`   API_HOST: ${process.env.API_HOST || 'Not set (using defaults)'}`);
@@ -69,6 +75,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'api.ebrecho.com.br',
         pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'hfnamd3s2wspxafm.public.blob.vercel-storage.com',
+        pathname: '/**',
       }
     ],
   },

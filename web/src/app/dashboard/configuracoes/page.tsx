@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -20,7 +20,7 @@ import {
   SelectValue,
   Checkbox
 } from '@/components/ui';
-import { Store, MapPin, Globe, AlertCircle, Loader2, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Store, MapPin, Globe, AlertCircle, Loader2, CheckCircle2, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { 
   maskCEP, 
   maskCPF, 
@@ -67,6 +67,12 @@ function StoreConfigForm() {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [slugError, setSlugError] = useState<string | null>(null);
   
+  // Logo upload states
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState<StoreConfigData>({
     name: '',
     email: user?.email || '',
@@ -95,6 +101,73 @@ function StoreConfigForm() {
   useEffect(() => {
     loadPartnerData();
   }, []);
+
+  // Handle logo file selection
+  const handleLogoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Por favor, selecione apenas arquivos de imagem (JPEG, PNG, WebP)');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('A imagem deve ter no máximo 5MB');
+        return;
+      }
+      
+      setLogoFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
+    }
+  };
+
+  // Handle logo upload
+  const handleLogoUpload = async () => {
+    if (!logoFile || !partner) return;
+    
+    setLogoUploading(true);
+    setError(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('logo', logoFile);
+      
+      const updatedPartner = await partnerService.uploadLogo(formData);
+      setPartner(updatedPartner);
+      setLogoFile(null);
+      setLogoPreview(null);
+      setSuccess('Logo atualizado com sucesso!');
+      
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+    } catch (err: unknown) {
+      console.error('Error uploading logo:', err);
+      const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Erro ao fazer upload do logo. Tente novamente.';
+      setError(errorMessage);
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  // Remove logo preview
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const loadPartnerData = async () => {
     try {
@@ -378,6 +451,101 @@ function StoreConfigForm() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Logo Upload Section */}
+              <div className="space-y-2">
+                <Label>Logo da Loja</Label>
+                <div className="flex items-start gap-4">
+                  {/* Current/Preview Logo */}
+                  <div className="relative w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                    {logoPreview ? (
+                      <>
+                        <img
+                          src={logoPreview}
+                          alt="Preview do logo"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeLogo}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : partner?.publicLogo ? (
+                      <img
+                        src={partner.publicLogo}
+                        alt="Logo atual"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <ImageIcon className="h-8 w-8 mb-2" />
+                        <span className="text-xs">Sem logo</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Controls */}
+                  <div className="flex-1 space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleLogoSelect}
+                      className="hidden"
+                    />
+                    
+                    {!logoFile ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={logoUploading}
+                        className="w-full sm:w-auto"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Selecionar Logo
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          onClick={handleLogoUpload}
+                          disabled={logoUploading}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {logoUploading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Enviar Logo
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={removeLogo}
+                          disabled={logoUploading}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-gray-500">
+                      Formatos aceitos: JPEG, PNG, WebP. Tamanho máximo: 5MB.
+                      O logo será exibido na sua vitrine pública.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="name">Nome da Loja *</Label>
