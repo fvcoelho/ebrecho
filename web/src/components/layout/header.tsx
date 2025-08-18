@@ -15,11 +15,11 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image 
-              src="/logo-ebrecho2.png" 
+              src="/logo/ebreho_deitado.svg" 
               alt="eBrecho Logo" 
-              width={300}
-              height={100}
-              className="w-48 h-16 md:w-60 md:h-20 object-contain"
+              width={400}
+              height={200}
+              className="w-40 h-20 md:w-48 md:h-24 object-contain"
               priority
             />
           </Link>
