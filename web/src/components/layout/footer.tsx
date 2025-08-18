@@ -11,11 +11,11 @@ export function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div className="space-y-4">
             <Image 
-              src="/logo-ebrecho2.png" 
+              src="/logo/ebreho_deitado.svg" 
               alt="eBrecho Logo" 
-              width={180}
-              height={60}
-              className="w-40 h-14 object-contain"
+              width={200}
+              height={100}
+              className="w-44 h-20 object-contain"
             />
             <p className="text-sm text-muted-foreground">
               A primeira plataforma brechó do Brasil. Marketplace para brechós que transforma o setor.

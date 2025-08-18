@@ -13,8 +13,28 @@ export class UserAnalyticsService {
   
   // Session management
   async createSession(data: CreateSessionInput) {
-    return await prisma.userSession.create({
-      data: data as any,
+    // Use upsert to handle duplicate session creation attempts
+    return await prisma.userSession.upsert({
+      where: { sessionId: data.sessionId },
+      update: {
+        // Update with latest session info if it already exists
+        ipAddress: data.ipAddress || undefined,
+        userAgent: data.userAgent || undefined,
+        referrer: data.referrer || undefined,
+        browser: data.browser || undefined,
+        city: data.city || undefined,
+        country: data.country || undefined,
+        device: data.device || undefined,
+        headers: data.headers || undefined,
+        language: data.language || undefined,
+        os: data.os || undefined,
+        region: data.region || undefined,
+        colorDepth: data.colorDepth || undefined,
+        screenResolution: data.screenResolution || undefined,
+        timezone: data.timezone || undefined,
+        viewport: data.viewport || undefined,
+      },
+      create: data as any,
     });
   }
 
@@ -50,12 +70,46 @@ export class UserAnalyticsService {
 
   // Tracking functions
   async trackPageView(data: CreatePageViewInput) {
+    // First check if session exists
+    const sessionExists = await prisma.userSession.findUnique({
+      where: { sessionId: data.sessionId }
+    });
+
+    // If session doesn't exist, create it first
+    if (!sessionExists) {
+      await prisma.userSession.create({
+        data: {
+          sessionId: data.sessionId,
+          partnerId: data.partnerId,
+          // Basic session data, will be updated by frontend later
+          landingPage: data.page,
+        }
+      });
+    }
+
     return await prisma.pageView.create({
       data: data as any,
     });
   }
 
   async trackActivity(data: CreateActivityInput) {
+    // First check if session exists
+    const sessionExists = await prisma.userSession.findUnique({
+      where: { sessionId: data.sessionId }
+    });
+
+    // If session doesn't exist, create it first
+    if (!sessionExists) {
+      await prisma.userSession.create({
+        data: {
+          sessionId: data.sessionId,
+          partnerId: data.partnerId,
+          // Basic session data, will be updated by frontend later
+          landingPage: data.page,
+        }
+      });
+    }
+
     return await prisma.userActivity.create({
       data: data as any,
     });

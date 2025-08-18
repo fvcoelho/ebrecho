@@ -45,6 +45,11 @@ class AnalyticsTracker {
   private pageStartTime: number = Date.now()
   private heartbeatInterval?: NodeJS.Timeout
   private isServerSide: boolean = typeof window === 'undefined'
+  private sessionInitialized: boolean = false
+  private sessionInitializing: boolean = false
+  private eventQueue: Array<{ type: 'pageView' | 'activity'; data: any }> = []
+  private initRetryCount: number = 0
+  private maxInitRetries: number = 3
 
   constructor() {
     this.sessionId = this.generateSessionId()
@@ -73,7 +78,9 @@ class AnalyticsTracker {
   }
 
   private async initializeSession() {
-    if (!this.isEnabled || this.isServerSide) return
+    if (!this.isEnabled || this.isServerSide || this.sessionInitializing) return
+
+    this.sessionInitializing = true
 
     try {
       const sessionData: SessionData = {
@@ -101,20 +108,63 @@ class AnalyticsTracker {
 
       await this.sendRequest('/api/analytics/sessions', 'POST', sessionData)
       
+      this.sessionInitialized = true
+      this.sessionInitializing = false
       console.log('📊 Analytics session initialized:', this.sessionId)
+      
+      // Process any queued events
+      this.processEventQueue()
     } catch (error) {
       console.warn('Failed to initialize analytics session:', error)
+      this.sessionInitializing = false
+      
+      // Retry initialization if we haven't exceeded max retries
+      if (this.initRetryCount < this.maxInitRetries) {
+        this.initRetryCount++
+        console.log(`Retrying session initialization (attempt ${this.initRetryCount}/${this.maxInitRetries})...`)
+        setTimeout(() => this.initializeSession(), 2000 * this.initRetryCount)
+      } else {
+        console.error('Max retries exceeded for session initialization')
+        // Mark as initialized anyway to allow tracking with potential backend fallback
+        this.sessionInitialized = true
+        this.processEventQueue()
+      }
+    }
+  }
+
+  private processEventQueue() {
+    while (this.eventQueue.length > 0) {
+      const event = this.eventQueue.shift()
+      if (!event) continue
+      
+      if (event.type === 'pageView') {
+        this.trackPageView(event.data)
+      } else if (event.type === 'activity') {
+        this.trackActivity(event.data)
+      }
     }
   }
 
   public async trackPageView(customData?: Partial<PageViewData>) {
     if (!this.isEnabled || this.isServerSide) return
+    
+    // Queue the event if session is not initialized yet
+    if (!this.sessionInitialized) {
+      console.log('Session not ready, queuing page view event')
+      this.eventQueue.push({ type: 'pageView', data: customData })
+      
+      // Try to initialize session if not already trying
+      if (!this.sessionInitializing) {
+        this.initializeSession()
+      }
+      return
+    }
 
     try {
       const pageViewData: PageViewData = {
         sessionId: this.sessionId,
-        page: window.location.pathname,
-        title: document.title,
+        page: window.location.pathname || '/',
+        title: document.title || 'Untitled',
         partnerId: this.partnerId,
         ...customData
       }
@@ -132,6 +182,35 @@ class AnalyticsTracker {
 
   public async trackActivity(elementOrData: HTMLElement | ActivityData, eventType?: string) {
     if (!this.isEnabled || this.isServerSide) return
+    
+    // Queue the event if session is not initialized yet
+    if (!this.sessionInitialized) {
+      console.log('Session not ready, queuing activity event')
+      
+      // Prepare the data for queuing
+      let activityData: ActivityData
+      if (typeof elementOrData === 'object' && 'sessionId' in elementOrData) {
+        activityData = elementOrData
+      } else {
+        const element = elementOrData as HTMLElement
+        activityData = {
+          sessionId: this.sessionId,
+          page: window.location.pathname || '/',
+          elementId: element.id || undefined,
+          elementText: this.getElementText(element),
+          elementType: this.getElementType(element, eventType),
+          partnerId: this.partnerId
+        }
+      }
+      
+      this.eventQueue.push({ type: 'activity', data: activityData })
+      
+      // Try to initialize session if not already trying
+      if (!this.sessionInitializing) {
+        this.initializeSession()
+      }
+      return
+    }
 
     try {
       let activityData: ActivityData
@@ -144,7 +223,7 @@ class AnalyticsTracker {
         const element = elementOrData as HTMLElement
         activityData = {
           sessionId: this.sessionId,
-          page: window.location.pathname,
+          page: window.location.pathname || '/',
           elementId: element.id || undefined,
           elementText: this.getElementText(element),
           elementType: this.getElementType(element, eventType),
@@ -163,20 +242,25 @@ class AnalyticsTracker {
   private setupEventListeners() {
     if (this.isServerSide) return
 
-    // Track initial page view immediately if DOM is ready
+    // Delay initial page view tracking to ensure session is initialized
+    const trackInitialPageView = () => {
+      setTimeout(() => {
+        console.log('📄 Tracking initial page view after session init')
+        this.trackPageView()
+      }, 500) // Small delay to ensure session is created
+    }
+
+    // Track initial page view after DOM is ready
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      console.log('📄 DOM ready, tracking initial page view')
-      this.trackPageView()
+      trackInitialPageView()
     } else {
       // Fallback for pages still loading
-      window.addEventListener('load', () => {
-        console.log('📄 Window loaded, tracking page view')
-        this.trackPageView()
-      })
+      window.addEventListener('load', trackInitialPageView)
     }
 
     // Track page views on Next.js client-side navigation
     if (typeof window !== 'undefined' && window.history) {
+      const self = this // Capture this context
       const originalPushState = window.history.pushState
       const originalReplaceState = window.history.replaceState
       
@@ -184,7 +268,7 @@ class AnalyticsTracker {
         originalPushState.apply(window.history, args)
         setTimeout(() => {
           console.log('📄 Navigation detected (pushState), tracking page view')
-          analytics?.trackPageView()
+          self.trackPageView()
         }, 100)
       }
       
@@ -192,7 +276,7 @@ class AnalyticsTracker {
         originalReplaceState.apply(window.history, args)
         setTimeout(() => {
           console.log('📄 Navigation detected (replaceState), tracking page view')
-          analytics?.trackPageView()
+          self.trackPageView()
         }, 100)
       }
     }
@@ -207,19 +291,22 @@ class AnalyticsTracker {
     
     // Track time spent on page before leaving
     window.addEventListener('beforeunload', () => {
+      if (!this.sessionId) return // Don't track if session not initialized
+      
       const timeSpent = Math.round((Date.now() - this.pageStartTime) / 1000)
       if (timeSpent > 1) { // Only track if spent more than 1 second
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-        navigator.sendBeacon(
-          `${apiUrl}/api/analytics/page-views`,
-          JSON.stringify({
-            sessionId: this.sessionId,
-            page: window.location.pathname,
-            title: document.title,
-            timeSpent,
-            partnerId: this.partnerId
-          })
-        )
+        const data = {
+          sessionId: this.sessionId,
+          page: window.location.pathname || '/',
+          title: document.title || 'Untitled',
+          timeSpent,
+          partnerId: this.partnerId
+        }
+        
+        // Use Blob to ensure proper Content-Type header
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+        navigator.sendBeacon(`${apiUrl}/api/analytics/page-views`, blob)
       }
     })
 
@@ -236,7 +323,7 @@ class AnalyticsTracker {
       const target = event.target as HTMLFormElement
       this.trackActivity({
         sessionId: this.sessionId,
-        page: window.location.pathname,
+        page: window.location.pathname || '/',
         elementId: target.id || undefined,
         elementText: 'Form Submission',
         elementType: 'form_submit',
@@ -248,7 +335,7 @@ class AnalyticsTracker {
     document.addEventListener('visibilitychange', () => {
       this.trackActivity({
         sessionId: this.sessionId,
-        page: window.location.pathname,
+        page: window.location.pathname || '/',
         elementText: document.hidden ? 'Tab Hidden' : 'Tab Visible',
         elementType: document.hidden ? 'tab_blur' : 'tab_focus',
         partnerId: this.partnerId
@@ -413,6 +500,21 @@ class AnalyticsTracker {
   }
 
   private async sendRequest(url: string, method: string, data: any): Promise<any> {
+    // Validate data based on the type of request
+    if (url.includes('/sessions')) {
+      // Session creation - just needs sessionId
+      if (!data || !data.sessionId) {
+        console.error('Invalid session data:', data)
+        throw new Error('Missing sessionId for session creation')
+      }
+    } else if (url.includes('/page-views') || url.includes('/activities')) {
+      // Page views and activities need sessionId and page
+      if (!data || !data.sessionId || !data.page) {
+        console.error('Invalid analytics data:', data)
+        throw new Error('Missing required fields for analytics')
+      }
+    }
+    
     // Use full API URL for backend requests
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     const fullUrl = url.startsWith('http') ? url : `${apiUrl}${url}`
@@ -426,6 +528,8 @@ class AnalyticsTracker {
     })
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Analytics request failed:', errorText)
       throw new Error(`Analytics request failed: ${response.statusText}`)
     }
 
@@ -458,19 +562,36 @@ export const getAnalytics = (): AnalyticsTracker | null => analytics
 
 // Convenience functions
 export const trackPageView = (data?: Partial<PageViewData>) => {
-  analytics?.trackPageView(data)
+  if (!analytics) {
+    console.warn('Analytics not initialized, cannot track page view')
+    return
+  }
+  analytics.trackPageView(data)
 }
 
 export const trackClick = (element: HTMLElement) => {
-  analytics?.trackActivity(element, 'click')
+  if (!analytics) {
+    console.warn('Analytics not initialized, cannot track click')
+    return
+  }
+  analytics.trackActivity(element, 'click')
 }
 
 export const trackCustomEvent = (eventName: string, data?: Record<string, any>) => {
-  if (!analytics) return
+  if (!analytics) {
+    console.warn('Analytics not initialized, cannot track custom event')
+    return
+  }
+  
+  const sessionId = (analytics as any).sessionId
+  if (!sessionId) {
+    console.warn('Session not initialized, cannot track custom event')
+    return
+  }
   
   analytics.trackActivity({
-    sessionId: (analytics as any).sessionId,
-    page: typeof window !== 'undefined' ? window.location.pathname : '',
+    sessionId,
+    page: typeof window !== 'undefined' ? window.location.pathname || '/' : '/',
     elementText: eventName,
     elementType: 'custom_event',
     partnerId: (analytics as any).partnerId,
