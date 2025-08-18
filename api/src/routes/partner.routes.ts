@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
+import { uploadSingle } from '../middlewares/upload.middleware';
 import {
   createPartner,
   getPartners,
   getPartnerById,
   updatePartner,
-  deletePartner
+  deletePartner,
+  uploadPartnerLogo
 } from '../controllers/partner.controller';
 import {
   createPartnerSchema,
@@ -86,6 +88,47 @@ router.use(authenticate);
  *         $ref: '#/components/responses/ForbiddenError'
  */
 router.get('/', authorize(['ADMIN']), getPartners);
+
+/**
+ * @swagger
+ * /api/partners/logo:
+ *   put:
+ *     summary: Upload partner logo
+ *     description: Upload and update partner logo. Partner Admins can update their own logo.
+ *     tags: [Partners]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *                 description: Logo image file (JPEG, PNG, WebP)
+ *     responses:
+ *       200:
+ *         description: Logo uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Partner'
+ *       400:
+ *         description: Invalid file or validation error
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ */
+router.put('/logo', uploadSingle('logo'), authorize(['PARTNER_ADMIN']), uploadPartnerLogo);
 
 /**
  * @swagger

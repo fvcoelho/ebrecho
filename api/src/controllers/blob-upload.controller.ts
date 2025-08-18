@@ -12,6 +12,12 @@ import multer from 'multer';
 // Ensure environment variables are loaded
 dotenv.config();
 
+// Environment-aware path helper
+const getEnvironmentPrefix = (): string => {
+  const env = process.env.NODE_ENV || 'development';
+  return env.toLowerCase(); // development, production, staging, etc.
+};
+
 // Utility functions for organized blob paths
 export const BlobPathUtils = {
   /**
@@ -20,7 +26,8 @@ export const BlobPathUtils = {
   createProductImagePath(partnerId: string, productId: string, filename: string): string {
     const timestamp = Date.now();
     const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    return `partners/${partnerId}/products/${productId}/images/${timestamp}-${sanitizedFilename}`;
+    const envPrefix = getEnvironmentPrefix();
+    return `${envPrefix}/partners/${partnerId}/products/${productId}/images/${timestamp}-${sanitizedFilename}`;
   },
 
   /**
@@ -29,7 +36,8 @@ export const BlobPathUtils = {
   createTempUploadPath(partnerId: string, filename: string): string {
     const timestamp = Date.now();
     const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    return `partners/${partnerId}/products/temp-${timestamp}/images/${timestamp}-${sanitizedFilename}`;
+    const envPrefix = getEnvironmentPrefix();
+    return `${envPrefix}/partners/${partnerId}/products/temp-${timestamp}/images/${timestamp}-${sanitizedFilename}`;
   },
 
   /**
@@ -39,8 +47,9 @@ export const BlobPathUtils = {
     if (imagePath.includes('/images/')) {
       return imagePath.replace('/images/', '/thumbnails/').replace(/\.[^/.]+$/, '-thumb.jpg');
     }
-    // Fallback for non-organized paths
-    return `thumbnails/${imagePath.replace(/\.[^/.]+$/, '')}-thumb.jpg`;
+    // Fallback for non-organized paths - include environment prefix
+    const envPrefix = getEnvironmentPrefix();
+    return `${envPrefix}/thumbnails/${imagePath.replace(/\.[^/.]+$/, '')}-thumb.jpg`;
   },
 
   /**
@@ -48,7 +57,8 @@ export const BlobPathUtils = {
    */
   createTestPath(filename: string): string {
     const timestamp = Date.now();
-    return `testing/direct-upload/${timestamp}-${filename}`;
+    const envPrefix = getEnvironmentPrefix();
+    return `${envPrefix}/testing/direct-upload/${timestamp}-${filename}`;
   },
 
   /**
@@ -65,14 +75,24 @@ export const BlobPathUtils = {
     const filename = tempPath.split('/').pop() || 'unknown';
     const pathParts = tempPath.split('/');
     
-    // Extract partnerId from temp path: partners/partnerId/products/temp-*/images/filename
-    if (pathParts.length >= 5 && pathParts[0] === 'partners') {
-      const partnerId = pathParts[1];
-      return `partners/${partnerId}/products/${productId}/images/${filename}`;
+    // Extract partnerId from temp path: environment/partners/partnerId/products/temp-*/images/filename
+    if (pathParts.length >= 6 && pathParts[1] === 'partners') {
+      const envPrefix = pathParts[0]; // Keep same environment as temp path
+      const partnerId = pathParts[2];
+      return `${envPrefix}/partners/${partnerId}/products/${productId}/images/${filename}`;
     }
     
-    // Fallback
-    return `products/${productId}/images/${filename}`;
+    // Fallback with current environment
+    const envPrefix = getEnvironmentPrefix();
+    return `${envPrefix}/products/${productId}/images/${filename}`;
+  },
+
+  /**
+   * Generate partner logo path
+   */
+  createPartnerLogoPath(partnerId: string, filename: string): string {
+    const envPrefix = getEnvironmentPrefix();
+    return `${envPrefix}/partners/${partnerId}/logo/${filename}`;
   }
 };
 
@@ -528,7 +548,7 @@ export const handleUploadComplete = async (
         if (blob.pathname.includes('/temp-')) {
           // Extract filename from temp path
           const filename = blob.pathname.split('/').pop() || `image-${i}`;
-          const organizedPath = `partners/${partnerId}/products/${productId}/images/${filename}`;
+          const organizedPath = BlobPathUtils.createProductImagePath(partnerId, productId, filename.replace(/^\d+-/, ''));
           
           logger.info('Moving blob to organized product directory', {
             from: blob.pathname,
