@@ -30,7 +30,7 @@ const adminNavItems = [
   { icon: Users, label: 'Usuários', href: '/admin/usuarios' },
   { icon: Store, label: 'Parceiros', href: '/admin/parceiros' },
   { icon: ShoppingBag, label: 'Brechós', href: '/admin/brechos' },
-  { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
+  { icon: BarChart3, label: 'Análises', href: '/admin/analytics' },
   { icon: Shield, label: 'Moderação', href: '/admin/moderacao' },
   { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
 ];
@@ -40,6 +40,7 @@ const storeOwnerNavItems = [
   { icon: ShoppingBag, label: 'Produtos', href: '/produtos' },
   { icon: ShoppingBag, label: 'Pedidos', href: '/dashboard/pedidos' },
   { icon: BarChart3, label: 'Vendas', href: '/vendas' },
+  { icon: TrendingUp, label: 'Análises', href: '/dashboard/analytics' },
   { icon: Users, label: 'Clientes', href: '/dashboard/clientes' },
   { icon: Settings, label:'Configurações', href: '/dashboard/configuracoes' },
 ];
