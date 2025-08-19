@@ -12,66 +12,96 @@ async function main() {
     await prisma.address.deleteMany();
     await prisma.user.deleteMany();
     await prisma.partner.deleteMany();
+    console.log('✅ Dados existentes limpos');
   } catch (error) {
     console.log('⚠️ Algumas tabelas não existem ainda (primeira execução)');
   }
 
-  // Criar admin do sistema
+  // Criar ou atualizar admin do sistema usando upsert
   const adminPassword = await bcrypt.hash('admin123', 10);
-  const admin = await prisma.user.create({
-    data: {
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@ebrecho.com.br' },
+    update: {
+      password: adminPassword,
+      name: 'Administrador',
+      role: 'ADMIN',
+    },
+    create: {
       email: 'admin@ebrecho.com.br',
       password: adminPassword,
       name: 'Administrador',
       role: 'ADMIN',
     },
   });
-  console.log('✅ Admin criado:', admin.email);
+  console.log('✅ Admin criado/atualizado:', admin.email);
 
-  // Criar 3 brechós com endereços (incluindo hasPhysicalStore)
-  const partners = await Promise.all([
-    // Brechó 1 - Brechó da Maria (com loja física)
-    prisma.partner.create({
-      data: {
-        name: 'Brechó da Maria',
-        email: 'contato@brechodamaria.com',
-        phone: '(11) 98765-4321',
-        document: '12345678000190',
-        documentType: 'CNPJ',
-        description: 'Especializado em roupas vintage e peças únicas dos anos 70 e 80',
-        hasPhysicalStore: true,
-        address: {
-          create: {
-            street: 'Rua das Flores',
-            number: '123',
-            complement: 'Loja 2',
-            neighborhood: 'Centro',
-            city: 'São Paulo',
-            state: 'SP',
-            zipCode: '01234-567',
+  // Check if partners already exist, if not create them
+  const existingPartners = await prisma.partner.findMany();
+  let partners = [];
+  
+  if (existingPartners.length >= 4) {
+    console.log(`✅ Found ${existingPartners.length} existing partners, skipping creation`);
+    partners = existingPartners;
+  } else {
+    console.log('📦 Creating partners...');
+    try {
+      // If we get errors, just skip partner creation
+      await prisma.product.deleteMany();
+      console.log('✅ Cleared existing products for clean state');
+      partners = existingPartners;
+    } catch (error) {
+      console.log('⚠️ Using existing data, skipping partner creation');
+      partners = existingPartners.length > 0 ? existingPartners : [];
+    }
+    
+    // If we still need partners, create them individually
+    if (partners.length === 0) {
+      partners = await Promise.all([
+        // Brechó 1 - Brechó da Maria (com loja física)
+        prisma.partner.create({
+          data: {
+            name: 'Brechó da Maria',
+            email: 'contato@brechodamaria.com',
+            phone: '(11) 98765-4321',
+            document: '12345678000190',
+            documentType: 'CNPJ',
+            description: 'Especializado em roupas vintage e peças únicas dos anos 70 e 80',
+            hasPhysicalStore: true,
+            address: {
+              create: {
+                street: 'Rua das Flores',
+                number: '123',
+                complement: 'Loja 2',
+                neighborhood: 'Centro',
+                city: 'São Paulo',
+                state: 'SP',
+                zipCode: '01234-567',
+              },
+            },
+            users: {
+              connectOrCreate: {
+                where: { email: 'maria@brechodamaria.com' },
+                create: {
+                  email: 'maria@brechodamaria.com',
+                  password: await bcrypt.hash('senha123', 10),
+                  name: 'Maria Silva',
+                  role: 'PARTNER_ADMIN',
+                },
+              },
+            },
           },
-        },
-        users: {
-          create: {
-            email: 'maria@brechodamaria.com',
-            password: await bcrypt.hash('senha123', 10),
-            name: 'Maria Silva',
-            role: 'PARTNER_ADMIN',
-          },
-        },
-      },
-    }),
+        }),
 
-    // Brechó 2 - Vintage Store (com loja física)
-    prisma.partner.create({
-      data: {
-        name: 'Vintage Store',
-        email: 'contato@vintagestore.com',
-        phone: '(21) 99876-5432',
-        document: '98765432000185',
-        documentType: 'CNPJ',
-        description: 'Moda sustentável com curadoria especial de peças de grife',
-        hasPhysicalStore: true,
+        // Brechó 2 - Vintage Store (com loja física)
+        prisma.partner.create({
+          data: {
+            name: 'Vintage Store',
+            email: 'contato@vintagestore.com',
+            phone: '(21) 99876-5432',
+            document: '98765432000185',
+            documentType: 'CNPJ',
+            description: 'Moda sustentável com curadoria especial de peças de grife',
+            hasPhysicalStore: true,
         address: {
           create: {
             street: 'Avenida Atlântica',
@@ -83,17 +113,20 @@ async function main() {
           },
         },
         users: {
-          create: {
-            email: 'joao@vintagestore.com',
-            password: await bcrypt.hash('senha123', 10),
-            name: 'João Santos',
-            role: 'PARTNER_ADMIN',
+          connectOrCreate: {
+            where: { email: 'joao@vintagestore.com' },
+            create: {
+              email: 'joao@vintagestore.com',
+              password: await bcrypt.hash('senha123', 10),
+              name: 'João Santos',
+              role: 'PARTNER_ADMIN',
+            },
           },
         },
-      },
-    }),
+          },
+        }),
 
-    // Brechó 3 - Eco Fashion (online-only, sem loja física)
+        // Brechó 3 - Eco Fashion (online-only, sem loja física)
     prisma.partner.create({
       data: {
         name: 'Eco Fashion',
@@ -105,11 +138,14 @@ async function main() {
         hasPhysicalStore: false,
         // Sem endereço para este parceiro online-only
         users: {
-          create: {
-            email: 'ana@ecofashion.com',
-            password: await bcrypt.hash('senha123', 10),
-            name: 'Ana Costa',
-            role: 'PARTNER_ADMIN',
+          connectOrCreate: {
+            where: { email: 'ana@ecofashion.com' },
+            create: {
+              email: 'ana@ecofashion.com',
+              password: await bcrypt.hash('senha123', 10),
+              name: 'Ana Costa',
+              role: 'PARTNER_ADMIN',
+            },
           },
         },
       },
@@ -127,11 +163,14 @@ async function main() {
         hasPhysicalStore: false,
         // Sem endereço para este parceiro online-only
         users: {
-          create: {
-            email: 'carlos@onlinestorebrasil.com',
-            password: await bcrypt.hash('senha123', 10),
-            name: 'Carlos Oliveira',
-            role: 'PARTNER_ADMIN',
+          connectOrCreate: {
+            where: { email: 'carlos@onlinestorebrasil.com' },
+            create: {
+              email: 'carlos@onlinestorebrasil.com',
+              password: await bcrypt.hash('senha123', 10),
+              name: 'Carlos Oliveira',
+              role: 'PARTNER_ADMIN',
+            },
           },
         },
       },
@@ -336,18 +375,30 @@ async function main() {
 
   console.log('✅ Produtos criados:', products.length);
 
-  // Criar alguns clientes e usuários de teste
+  // Criar alguns clientes e usuários de teste usando upsert
   const customers = await Promise.all([
-    prisma.user.create({
-      data: {
+    prisma.user.upsert({
+      where: { email: 'cliente1@gmail.com' },
+      update: {
+        password: await bcrypt.hash('senha123', 10),
+        name: 'Cliente Silva',
+        role: 'CUSTOMER',
+      },
+      create: {
         email: 'cliente1@gmail.com',
         password: await bcrypt.hash('senha123', 10),
         name: 'Cliente Silva',
         role: 'CUSTOMER',
       },
     }),
-    prisma.user.create({
-      data: {
+    prisma.user.upsert({
+      where: { email: 'cliente2@gmail.com' },
+      update: {
+        password: await bcrypt.hash('senha123', 10),
+        name: 'Cliente Santos',
+        role: 'CUSTOMER',
+      },
+      create: {
         email: 'cliente2@gmail.com',
         password: await bcrypt.hash('senha123', 10),
         name: 'Cliente Santos',
@@ -355,8 +406,15 @@ async function main() {
       },
     }),
     // Usuário PARTNER_ADMIN sem parceiro para testar o setup
-    prisma.user.create({
-      data: {
+    prisma.user.upsert({
+      where: { email: 'teste@parceiro.com' },
+      update: {
+        password: await bcrypt.hash('senha123', 10),
+        name: 'Teste Parceiro',
+        role: 'PARTNER_ADMIN',
+        emailVerified: true,
+      },
+      create: {
         email: 'teste@parceiro.com',
         password: await bcrypt.hash('senha123', 10),
         name: 'Teste Parceiro',
@@ -365,8 +423,15 @@ async function main() {
       },
     }),
     // Outro usuário PARTNER_ADMIN para testar loja online
-    prisma.user.create({
-      data: {
+    prisma.user.upsert({
+      where: { email: 'online@teste.com' },
+      update: {
+        password: await bcrypt.hash('senha123', 10),
+        name: 'Loja Online Teste',
+        role: 'PARTNER_ADMIN',
+        emailVerified: true,
+      },
+      create: {
         email: 'online@teste.com',
         password: await bcrypt.hash('senha123', 10),
         name: 'Loja Online Teste',

@@ -16,7 +16,11 @@ const testFiles = [
     'address.test.js',
     'product.test.js',
     'partner.test.js',
-    'database.test.js'
+    'database.test.js',
+    'analytics.test.js',
+    'pix-transactions.test.js',
+    'promoter.test.js',
+    'customers.test.js'
 ];
 
 // Colors for console output
@@ -202,10 +206,10 @@ function parseTestOutput(output, filename) {
     let failed = 0;
     let total = 0;
     
-    // Look for patterns like "✅ Passed: X", "❌ Failed: Y", "📋 Total: Z"
-    const passedMatch = output.match(/✅ Passed: (\d+)/);
-    const failedMatch = output.match(/❌ Failed: (\d+)/);
-    const totalMatch = output.match(/📋 Total: (\d+)/);
+    // Look for patterns like "✅ Passed: X", "❌ Failed: Y", "📋 Total: Z" (English and Portuguese)
+    const passedMatch = output.match(/✅ (?:Passed|Testes aprovados): (\d+)/) || output.match(/✅ Passed: (\d+)/);
+    const failedMatch = output.match(/❌ (?:Failed|Testes falhados): (\d+)/) || output.match(/❌ Failed: (\d+)/);
+    const totalMatch = output.match(/📋 (?:Total|Total de testes): (\d+)/) || output.match(/📝 Total de testes: (\d+)/);
     
     if (passedMatch) passed = parseInt(passedMatch[1]);
     if (failedMatch) failed = parseInt(failedMatch[1]);
@@ -219,12 +223,21 @@ function parseTestOutput(output, filename) {
         let testFailed = 0;
         
         for (const line of lines) {
-            // Skip summary sections
+            // Skip summary sections (English and Portuguese)
             if (line.includes('Test Summary') || 
+                line.includes('RESUMO DOS TESTES') ||
                 line.includes('Passed:') || 
                 line.includes('Failed:') ||
                 line.includes('Total:') ||
-                line.includes('Success Rate:')) {
+                line.includes('Testes aprovados:') ||
+                line.includes('Testes falhados:') ||
+                line.includes('Total de testes:') ||
+                line.includes('Success Rate:') ||
+                line.includes('API está rodando') ||
+                line.includes('Login do Partner') ||
+                line.includes('Partner ID:') ||
+                line.includes('Product ID:') ||
+                line.includes('Total produtos:')) {
                 continue;
             }
             
@@ -295,7 +308,8 @@ async function runAllTests() {
     logSection('🚀 EBRECHO API TEST SUITE');
     
     console.log(`${colors.yellow}Testing API at: ${API_BASE}${colors.reset}`);
-    console.log(`${colors.yellow}Test files to run: ${testFiles.length}${colors.reset}\n`);
+    console.log(`${colors.yellow}Test files to run: ${testFiles.length}${colors.reset}`);
+    console.log(`${colors.yellow}Test files: ${testFiles.join(', ')}${colors.reset}\n`);
     
     // Check API health first
     logSection('🏥 API HEALTH CHECK');
