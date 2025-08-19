@@ -49,6 +49,8 @@ export default function LoginPage() {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (user.role === 'ADMIN') {
           router.push('/admin');
+        } else if (user.role === 'PROMOTER' || user.role === 'PARTNER_PROMOTER') {
+          router.push('/promoter-dashboard');
         } else {
           router.push('/dashboard');
         }

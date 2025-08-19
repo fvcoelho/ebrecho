@@ -46,14 +46,14 @@ const storeOwnerNavItems = [
 ];
 
 const promoterNavItems = [
-  { icon: Home, label: 'Painel Geral', href: '/dashboard' },
-  { icon: UserPlus, label: 'Convidar Parceiros', href: '/dashboard/convites' },
-  { icon: Users, label: 'Meus Parceiros', href: '/dashboard/parceiros' },
-  { icon: Calendar, label: 'Eventos', href: '/dashboard/eventos' },
-  { icon: TrendingUp, label: 'Comissões', href: '/dashboard/comissoes' },
-  { icon: BarChart3, label: 'Relatórios', href: '/dashboard/relatorios' },
-  { icon: Gift, label: 'Recompensas', href: '/dashboard/recompensas' },
-  { icon: Settings, label: 'Configurações', href: '/dashboard/configuracoes' },
+  { icon: Home, label: 'Painel Geral', href: '/promoter-dashboard' },
+  { icon: UserPlus, label: 'Convidar Parceiros', href: '/promoter-dashboard/convites' },
+  { icon: Users, label: 'Meus Parceiros', href: '/promoter-dashboard/parceiros' },
+  { icon: Calendar, label: 'Eventos', href: '/promoter-dashboard/eventos' },
+  { icon: TrendingUp, label: 'Comissões', href: '/promoter-dashboard/comissoes' },
+  { icon: BarChart3, label: 'Relatórios', href: '/promoter-dashboard/relatorios' },
+  { icon: Gift, label: 'Recompensas', href: '/promoter-dashboard/recompensas' },
+  { icon: Settings, label: 'Configurações', href: '/promoter-dashboard/configuracoes' },
 ];
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
