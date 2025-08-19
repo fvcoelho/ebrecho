@@ -47,7 +47,21 @@ This is a Next.js 15 e-commerce web application for a "brecho" (thrift store) pl
 
 ### Directory Structure
 
-- `src/app/` - Next.js App Router pages and API routes
+The application uses Next.js Route Groups for role-based access control:
+
+- `src/app/` - Next.js App Router with route groups for role-based organization
+  - `(public)/` - Public routes (no authentication required)
+    - `page.tsx` - Home page
+    - `login/`, `cadastro/`, `recuperar-senha/`, `verificar-email/` - Auth pages
+    - `[slug]/` - Partner storefronts (public access)
+  - `(partner)/` - Partner routes (PARTNER_ADMIN, PARTNER_USER)
+    - `dashboard/`, `produtos/`, `vendas/`, `setup-loja/` - Partner management
+  - `(promoter)/` - Promoter routes (PROMOTER, PARTNER_PROMOTER)
+    - `promoter-dashboard/` - Promoter-specific dashboard
+  - `(admin)/` - Admin routes (ADMIN only)
+    - `admin/`, `analytics/` - System administration
+  - `(dev)/` - Development/test routes (development only)
+    - All `test-*` and debug routes
 - `src/components/` - Reusable UI components organized by feature
 - `src/contexts/` - React contexts (primarily auth)
 - `src/lib/` - Utilities, API clients, and shared logic
@@ -73,3 +87,22 @@ Uses dual API URL configuration:
 - Form validation uses Zod schemas with React Hook Form
 - Image handling includes upload, processing, and thumbnail generation
 - Responsive design with mobile-first approach using Tailwind CSS
+
+### Route Groups & Role-Based Access Control
+
+**IMPORTANT:** The application now uses Next.js Route Groups for clean role-based access control:
+
+1. **Route Group Layout Authentication**: Authentication is handled at the layout level for each route group, not in individual pages
+2. **No Individual ProtectedRoute Wrappers**: Pages within route groups should NOT use `<ProtectedRoute>` components - authentication is handled by the layout
+3. **Route Group Selection**: 
+   - Use `(public)` for pages that don't require authentication
+   - Use `(partner)` for partner management features (PARTNER_ADMIN, PARTNER_USER)
+   - Use `(promoter)` for promoter features (PROMOTER, PARTNER_PROMOTER)  
+   - Use `(admin)` for admin-only features (ADMIN)
+   - Use `(dev)` for development/testing features
+
+**Development Rules:**
+- When creating new pages, always place them in the appropriate route group
+- The route group layout handles authentication automatically
+- URLs remain unchanged - route groups are organizational only
+- Development routes in `(dev)` are automatically hidden in production
