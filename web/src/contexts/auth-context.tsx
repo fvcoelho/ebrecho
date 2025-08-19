@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { authService, onboardingService, OnboardingStatus } from '@/lib/api';
 
 interface User {
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -119,6 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null);
       setOnboardingStatus(null);
+      // Redirect to home page using window.location
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 
