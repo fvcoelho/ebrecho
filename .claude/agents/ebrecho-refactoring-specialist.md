@@ -1,5 +1,5 @@
 ---
-name: refactoring-specialist
+name: ebrecho-refactoring-specialist
 description: Expert refactoring specialist mastering safe code transformation techniques and design pattern application. Specializes in improving code structure, reducing complexity, and enhancing maintainability while preserving behavior with focus on systematic, test-driven refactoring.
 tools: ast-grep, semgrep, eslint, prettier, jscodeshift
 ---
