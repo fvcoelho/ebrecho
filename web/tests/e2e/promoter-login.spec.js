@@ -66,13 +66,17 @@ test.describe('Promoter Login E2E Test', () => {
     // Step 6: Verify redirect to promoter dashboard
     console.log('🎯 Step 5: Verifying promoter dashboard access...');
     
-    // Wait for navigation to dashboard with longer timeout (promoters use regular dashboard)
-    await page.waitForURL('**/dashboard', { timeout: 15000 });
+    // Wait for navigation to promoter dashboard with longer timeout
+    await page.waitForURL('**/promoter-dashboard', { timeout: 15000 });
     
     // Verify promoter dashboard elements
     await expect(page.locator('h1:has-text("Painel do Promotor")')).toBeVisible();
     await expect(page.locator('text=fvcoelho@gmail.com')).toBeVisible();
     await expect(page.locator('text=PROMOTER')).toBeVisible();
+    
+    // Verify main dashboard page content
+    await expect(page.locator('h1:has-text("Bem-vindo")')).toBeVisible();
+    await expect(page.locator('text=Você é um Promotor do eBrecho')).toBeVisible();
     
     // Verify promoter navigation elements - use first() for sidebar buttons
     await expect(page.locator('button:has-text("Painel Geral")')).toBeVisible();
@@ -85,10 +89,10 @@ test.describe('Promoter Login E2E Test', () => {
     await expect(page.locator('button:has-text("Configurações")').first()).toBeVisible();
     
     // Verify dashboard stats cards for promoter
-    await expect(page.locator('text=Total de Parceiros')).toBeVisible();
+    await expect(page.locator('text=Parceiros Convidados')).toBeVisible();
+    await expect(page.locator('text=Parceiros Ativos')).toBeVisible();
     await expect(page.locator('text=Comissões do Mês')).toBeVisible();
-    await expect(page.locator('text=Eventos Ativos')).toBeVisible();
-    await expect(page.locator('text=Performance')).toBeVisible();
+    await expect(page.locator('text=Eventos Criados')).toBeVisible();
     
     // Take final screenshot of promoter dashboard
     await page.screenshot({ path: 'test-results/promoter-03-dashboard.png' });
