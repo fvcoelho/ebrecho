@@ -62,12 +62,24 @@ app.use(cors({
       'https://api.ebrecho.com.br' // Allow production Swagger UI
     ].filter(Boolean); // Remove undefined values
     
+    // Allow requests with no origin (e.g., Postman, server-to-server, same-origin)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.error('CORS blocked origin:', origin);
-      console.error('Allowed origins:', allowedOrigins);
-      callback(new Error('Not allowed by CORS'));
+      console.error('\n⚠️  CORS Request Blocked');
+      console.error('   Origin:', origin);
+      console.error('   Allowed origins:');
+      allowedOrigins.forEach((allowed, index) => {
+        console.error(`     ${index + 1}. ${allowed}`);
+      });
+      console.error('   To fix: Add the origin to FRONTEND_URL environment variable\n');
+      
+      const errorMessage = `Access blocked: The origin ${origin} is not allowed to access this API. Please configure CORS settings.`;
+      callback(new Error(errorMessage));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

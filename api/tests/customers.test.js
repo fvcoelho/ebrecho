@@ -142,6 +142,7 @@ async function runCustomerTests() {
         const customerData = {
             email: testEmail, // Same email as above
             name: 'Duplicate Customer',
+            phone: '11999887766',
             cpf: `999.999.99${timestamp.toString().slice(-1)}-${timestamp.toString().slice(-2)}`
         };
         
@@ -163,6 +164,7 @@ async function runCustomerTests() {
         const customerData = {
             email: `unique.${timestamp}@example.com`,
             name: 'Duplicate CPF Customer',
+            phone: '11999887766',
             cpf: testCpf // Same CPF as first customer
         };
         
