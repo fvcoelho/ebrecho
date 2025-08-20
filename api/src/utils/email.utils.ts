@@ -3,6 +3,18 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
+// Get current directory - use process.cwd() and path resolution for compatibility
+const getCurrentDir = () => {
+  // First try to use __dirname if available
+  if (typeof __dirname !== 'undefined') {
+    return __dirname;
+  }
+  
+  // Fallback: calculate path from current working directory
+  // This file is in src/utils, so templates are in src/templates
+  return path.join(process.cwd(), 'src', 'utils');
+};
+
 export interface EmailConfig {
   host?: string;
   port?: number;
@@ -71,7 +83,8 @@ export class EmailService {
 
   private loadTemplate(templateName: string, variables: Record<string, string>): string {
     try {
-      const templatePath = path.join(__dirname, '..', 'templates', templateName);
+      const currentDir = getCurrentDir();
+      const templatePath = path.join(currentDir, '..', 'templates', templateName);
       let template = fs.readFileSync(templatePath, 'utf-8');
       
       // Replace variables in template

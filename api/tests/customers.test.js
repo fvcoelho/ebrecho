@@ -70,7 +70,7 @@ async function runCustomerTests() {
     // Generate unique test data
     const timestamp = Date.now();
     const testEmail = `customer.test.${timestamp}@example.com`;
-    const testCpf = `12345678${timestamp.toString().slice(-3)}`;
+    const testCpf = `123.456.78${timestamp.toString().slice(-1)}-${timestamp.toString().slice(-2)}`;
     
     // Test 1: Login as admin to get token
     try {
@@ -142,7 +142,7 @@ async function runCustomerTests() {
         const customerData = {
             email: testEmail, // Same email as above
             name: 'Duplicate Customer',
-            cpf: `99999999${timestamp.toString().slice(-3)}`
+            cpf: `999.999.99${timestamp.toString().slice(-1)}-${timestamp.toString().slice(-2)}`
         };
         
         const { statusCode, response } = await makeRequest('POST', '/api/customers', customerData, {

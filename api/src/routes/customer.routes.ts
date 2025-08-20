@@ -318,7 +318,7 @@ router.use(authenticate);
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.get('/', customerController.getCustomers);
+router.get('/', authorize(['ADMIN']), customerController.getCustomers);
 /**
  * @swagger
  * /api/customers/stats:
@@ -376,7 +376,7 @@ router.get('/', customerController.getCustomers);
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  */
-router.get('/stats', customerController.getCustomerStats);
+router.get('/stats', authorize(['ADMIN']), customerController.getCustomerStats);
 /**
  * @swagger
  * /api/customers/{id}:
@@ -434,7 +434,7 @@ router.get('/stats', customerController.getCustomerStats);
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.get('/:id', validate(customerParamsSchema), customerController.getCustomerById);
+router.get('/:id', validate(customerParamsSchema), authorize(['ADMIN']), customerController.getCustomerById);
 
 /**
  * @swagger

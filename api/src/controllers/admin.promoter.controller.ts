@@ -107,6 +107,45 @@ export const approvePromoterApplication = async (req: Request, res: Response) =>
   }
 };
 
+// Get all promoters
+export const getAllPromoters = async (req: Request, res: Response) => {
+  try {
+    const promoters = await prisma.promoter.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            partner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        promoters,
+        total: promoters.length,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting all promoters:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Get all pending promoter applications
 export const getPendingPromoterApplications = async (req: Request, res: Response) => {
   try {

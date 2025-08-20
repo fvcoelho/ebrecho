@@ -30,6 +30,7 @@ router.get('/products/stats', adminController.getProductStats as any);
 router.get('/sales/stats', adminController.getSalesStats as any);
 
 // Promoter management routes
+router.get('/promoters', adminPromoterController.getAllPromoters as any);
 router.get('/promoters/pending', adminPromoterController.getPendingPromoterApplications as any);
 router.post('/promoters/approve', adminPromoterController.approvePromoterApplication as any);
 router.put('/promoters/tier', adminPromoterController.updatePromoterTier as any);

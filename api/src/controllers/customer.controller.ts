@@ -28,7 +28,7 @@ export const createCustomer = async (
     });
 
     if (existingCustomer) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         error: 'Customer with this email or CPF already exists'
       });

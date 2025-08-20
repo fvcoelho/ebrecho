@@ -33,6 +33,9 @@ router.use(authMiddleware);
 // Promoter application (special middleware to check eligibility)
 router.post('/apply', canApplyPromoterMiddleware, validate(promoterApplicationSchema), applyForPromoter);
 
+// Create profile endpoint (same as apply, for test compatibility)
+router.post('/profile', canApplyPromoterMiddleware, validate(promoterApplicationSchema), applyForPromoter);
+
 // All other routes require PROMOTER role
 router.use(promoterMiddleware);
 
