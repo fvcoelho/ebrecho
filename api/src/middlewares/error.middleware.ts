@@ -12,7 +12,7 @@ export const errorHandler = (
 
   // Zod validation errors
   if (err instanceof ZodError) {
-    return res.status(400).json({
+    return res.status(422).json({
       success: false,
       error: 'Dados inválidos',
       details: err.errors,

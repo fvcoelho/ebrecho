@@ -102,27 +102,27 @@ async function main() {
             documentType: 'CNPJ',
             description: 'Moda sustentável com curadoria especial de peças de grife',
             hasPhysicalStore: true,
-        address: {
-          create: {
-            street: 'Avenida Atlântica',
-            number: '456',
-            neighborhood: 'Copacabana',
-            city: 'Rio de Janeiro',
-            state: 'RJ',
-            zipCode: '22070-001',
-          },
-        },
-        users: {
-          connectOrCreate: {
-            where: { email: 'joao@vintagestore.com' },
-            create: {
-              email: 'joao@vintagestore.com',
-              password: await bcrypt.hash('senha123', 10),
-              name: 'João Santos',
-              role: 'PARTNER_ADMIN',
+            address: {
+              create: {
+                street: 'Avenida Atlântica',
+                number: '456',
+                neighborhood: 'Copacabana',
+                city: 'Rio de Janeiro',
+                state: 'RJ',
+                zipCode: '22070-001',
+              },
             },
-          },
-        },
+            users: {
+              connectOrCreate: {
+                where: { email: 'joao@vintagestore.com' },
+                create: {
+                  email: 'joao@vintagestore.com',
+                  password: await bcrypt.hash('senha123', 10),
+                  name: 'João Santos',
+                  role: 'PARTNER_ADMIN',
+                },
+              },
+            },
           },
         }),
 
@@ -176,14 +176,33 @@ async function main() {
       },
     }),
   ]);
+    }
+  }
 
   console.log('✅ Brechós criados:', partners.map(p => p.name).join(', '));
 
-  // Criar alguns produtos para cada brechó
+  // Criar alguns produtos para cada brechó usando upsert
   const products = await Promise.all([
     // Produtos do Brechó da Maria
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[0].id,
+          sku: 'BM001'
+        }
+      },
+      update: {
+        name: 'Vestido Vintage Floral',
+        description: 'Vestido midi dos anos 70 em perfeito estado, estampa floral exclusiva',
+        price: 89.90,
+        category: 'Vestidos',
+        brand: 'Vintage',
+        size: 'M',
+        color: 'Floral',
+        condition: 'LIKE_NEW',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Vestido Vintage Floral',
         description: 'Vestido midi dos anos 70 em perfeito estado, estampa floral exclusiva',
         price: 89.90,
@@ -205,8 +224,25 @@ async function main() {
         partnerId: partners[0].id,
       },
     }),
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[0].id,
+          sku: 'BM002'
+        }
+      },
+      update: {
+        name: 'Jaqueta Jeans Oversized',
+        description: 'Jaqueta jeans clássica oversized, perfeita para looks despojados',
+        price: 120.00,
+        category: 'Jaquetas',
+        brand: 'Lee',
+        size: 'G',
+        color: 'Azul',
+        condition: 'GOOD',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Jaqueta Jeans Oversized',
         description: 'Jaqueta jeans clássica oversized, perfeita para looks despojados',
         price: 120.00,
@@ -230,8 +266,24 @@ async function main() {
     }),
 
     // Produtos da Vintage Store
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[1].id,
+          sku: 'VS001'
+        }
+      },
+      update: {
+        name: 'Bolsa Chanel Classic',
+        description: 'Bolsa Chanel Classic autêntica, couro matelassê, corrente dourada',
+        price: 3500.00,
+        category: 'Bolsas',
+        brand: 'Chanel',
+        color: 'Preto',
+        condition: 'GOOD',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Bolsa Chanel Classic',
         description: 'Bolsa Chanel Classic autêntica, couro matelassê, corrente dourada',
         price: 3500.00,
@@ -252,8 +304,25 @@ async function main() {
         partnerId: partners[1].id,
       },
     }),
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[1].id,
+          sku: 'VS002'
+        }
+      },
+      update: {
+        name: 'Blazer Armani',
+        description: 'Blazer Giorgio Armani em lã, corte italiano impecável',
+        price: 890.00,
+        category: 'Blazers',
+        brand: 'Giorgio Armani',
+        size: 'P',
+        color: 'Cinza',
+        condition: 'LIKE_NEW',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Blazer Armani',
         description: 'Blazer Giorgio Armani em lã, corte italiano impecável',
         price: 890.00,
@@ -277,8 +346,25 @@ async function main() {
     }),
 
     // Produtos da Eco Fashion
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[2].id,
+          sku: 'EF001'
+        }
+      },
+      update: {
+        name: 'Calça Wide Leg Linho',
+        description: 'Calça wide leg em linho natural, confortável e sustentável',
+        price: 150.00,
+        category: 'Calças',
+        brand: 'Eco Brand',
+        size: 'M',
+        color: 'Bege',
+        condition: 'NEW',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Calça Wide Leg Linho',
         description: 'Calça wide leg em linho natural, confortável e sustentável',
         price: 150.00,
@@ -300,8 +386,25 @@ async function main() {
         partnerId: partners[2].id,
       },
     }),
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[2].id,
+          sku: 'EF002'
+        }
+      },
+      update: {
+        name: 'Camisa Algodão Orgânico',
+        description: 'Camisa em algodão orgânico certificado, produção ética',
+        price: 95.00,
+        category: 'Camisas',
+        brand: 'Sustainable Fashion',
+        size: 'G',
+        color: 'Branco',
+        condition: 'NEW',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Camisa Algodão Orgânico',
         description: 'Camisa em algodão orgânico certificado, produção ética',
         price: 95.00,
@@ -325,8 +428,25 @@ async function main() {
     }),
 
     // Produtos da Online Store Brasil
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[3].id,
+          sku: 'OSB001'
+        }
+      },
+      update: {
+        name: 'Tênis Streetwear Limited',
+        description: 'Tênis edição limitada para streetwear urbano',
+        price: 280.00,
+        category: 'Calçados',
+        brand: 'Urban Brand',
+        size: '42',
+        color: 'Preto/Branco',
+        condition: 'NEW',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Tênis Streetwear Limited',
         description: 'Tênis edição limitada para streetwear urbano',
         price: 280.00,
@@ -348,8 +468,25 @@ async function main() {
         partnerId: partners[3].id,
       },
     }),
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: {
+        partnerId_sku: {
+          partnerId: partners[3].id,
+          sku: 'OSB002'
+        }
+      },
+      update: {
+        name: 'Moletom Oversized Grafitti',
+        description: 'Moletom oversized com arte graffiti exclusiva',
+        price: 165.00,
+        category: 'Moletons',
+        brand: 'Street Art',
+        size: 'GG',
+        color: 'Cinza',
+        condition: 'LIKE_NEW',
+        status: 'AVAILABLE',
+      },
+      create: {
         name: 'Moletom Oversized Grafitti',
         description: 'Moletom oversized com arte graffiti exclusiva',
         price: 165.00,

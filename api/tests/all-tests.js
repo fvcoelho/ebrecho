@@ -41,7 +41,10 @@ let overallResults = {
     totalTests: 0,
     passedTests: 0,
     failedTests: 0,
-    results: []
+    results: [],
+    startTime: null,
+    endTime: null,
+    totalDuration: 0
 };
 
 function logSection(title) {
@@ -264,6 +267,356 @@ function parseTestOutput(output, filename) {
     };
 }
 
+function generateHtmlReport() {
+    const successRate = overallResults.totalTests > 0 
+        ? ((overallResults.passedTests / overallResults.totalTests) * 100).toFixed(1)
+        : 0;
+    
+    const allPassed = overallResults.failedFiles === 0 && overallResults.failedTests === 0;
+    const timestamp = new Date().toISOString();
+    
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eBrecho API Test Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .status-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status-warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .status-error {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .summary {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .metric-card.success {
+            border-left-color: #27ae60;
+        }
+        
+        .metric-card.warning {
+            border-left-color: #f39c12;
+        }
+        
+        .metric-card.error {
+            border-left-color: #e74c3c;
+        }
+        
+        .metric-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        
+        .files-section {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        
+        .file-grid {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .file-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #3498db;
+        }
+        
+        .file-card.success {
+            border-left-color: #27ae60;
+        }
+        
+        .file-card.error {
+            border-left-color: #e74c3c;
+        }
+        
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .file-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .file-status {
+            font-size: 1.5rem;
+        }
+        
+        .file-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .success-rate {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .rate-excellent {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+        
+        .rate-good {
+            background: #fef5e7;
+            color: #f39c12;
+        }
+        
+        .rate-poor {
+            background: #fadbd8;
+            color: #e74c3c;
+        }
+        
+        .footer {
+            padding: 30px 40px;
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+            transition: width 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .summary {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .files-section {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 eBrecho API Test Results</h1>
+            <div class="subtitle">Comprehensive API Test Suite Report</div>
+            <div class="status-badge ${allPassed ? 'status-success' : 'status-error'}">
+                ${allPassed ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED'}
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${successRate}%"></div>
+            </div>
+            <div style="margin-top: 10px; font-size: 1.1rem;">
+                Success Rate: ${successRate}%
+            </div>
+        </div>
+        
+        <div class="summary">
+            <div class="metric-card">
+                <div class="metric-number">${overallResults.totalFiles}</div>
+                <div class="metric-label">Test Files</div>
+            </div>
+            
+            <div class="metric-card success">
+                <div class="metric-number">${overallResults.passedTests}</div>
+                <div class="metric-label">Tests Passed</div>
+            </div>
+            
+            <div class="metric-card ${overallResults.failedTests > 0 ? 'error' : 'success'}">
+                <div class="metric-number">${overallResults.failedTests}</div>
+                <div class="metric-label">Tests Failed</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-number">${overallResults.totalDuration}ms</div>
+                <div class="metric-label">Total Duration</div>
+            </div>
+        </div>
+        
+        <div class="files-section">
+            <h2 class="section-title">📁 Test File Results</h2>
+            <div class="file-grid">
+                ${overallResults.results.map(result => {
+                    const fileRate = result.total > 0 ? ((result.passed / result.total) * 100).toFixed(1) : 0;
+                    const rateClass = fileRate >= 90 ? 'rate-excellent' : fileRate >= 70 ? 'rate-good' : 'rate-poor';
+                    
+                    return `
+                    <div class="file-card ${result.success ? 'success' : 'error'}">
+                        <div class="file-header">
+                            <div class="file-name">${result.filename}</div>
+                            <div class="file-status">${result.success ? '✅' : '❌'}</div>
+                        </div>
+                        <div class="file-stats">
+                            <div class="stat">
+                                <div class="stat-number" style="color: #27ae60">${result.passed}</div>
+                                <div class="stat-label">Passed</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number" style="color: #e74c3c">${result.failed}</div>
+                                <div class="stat-label">Failed</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number" style="color: #3498db">${result.total}</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number" style="color: #9b59b6">${result.duration}ms</div>
+                                <div class="stat-label">Duration</div>
+                            </div>
+                            <div class="stat">
+                                <div class="success-rate ${rateClass}">${fileRate}%</div>
+                                <div class="stat-label">Success Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+        
+        <div class="footer">
+            Generated on ${timestamp} | eBrecho API Test Suite v1.0
+        </div>
+    </div>
+</body>
+</html>`;
+
+    return html;
+}
+
 function printOverallSummary() {
     logSection('🎯 OVERALL TEST SUMMARY');
     
@@ -302,9 +655,23 @@ function printOverallSummary() {
     // Overall status
     const allPassed = overallResults.failedFiles === 0 && overallResults.failedTests === 0;
     console.log(`\n${colors.bold}Overall Status: ${allPassed ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED'}${colors.reset}`);
+    
+    // Generate and save HTML report
+    try {
+        const htmlReport = generateHtmlReport();
+        const reportPath = path.join(__dirname, 'test-results.html');
+        fs.writeFileSync(reportPath, htmlReport, 'utf8');
+        console.log(`\n${colors.bold}📄 HTML Report Generated:${colors.reset}`);
+        logResult(`Report saved to: ${reportPath}`);
+        logResult(`Open in browser: file://${reportPath}`);
+    } catch (error) {
+        console.log(`${colors.red}❌ Failed to generate HTML report: ${error.message}${colors.reset}`);
+    }
 }
 
 async function runAllTests() {
+    overallResults.startTime = Date.now();
+    
     logSection('🚀 EBRECHO API TEST SUITE');
     
     console.log(`${colors.yellow}Testing API at: ${API_BASE}${colors.reset}`);
@@ -355,6 +722,10 @@ async function runAllTests() {
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
+    
+    // Calculate total duration
+    overallResults.endTime = Date.now();
+    overallResults.totalDuration = overallResults.endTime - overallResults.startTime;
     
     // Print overall summary
     printOverallSummary();
