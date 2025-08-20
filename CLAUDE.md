@@ -1,6 +1,5 @@
 # CLAUDE.md
 
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -10,7 +9,7 @@ eBrecho is a multi-tenant second-hand fashion marketplace with:
 - **Web**: Next.js 15/React 19 frontend with TypeScript and Tailwind CSS
 - **Architecture**: Serverless-first design supporting AWS Lambda and Vercel deployments
 
-## Common Development Commands
+## Essential Commands
 
 ### API Development
 ```bash
@@ -40,6 +39,11 @@ cd api/tests
 node auth.test.js           # Test authentication
 node product.test.js        # Test product endpoints
 node all-tests.js          # Run all tests
+
+# Web E2E tests (Playwright)
+cd web
+npx playwright test         # Run all E2E tests
+npx playwright test --ui    # Run tests with UI mode
 ```
 
 ## High-Level Architecture
@@ -75,6 +79,7 @@ The web app uses Next.js App Router with multi-tenant routing:
    - `/dashboard/*` - Partner admin area (authenticated)
    - `/admin/*` - System admin area
    - `/produtos/*` - Product management
+   - `/promoter-dashboard/*` - Promoter management
 
 2. **State Management**:
    - `AuthContext` - Global auth state with localStorage persistence
@@ -113,12 +118,14 @@ Prisma-managed PostgreSQL with key entities:
 - File uploads stored locally in dev, S3/cloud storage in production
 - Swagger documentation auto-generated at `/api-docs`
 - Custom test scripts in `/api/tests/` directory
+- CORS configured for multiple origins including localhost and production domains
 
 ### Frontend Considerations
 - Server/client API URL configuration via environment variables
 - Protected routes use `ProtectedRoute` and `OnboardingGuard` components
 - Partner slug validation in middleware to prevent route conflicts
 - Mobile-first responsive design with Tailwind breakpoints
+- Route groups handle authentication at layout level
 
 ### Security Notes
 - JWT secrets must be configured in production
@@ -134,12 +141,14 @@ DATABASE_URL="postgresql://...?pgbouncer=true"
 DIRECT_URL="postgresql://..."
 JWT_SECRET="your-secret-key"
 FRONTEND_URL="http://localhost:3000"
+BLOB_READ_WRITE_TOKEN="vercel-blob-token"
+BLOB_BASE_URL="blob-storage-url"
 ```
 
 ### Web (.env.local)
 ```
-NEXT_PUBLIC_API_URL="http://localhost:3001"
-API_URL="http://localhost:3001"
+NEXT_PUBLIC_API_URL="http://localhost:3001/api"
+API_URL="http://localhost:3001/api"
 ```
 
 ## Important Patterns
@@ -148,11 +157,49 @@ API_URL="http://localhost:3001"
 2. **Validation**: Zod schemas validate all API requests
 3. **File Processing**: Sharp library handles image optimization
 4. **Email**: Nodemailer with HTML/text templates for verification
-5. **Testing**: Custom Node.js scripts with direct HTTP requests
+5. **Testing**: Custom Node.js scripts with direct HTTP requests for API, Playwright for E2E
 
 ## Development Workflow
 
-1. Schema changes: Edit `/api/prisma/schema.prisma` → run migrations → generate client
-2. API changes: Implement in controller → add validation schema → update routes → test
-3. Frontend changes: Create/modify components → update API service → handle loading/error states
-4. Testing: Run specific test files or use `all-tests.js` for comprehensive testing
+1. **Schema changes**: Edit `/api/prisma/schema.prisma` → run migrations → generate client
+2. **API changes**: Implement in controller → add validation schema → update routes → test
+3. **Frontend changes**: Create/modify components → update API service → handle loading/error states
+4. **Testing**: Run specific test files or use `all-tests.js` for comprehensive API testing
+
+## Common Tasks
+
+### Adding New API Endpoint
+1. Create controller in `/api/src/controllers/`
+2. Define Zod schema in `/api/src/schemas/`
+3. Create route in `/api/src/routes/`
+4. Register route in `/api/src/app.ts`
+5. Add test in `/api/tests/`
+
+### Adding New Frontend Page
+1. Create page in appropriate route group under `/web/src/app/`
+2. Use shadcn/ui components for UI
+3. Add service methods in `/web/src/lib/` if needed
+4. Handle authentication via route group layout
+
+### Running Tests
+```bash
+# Run all API tests
+cd api && node tests/all-tests.js
+
+# Run specific API test
+cd api && node tests/auth.test.js
+
+# Run web E2E tests
+cd web && npx playwright test
+
+# Run with UI for debugging
+cd web && npx playwright test --ui
+```
+
+## Project-Specific Rules
+
+1. **ALWAYS use shadcn/ui components** in TSX files
+2. **NEVER use `<ProtectedRoute>` wrappers** in pages within authenticated route groups
+3. **Multi-tenancy first**: All partner data must be scoped by partnerId
+4. **Test before deploy**: Run `all-tests.js` before any deployment
+5. **Environment-specific config**: Use proper environment variables for API URLs
