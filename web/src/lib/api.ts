@@ -501,3 +501,69 @@ export const partnerService = {
     return response.data.data;
   }
 };
+
+export interface PromoterProfile {
+  id: string;
+  userId: string;
+  businessName?: string;
+  territory?: string;
+  specialization?: string;
+  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  commissionRate: number;
+  invitationQuota: number;
+  invitationsUsed: number;
+  isActive: boolean;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  monthlyCommissions?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdatePromoterData {
+  businessName?: string;
+  territory?: string;
+  specialization?: string;
+  bio?: string;
+  phone?: string;
+  pixKey?: string;
+  bankName?: string;
+  bankAgency?: string;
+  bankAccount?: string;
+  notificationSettings?: {
+    newPartner?: boolean;
+    newSale?: boolean;
+    commission?: boolean;
+    events?: boolean;
+  };
+}
+
+export const promoterService = {
+  async getProfile(): Promise<PromoterProfile> {
+    const response = await api.get('/api/promoter/profile');
+    return response.data.data || response.data;
+  },
+
+  async createProfile(data: {
+    businessName: string;
+    territory: string;
+    specialization: string;
+  }): Promise<PromoterProfile> {
+    const response = await api.post('/api/promoter/profile', data);
+    return response.data.promoter || response.data;
+  },
+
+  async updateProfile(data: UpdatePromoterData): Promise<PromoterProfile> {
+    const response = await api.put('/api/promoter/profile', data);
+    return response.data.data || response.data;
+  },
+
+  async getAnalytics(): Promise<any> {
+    const response = await api.get('/api/promoter/analytics');
+    return response.data.data || response.data;
+  }
+};

@@ -76,7 +76,7 @@ export default function ParceirosPage() {
               <p className="text-sm text-gray-400 mt-2">
                 Convide brechós para começar a expandir sua rede
               </p>
-              <Button className="mt-4" onClick={() => window.location.href = '/promoter-dashboard/convites'}>
+              <Button className="mt-4" onClick={() => window.location.href = '/promoter/convites'}>
                 Convidar Parceiros
               </Button>
             </div>

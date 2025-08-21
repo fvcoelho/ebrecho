@@ -50,7 +50,7 @@ export default function LoginPage() {
         if (user.role === 'ADMIN') {
           router.push('/admin');
         } else if (user.role === 'PROMOTER' || user.role === 'PARTNER_PROMOTER') {
-          router.push('/promoter-dashboard');
+          router.push('/promoter');
         } else {
           router.push('/dashboard');
         }
