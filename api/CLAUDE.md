@@ -17,9 +17,11 @@ eBrecho API is a **serverless Express.js API** built with TypeScript, designed f
 
 ### Key Design Patterns
 - **Middleware Stack**: Authentication → Authorization → Validation → Business Logic
-- **Role-Based Access**: Six user roles with hierarchical permissions
-- **Zod Validation**: Request validation using schema middleware
+- **Role-Based Access**: Six user roles with hierarchical permissions (ADMIN > PARTNER_ADMIN > PARTNER_USER > PROMOTER/PARTNER_PROMOTER > CUSTOMER)
+- **Zod Validation**: Request validation using schema middleware (all schemas in `src/schemas/`)
 - **Centralized Error Handling**: Global error middleware for consistent responses
+- **Multi-tenancy**: Partner-based data isolation using `partnerId`
+- **File Processing**: Sharp for image optimization, Multer for uploads
 
 ## Essential Commands
 
@@ -55,8 +57,19 @@ npm run format              # Prettier formatting
 
 ### Testing
 ```bash
+node tests/all-tests.js     # Run all tests (comprehensive suite)
 node tests/auth.test.js     # Run authentication tests
 node tests/auth-security.test.js  # Run security tests
+node tests/product.test.js  # Run product tests
+node tests/partner.test.js  # Run partner tests
+node tests/promoter.test.js # Run promoter tests
+
+# Run specific tests individually:
+node tests/address.test.js
+node tests/analytics.test.js
+node tests/customers.test.js
+node tests/database.test.js
+node tests/pix-transactions.test.js
 ```
 
 ## Serverless Considerations
@@ -68,10 +81,13 @@ node tests/auth-security.test.js  # Run security tests
 
 ### Environment Variables
 Required for all deployments:
-- `DATABASE_URL`: PostgreSQL connection string with pooling
+- `DATABASE_URL`: PostgreSQL connection string with pooling (?pgbouncer=true)
 - `DIRECT_URL`: Direct database connection (for migrations)
 - `JWT_SECRET`: Token signing secret
 - `FRONTEND_URL`: Allowed CORS origin
+- `UPLOAD_DIR`: Upload directory (default: ./uploads)
+- `BLOB_READ_WRITE_TOKEN`: Vercel Blob storage token (for production)
+- `BLOB_BASE_URL`: Blob storage base URL (for production)
 
 ### File Storage
 - Local development: `./uploads` directory
@@ -89,6 +105,15 @@ Required for all deployments:
 /api/orders/*       - Order processing
 /api/public/*       - Public endpoints (no auth)
 /api/admin/*        - Administrative functions
+/api/customer/*     - Customer management
+/api/address/*      - Address management
+/api/analytics/*    - Analytics and metrics
+/api/dashboard/*    - Dashboard data endpoints
+/api/onboarding/*   - User onboarding flow
+/api/pix/*          - PIX payment transactions
+/api/ai-enhancement/* - AI image enhancement
+/api/tryon/*        - Virtual try-on features
+/api-docs           - Swagger documentation UI
 ```
 
 ### Request Flow
@@ -168,8 +193,10 @@ Required for all deployments:
 1. Create route in `src/routes/`
 2. Add controller in `src/controllers/`
 3. Define Zod schema in `src/schemas/`
-4. Apply appropriate middleware
+4. Apply appropriate middleware (auth, role, validation)
 5. Update route registration in `src/app.ts`
+6. Write test in `tests/` directory
+7. Run `node tests/all-tests.js` to verify
 
 ### Modifying Database Schema
 1. Update `prisma/schema.prisma`
@@ -183,3 +210,34 @@ Required for all deployments:
 3. Implement proper error handling
 4. Add logging for debugging
 5. Consider performance impact
+
+### Running Development Server
+```bash
+# Start the API server with hot reload
+npm run dev
+
+# The server will be available at http://localhost:3001
+# Swagger docs at http://localhost:3001/api-docs
+```
+
+## Test Data & Credentials
+
+### Default Test Users
+The test suite creates dynamic users but also uses these predefined accounts:
+- Admin: `admin@example.com`
+- Partner Admin: `partner@example.com`
+- Customer: Dynamically created with timestamp
+
+### Test Execution Order
+When running `all-tests.js`, tests execute in this order for dependency management:
+1. auth.test.js - Authentication setup
+2. auth-simple.test.js - Basic auth flows
+3. auth-security.test.js - Security validations
+4. address.test.js - Address management
+5. product.test.js - Product CRUD
+6. partner.test.js - Partner operations
+7. database.test.js - Database operations
+8. analytics.test.js - Analytics endpoints
+9. pix-transactions.test.js - Payment flows
+10. promoter.test.js - Promoter system
+11. customers.test.js - Customer management
