@@ -15,7 +15,7 @@ import {
   Package,
   UserCheck
 } from 'lucide-react';
-import { adminService, AdminStats } from '@/lib/dashboard';
+import { adminService, AdminStats } from '@/lib/api';
 
 interface SalesData {
   salesTrend?: Array<{ date: string; revenue: number }>;

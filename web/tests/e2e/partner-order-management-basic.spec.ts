@@ -53,23 +53,23 @@ class OrdersPage {
 
   async goto() {
     await this.page.goto(`${TEST_CONFIG.baseUrl}/pedidos`);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('networkidle', { timeout: 30000 });
   }
 
   get heading() { 
-    return this.page.locator('h1[data-testid="orders-page-title"], h1:has-text("Pedidos")'); 
+    return this.page.locator('h1[data-testid="orders-page-title"]').or(this.page.locator('h1:has-text("Pedidos")')); 
   }
   
   get description() { 
-    return this.page.locator('[data-testid="orders-page-description"], text=Gerencie os pedidos'); 
+    return this.page.locator('[data-testid="orders-page-description"]').or(this.page.locator('text=Gerencie os pedidos')); 
   }
   
   get refreshButton() { 
-    return this.page.locator('[data-testid="refresh-orders-button"], button:has-text("Atualizar")'); 
+    return this.page.locator('[data-testid="refresh-orders-button"]').or(this.page.locator('button:has-text("Atualizar")')); 
   }
   
   get searchInput() { 
-    return this.page.locator('[data-testid="orders-search-input"], input[placeholder*="Buscar"]'); 
+    return this.page.locator('[data-testid="orders-search-input"]').or(this.page.locator('input[placeholder*="Buscar"]')); 
   }
   
   get statusFilter() { 
@@ -77,15 +77,15 @@ class OrdersPage {
   }
   
   get applyButton() { 
-    return this.page.locator('[data-testid="apply-filters-button"], button:has-text("Aplicar")'); 
+    return this.page.locator('[data-testid="apply-filters-button"]').or(this.page.locator('button:has-text("Aplicar")')); 
   }
   
   get ordersTable() { 
-    return this.page.locator('[data-testid="orders-table"], table'); 
+    return this.page.locator('[data-testid="orders-table"]').or(this.page.locator('table')); 
   }
   
   get noOrdersMessage() { 
-    return this.page.locator('[data-testid="no-orders-message"], text=Nenhum pedido encontrado'); 
+    return this.page.locator('[data-testid="no-orders-message"]').or(this.page.locator('text=Nenhum pedido encontrado')); 
   }
 
   // Stats card getters
