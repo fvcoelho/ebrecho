@@ -7,7 +7,7 @@ import { Copy, Check, MessageCircle } from 'lucide-react'
 import { PixIcon } from '@/components/ui/pix-icon'
 import { PixCanvas, payload } from '@/lib/pix'
 import { copyToClipboard } from '@/lib/clipboard'
-import { pixTransactionService } from '@/lib/api/pix-transactions'
+import { pixTransactionService } from '@/lib/api'
 
 interface PixPaymentBaseProps {
   pixKey: string

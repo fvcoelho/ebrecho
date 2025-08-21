@@ -106,7 +106,8 @@ class AnalyticsTracker {
       if (location.country) sessionData.country = location.country
       if (location.region) sessionData.region = location.region
 
-      await this.sendRequest('/api/analytics/sessions', 'POST', sessionData)
+      // TODO: Send session data to backend FIX later 
+      //await this.sendRequest('/analytics/sessions', 'POST', sessionData)
       
       this.sessionInitialized = true
       this.sessionInitializing = false
@@ -169,7 +170,7 @@ class AnalyticsTracker {
         ...customData
       }
 
-      await this.sendRequest('/api/analytics/page-views', 'POST', pageViewData)
+      await this.sendRequest('/analytics/page-views', 'POST', pageViewData)
       
       // Reset page start time for next tracking
       this.pageStartTime = Date.now()
@@ -231,7 +232,7 @@ class AnalyticsTracker {
         }
       }
 
-      await this.sendRequest('/api/analytics/activities', 'POST', activityData)
+      await this.sendRequest('/analytics/activities', 'POST', activityData)
       
       console.log('🖱️ Activity tracked:', activityData.elementText || activityData.elementId)
     } catch (error) {
@@ -306,7 +307,7 @@ class AnalyticsTracker {
         
         // Use Blob to ensure proper Content-Type header
         const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-        navigator.sendBeacon(`${apiUrl}/api/analytics/page-views`, blob)
+        navigator.sendBeacon(`${apiUrl}/analytics/page-views`, blob)
       }
     })
 
@@ -358,7 +359,7 @@ class AnalyticsTracker {
 
   private async updateSession(data: Partial<SessionData>) {
     try {
-      await this.sendRequest(`/api/analytics/sessions/${this.sessionId}`, 'PUT', data)
+      await this.sendRequest(`/analytics/sessions/${this.sessionId}`, 'PUT', data)
     } catch (error) {
       console.warn('Failed to update session:', error)
     }
@@ -487,13 +488,15 @@ class AnalyticsTracker {
 
   private async getLocation(): Promise<{ city?: string; country?: string; region?: string }> {
     try {
-      const response = await fetch('https://ipapi.co/json/')
-      const data = await response.json()
-      return {
-        city: data.city,
-        country: data.country_name,
-        region: data.region
-      }
+      // Use a CORS-friendly IP geolocation service or remove if not essential
+      // For now, we'll disable this to avoid CORS issues
+      console.log('IP geolocation disabled to avoid CORS issues')
+      return {}
+      
+      // Alternative: Use ipify for IP only and get location from backend
+      // const response = await fetch('https://api.ipify.org?format=json')
+      // const data = await response.json()
+      // Then send IP to backend for geolocation lookup
     } catch {
       return {}
     }

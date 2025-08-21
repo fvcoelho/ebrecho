@@ -24,7 +24,7 @@ import {
   XCircle,
   AlertTriangle
 } from 'lucide-react';
-import { pixTransactionService, PixTransaction, ListPixTransactionsParams } from '@/lib/api/pix-transactions';
+import { pixTransactionService, PixTransaction, ListPixTransactionsParams } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 
 const statusColors = {

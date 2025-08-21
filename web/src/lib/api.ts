@@ -18,6 +18,7 @@ export const api = axios.create({
 });
 
 // Add debugging interceptors
+/*
 api.interceptors.request.use(
   (config) => {
     console.log('[DEBUG] API Request:', {
@@ -53,6 +54,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+*/
 
 // Add auth token to requests (only on client-side)
 if (typeof window !== 'undefined') {
@@ -499,5 +501,350 @@ export const partnerService = {
       },
     });
     return response.data.data;
+  }
+};
+
+export interface PromoterProfile {
+  id: string;
+  userId: string;
+  businessName: string;
+  territory?: string;
+  specialization?: string;
+  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  commissionRate: number;
+  invitationQuota: number;
+  invitationsUsed: number;
+  totalCommissionsEarned: number;
+  totalPartnersInvited: number;
+  successfulInvitations: number;
+  isActive: boolean;
+  approvedAt?: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  monthlyCommissions?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdatePromoterData {
+  businessName?: string;
+  territory?: string;
+  specialization?: string;
+  bio?: string;
+  phone?: string;
+  pixKey?: string;
+  bankName?: string;
+  bankAgency?: string;
+  bankAccount?: string;
+  notificationSettings?: {
+    newPartner?: boolean;
+    newSale?: boolean;
+    commission?: boolean;
+    events?: boolean;
+  };
+}
+
+export const promoterService = {
+  async getProfile(): Promise<PromoterProfile> {
+    const response = await api.get('/api/promoter/profile');
+    // Handle different response formats
+    return response.data.data || response.data;
+  },
+
+  async createProfile(data: {
+    businessName: string;
+    territory: string;
+    specialization: string;
+  }): Promise<PromoterProfile> {
+    // Use the apply endpoint for new promoter applications
+    const response = await api.post('/api/promoter/apply', data);
+    // Handle different response formats
+    return response.data.promoter || response.data.data || response.data;
+  },
+
+  async updateProfile(data: UpdatePromoterData): Promise<PromoterProfile> {
+    const response = await api.put('/api/promoter/profile', data);
+    // Handle different response formats  
+    return response.data.promoter || response.data.data || response.data;
+  },
+
+  async getAnalytics(): Promise<any> {
+    const response = await api.get('/api/promoter/analytics');
+    // Handle different response formats
+    return response.data.data || response.data;
+  }
+};
+
+// Dashboard and Admin Services
+export interface AdminStats {
+  overview: {
+    totalUsers: number;
+    totalPartners: number;
+    totalProducts: number;
+    totalSales: number;
+    totalRevenue: number;
+    activeUsers: number;
+    activePartners: number;
+  };
+  monthlyMetrics: {
+    newUsers: number;
+    newPartners: number;
+    newProducts: number;
+    sales: number;
+    revenue: number;
+  };
+  growth: {
+    userGrowthRate: number;
+    partnerGrowthRate: number;
+    userGrowthLastWeek: number;
+    partnerGrowthLastWeek: number;
+  };
+  distributions: {
+    productsByStatus: Record<string, number>;
+    usersByRole: Record<string, number>;
+  };
+  topPartners: Array<{
+    id: string;
+    name: string;
+    productCount: number;
+  }>;
+}
+
+export interface PartnerStats {
+  partner: {
+    name: string;
+    email: string;
+    userCount: number;
+  };
+  overview: {
+    totalProducts: number;
+    availableProducts: number;
+    soldProducts: number;
+    reservedProducts: number;
+    totalRevenue: number;
+    averagePrice: number;
+  };
+  monthlyMetrics: {
+    soldThisMonth: number;
+    revenue: number;
+    salesGrowth: number;
+  };
+  weeklyMetrics: {
+    newProducts: number;
+  };
+  productDistribution: {
+    byCategory: Record<string, number>;
+    byCondition: Record<string, number>;
+  };
+  topSellingCategories: Array<{
+    category: string;
+    count: number;
+    revenue: number;
+  }>;
+  recentSales: Array<{
+    id: string;
+    name: string;
+    price: string;
+    soldAt: string;
+    image: string | null;
+  }>;
+}
+
+export interface SalesData {
+  period: string;
+  totalSales: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  dailySales: Record<string, { count: number; revenue: number }>;
+  categorySales: Record<string, { count: number; revenue: number }>;
+  salesTrend: Array<{
+    date: string;
+    count: number;
+    revenue: number;
+  }>;
+}
+
+export const adminService = {
+  async getStats(): Promise<AdminStats> {
+    const response = await api.get('/api/admin/stats');
+    return response.data.data;
+  },
+
+  async getUserStats(period: string = '30d') {
+    const response = await api.get('/api/admin/users/stats', { params: { period } });
+    return response.data.data;
+  },
+
+  async getPartnerStats() {
+    const response = await api.get('/api/admin/partners/stats');
+    return response.data.data;
+  },
+
+  async getProductStats() {
+    const response = await api.get('/api/admin/products/stats');
+    return response.data.data;
+  },
+
+  async getSalesStats(period: string = '30d'): Promise<SalesData> {
+    const response = await api.get('/api/admin/sales/stats', { params: { period } });
+    return response.data.data;
+  }
+};
+
+export const dashboardService = {
+  async getStats(): Promise<PartnerStats> {
+    console.log('dashboardService.getStats - Making API request to /api/dashboard/stats');
+    try {
+      const response = await api.get('/api/dashboard/stats');
+      console.log('dashboardService.getStats - API response:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data
+      });
+      return response.data.data;
+    } catch (error: any) {
+      console.error('dashboardService.getStats - API error:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      throw error;
+    }
+  },
+
+  async getSalesHistory(params: {
+    period?: string;
+    page?: number;
+    limit?: number;
+  } = {}) {
+    const response = await api.get('/api/dashboard/sales', { params });
+    return response.data.data;
+  },
+
+  async getProductStats() {
+    const response = await api.get('/api/dashboard/products/stats');
+    return response.data.data;
+  },
+
+  async getCustomerInsights() {
+    const response = await api.get('/api/dashboard/insights/customers');
+    return response.data.data;
+  }
+};
+
+export const databaseService = {
+  async getStats() {
+    const response = await api.get('/api/database/stats');
+    return response.data.data;
+  }
+};
+
+// PIX Transactions Service
+export interface PixTransaction {
+  id: string;
+  transactionCode: string;
+  partnerId: string;
+  productId: string;
+  pixKey: string;
+  amount: number;
+  merchantName: string;
+  merchantCity: string;
+  status: 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED';
+  customerId?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  pixPayload: string;
+  qrCodeUrl?: string;
+  orderId?: string;
+  createdAt: string;
+  expiresAt?: string;
+  paidAt?: string;
+  cancelledAt?: string;
+  metadata?: any;
+  product?: {
+    id: string;
+    name: string;
+    price: number;
+    sku?: string;
+  };
+  partner?: {
+    id: string;
+    name: string;
+  };
+  customer?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  order?: {
+    id: string;
+    orderNumber: string;
+  };
+}
+
+export interface CreatePixTransactionData {
+  transactionCode: string;
+  productId: string;
+  pixKey: string;
+  amount: number;
+  merchantName: string;
+  merchantCity: string;
+  pixPayload: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  expiresIn?: number; // in minutes
+}
+
+export interface UpdatePixTransactionStatusData {
+  status: 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED';
+  orderId?: string;
+}
+
+export interface ListPixTransactionsParams {
+  status?: 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED';
+  productId?: string;
+  customerId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export const pixTransactionService = {
+  // Create a new PIX transaction
+  async createPixTransaction(data: CreatePixTransactionData): Promise<PixTransaction> {
+    console.log('Create a new PIX transaction');
+    const response = await api.post('/api/pix-transactions', data);
+    return response.data.transaction;
+  },
+
+  // Get PIX transaction by code
+  async getPixTransaction(transactionCode: string): Promise<PixTransaction> {
+    const response = await api.get(`/api/pix-transactions/${transactionCode}`);
+    return response.data.transaction;
+  },
+
+  // Update PIX transaction status
+  async updatePixTransactionStatus(
+    transactionCode: string, 
+    data: UpdatePixTransactionStatusData
+  ): Promise<PixTransaction> {
+    const response = await api.patch(`/api/pix-transactions/${transactionCode}/status`, data);
+    return response.data.transaction;
+  },
+
+  // List PIX transactions for authenticated partner
+  async listPartnerPixTransactions(params?: ListPixTransactionsParams): Promise<PixTransaction[]> {
+    const response = await api.get('/api/pix-transactions/partner/list', { params });
+    return response.data.transactions;
+  },
+
+  // Expire old transactions (admin)
+  async expireOldTransactions(): Promise<{ expiredCount: number }> {
+    const response = await api.post('/api/pix-transactions/admin/expire');
+    return response.data;
   }
 };

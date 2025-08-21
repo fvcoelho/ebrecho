@@ -2,6 +2,8 @@ import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller';
 import * as adminPromoterController from '../controllers/admin.promoter.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { adminCreatePromoterSchema, adminUpdatePromoterSchema } from '../schemas/promoter.schema';
 import { AuthRequest } from '../types';
 
 const router = Router();
@@ -29,9 +31,15 @@ router.get('/products/stats', adminController.getProductStats as any);
 
 router.get('/sales/stats', adminController.getSalesStats as any);
 
-// Promoter management routes
+// Promoter management routes - Full CRUD
+router.post('/promoters', validate(adminCreatePromoterSchema), adminPromoterController.createPromoter as any);
 router.get('/promoters', adminPromoterController.getAllPromoters as any);
 router.get('/promoters/pending', adminPromoterController.getPendingPromoterApplications as any);
+router.get('/promoters/:id', adminPromoterController.getPromoterById as any);
+router.put('/promoters/:id', validate(adminUpdatePromoterSchema), adminPromoterController.updatePromoter as any);
+router.delete('/promoters/:id', adminPromoterController.deletePromoter as any);
+
+// Legacy routes for backward compatibility
 router.post('/promoters/approve', adminPromoterController.approvePromoterApplication as any);
 router.put('/promoters/tier', adminPromoterController.updatePromoterTier as any);
 

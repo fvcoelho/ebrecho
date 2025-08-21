@@ -15,7 +15,7 @@ import {
   DollarSign,
   Activity
 } from 'lucide-react';
-import { dashboardService, PartnerStats } from '@/lib/dashboard';
+import { dashboardService, PartnerStats } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 
 export default function DashboardPage() {
