@@ -106,7 +106,7 @@ class AnalyticsTracker {
       if (location.country) sessionData.country = location.country
       if (location.region) sessionData.region = location.region
 
-      await this.sendRequest('/analytics/sessions', 'POST', sessionData)
+      await this.sendRequest('/api/analytics/sessions', 'POST', sessionData)
       
       this.sessionInitialized = true
       this.sessionInitializing = false
@@ -169,7 +169,7 @@ class AnalyticsTracker {
         ...customData
       }
 
-      await this.sendRequest('/analytics/page-views', 'POST', pageViewData)
+      await this.sendRequest('/api/analytics/page-views', 'POST', pageViewData)
       
       // Reset page start time for next tracking
       this.pageStartTime = Date.now()
@@ -231,7 +231,7 @@ class AnalyticsTracker {
         }
       }
 
-      await this.sendRequest('/analytics/activities', 'POST', activityData)
+      await this.sendRequest('/api/analytics/activities', 'POST', activityData)
       
       console.log('🖱️ Activity tracked:', activityData.elementText || activityData.elementId)
     } catch (error) {
@@ -306,7 +306,7 @@ class AnalyticsTracker {
         
         // Use Blob to ensure proper Content-Type header
         const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-        navigator.sendBeacon(`${apiUrl}/analytics/page-views`, blob)
+        navigator.sendBeacon(`${apiUrl}/api/analytics/page-views`, blob)
       }
     })
 
@@ -358,7 +358,7 @@ class AnalyticsTracker {
 
   private async updateSession(data: Partial<SessionData>) {
     try {
-      await this.sendRequest(`/analytics/sessions/${this.sessionId}`, 'PUT', data)
+      await this.sendRequest(`/api/analytics/sessions/${this.sessionId}`, 'PUT', data)
     } catch (error) {
       console.warn('Failed to update session:', error)
     }
