@@ -9,7 +9,7 @@ const RESERVED_PATHS = [
   'dashboard',
   'produtos',
   'vendas',
-  'promoter-dashboard',
+  'promoter',
   'setup-loja',
   'verificar-email',
   'recuperar-senha',

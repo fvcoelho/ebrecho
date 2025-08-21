@@ -59,9 +59,12 @@ export function ProtectedRoute({
       if (user.role === 'CUSTOMER') {
         console.log('ProtectedRoute: Redirecting CUSTOMER to /');
         router.push('/');
-      } else if (user.role === 'PARTNER_ADMIN') {
-        console.log('ProtectedRoute: Redirecting PARTNER_ADMIN to /dashboard');
+      } else if (user.role === 'PARTNER_ADMIN' || user.role === 'PARTNER_USER') {
+        console.log('ProtectedRoute: Redirecting PARTNER to /dashboard');
         router.push('/dashboard');
+      } else if (user.role === 'PROMOTER' || user.role === 'PARTNER_PROMOTER') {
+        console.log('ProtectedRoute: Redirecting PROMOTER to /promoter');
+        router.push('/promoter');
       } else if (user.role === 'ADMIN') {
         console.log('ProtectedRoute: Redirecting ADMIN to /admin');
         router.push('/admin');
