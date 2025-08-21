@@ -175,6 +175,42 @@ export const acceptInvitationSchema = z.object({
   }),
 });
 
+// Admin CRUD schemas
+export const adminCreatePromoterSchema = z.object({
+  body: z.object({
+    userId: z.string().cuid('Invalid user ID format'),
+    businessName: z.string().min(2, 'Business name must be at least 2 characters'),
+    territory: z.string().optional(),
+    specialization: z.string().optional(),
+    tier: z.enum(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM']).default('BRONZE'),
+    commissionRate: z.number().min(0).max(1).optional(),
+    invitationQuota: z.number().int().min(-1).optional(),
+    isActive: z.boolean().default(true),
+  }),
+});
+
+export const adminUpdatePromoterSchema = z.object({
+  body: z.object({
+    businessName: z.string().min(2, 'Business name must be at least 2 characters').optional(),
+    territory: z.string().optional(),
+    specialization: z.string().optional(),
+    tier: z.enum(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM']).optional(),
+    commissionRate: z.number().min(0).max(1).optional(),
+    invitationQuota: z.number().int().min(-1).optional(),
+    isActive: z.boolean().optional(),
+  }),
+});
+
+export const adminPromotersQuerySchema = z.object({
+  page: z.string().transform(Number).default('1'),
+  limit: z.string().transform(Number).default('10'),
+  sortBy: z.enum(['createdAt', 'businessName', 'tier', 'totalCommissionsEarned', 'updatedAt']).default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  tier: z.enum(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM']).optional(),
+  isActive: z.string().transform((val) => val === 'true' ? true : val === 'false' ? false : undefined).optional(),
+  search: z.string().optional(),
+});
+
 // Export types
 export type PromoterApplicationInput = z.infer<typeof promoterApplicationSchema>;
 export type PromoterUpdateInput = z.infer<typeof promoterUpdateSchema>;
@@ -184,3 +220,6 @@ export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
 export type PromoterInvitationsQuery = z.infer<typeof promoterInvitationsQuerySchema>;
 export type PromoterEventsQuery = z.infer<typeof promoterEventsQuerySchema>;
 export type PromoterCommissionsQuery = z.infer<typeof promoterCommissionsQuerySchema>;
+export type AdminCreatePromoterInput = z.infer<typeof adminCreatePromoterSchema>;
+export type AdminUpdatePromoterInput = z.infer<typeof adminUpdatePromoterSchema>;
+export type AdminPromotersQuery = z.infer<typeof adminPromotersQuerySchema>;

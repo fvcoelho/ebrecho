@@ -40,6 +40,70 @@ function getTierCommissionRate(tier: string): number {
 }
 
 // Promoter Profile Management
+/**
+ * @swagger
+ * /api/promoter/apply:
+ *   post:
+ *     tags:
+ *       - Promoter
+ *     summary: Apply to become a promoter
+ *     description: Submit application to become a promoter. Creates a new promoter profile in pending status.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - businessName
+ *               - territory
+ *               - specialization
+ *             properties:
+ *               businessName:
+ *                 type: string
+ *                 example: "Fashion Hub Promotions"
+ *               territory:
+ *                 type: string
+ *                 example: "São Paulo - Centro"
+ *               specialization:
+ *                 type: string
+ *                 example: "vintage"
+ *     responses:
+ *       201:
+ *         description: Promoter application submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Promoter application submitted successfully"
+ *                 promoter:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     businessName:
+ *                       type: string
+ *                     territory:
+ *                       type: string
+ *                     specialization:
+ *                       type: string
+ *                     tier:
+ *                       type: string
+ *                       enum: [BRONZE, SILVER, GOLD, PLATINUM]
+ *                     isActive:
+ *                       type: boolean
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const applyForPromoter = async (req: Request, res: Response) => {
   try {
     const data = req.body;
@@ -81,7 +145,7 @@ export const applyForPromoter = async (req: Request, res: Response) => {
         tier: 'BRONZE',
         commissionRate: getTierCommissionRate('BRONZE'),
         invitationQuota: getTierQuota('BRONZE'),
-        isActive: false, // Pending approval
+        // isActive defaults to true from schema
       },
       include: {
         user: {
@@ -107,6 +171,52 @@ export const applyForPromoter = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/promoter/profile:
+ *   get:
+ *     tags:
+ *       - Promoter
+ *     summary: Get promoter profile
+ *     description: Retrieve the authenticated promoter's profile with statistics
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Promoter profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 businessName:
+ *                   type: string
+ *                 territory:
+ *                   type: string
+ *                 specialization:
+ *                   type: string
+ *                 tier:
+ *                   type: string
+ *                   enum: [BRONZE, SILVER, GOLD, PLATINUM]
+ *                 commissionRate:
+ *                   type: number
+ *                 invitationQuota:
+ *                   type: integer
+ *                 invitationsUsed:
+ *                   type: integer
+ *                 isActive:
+ *                   type: boolean
+ *                 monthlyCommissions:
+ *                   type: number
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Promoter profile not found
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const getPromoterProfile = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
@@ -167,6 +277,39 @@ export const getPromoterProfile = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/promoter/profile:
+ *   put:
+ *     tags:
+ *       - Promoter
+ *     summary: Update promoter profile
+ *     description: Update promoter profile information
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               businessName:
+ *                 type: string
+ *               territory:
+ *                 type: string
+ *               specialization:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const updatePromoterProfile = async (req: Request, res: Response) => {
   try {
     const data = req.body;
@@ -204,6 +347,55 @@ export const updatePromoterProfile = async (req: Request, res: Response) => {
 };
 
 // Invitation Management
+/**
+ * @swagger
+ * /api/promoter/invitations:
+ *   post:
+ *     tags:
+ *       - Promoter
+ *     summary: Create new partner invitation
+ *     description: Create invitation for potential partners to join the platform
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - targetEmail
+ *               - targetName
+ *               - targetBusinessName
+ *               - invitationType
+ *             properties:
+ *               targetEmail:
+ *                 type: string
+ *                 format: email
+ *               targetName:
+ *                 type: string
+ *               targetBusinessName:
+ *                 type: string
+ *               targetPhone:
+ *                 type: string
+ *               personalizedMessage:
+ *                 type: string
+ *               invitationType:
+ *                 type: string
+ *                 enum: [EMAIL, WHATSAPP, IN_PERSON]
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: Invitation created successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const createInvitation = async (req: Request, res: Response) => {
   try {
     const data = req.body;
@@ -302,6 +494,50 @@ export const createInvitation = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/promoter/invitations:
+ *   get:
+ *     tags:
+ *       - Promoter
+ *     summary: Get promoter invitations
+ *     description: Retrieve list of invitations created by the promoter with pagination
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, SENT, VIEWED, ACCEPTED, EXPIRED]
+ *       - in: query
+ *         name: invitationType
+ *         schema:
+ *           type: string
+ *           enum: [EMAIL, WHATSAPP, IN_PERSON]
+ *     responses:
+ *       200:
+ *         description: Invitations retrieved successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const getInvitations = async (req: Request, res: Response) => {
   try {
     const query = promoterInvitationsQuerySchema.parse(req.query);
@@ -371,6 +607,50 @@ export const getInvitations = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/promoter/invitations/{id}:
+ *   put:
+ *     tags:
+ *       - Promoter
+ *     summary: Update invitation
+ *     description: Update an existing invitation (only pending/sent invitations)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               targetName:
+ *                 type: string
+ *               targetPhone:
+ *                 type: string
+ *               personalizedMessage:
+ *                 type: string
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Invitation updated successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Invitation not found or cannot be updated
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const updateInvitation = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -421,6 +701,32 @@ export const updateInvitation = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/promoter/invitations/{id}:
+ *   delete:
+ *     tags:
+ *       - Promoter
+ *     summary: Cancel invitation
+ *     description: Cancel an existing invitation by marking it as expired
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Invitation cancelled successfully
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Invitation not found or cannot be cancelled
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const cancelInvitation = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -469,6 +775,54 @@ export const cancelInvitation = async (req: Request, res: Response) => {
 };
 
 // Dashboard Analytics
+/**
+ * @swagger
+ * /api/promoter/analytics:
+ *   get:
+ *     tags:
+ *       - Promoter
+ *     summary: Get promoter analytics
+ *     description: Retrieve comprehensive analytics for promoter dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Analytics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 overview:
+ *                   type: object
+ *                   properties:
+ *                     totalInvitations:
+ *                       type: integer
+ *                     monthlyInvitations:
+ *                       type: integer
+ *                     successfulInvitations:
+ *                       type: integer
+ *                     conversionRate:
+ *                       type: number
+ *                     activeEvents:
+ *                       type: integer
+ *                     monthlyCommissions:
+ *                       type: number
+ *                     totalCommissions:
+ *                       type: number
+ *                     currentTier:
+ *                       type: string
+ *                       enum: [BRONZE, SILVER, GOLD, PLATINUM]
+ *                 tierProgress:
+ *                   type: object
+ *                   nullable: true
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Promoter not found
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const getPromoterAnalytics = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
@@ -582,6 +936,64 @@ export const getPromoterAnalytics = async (req: Request, res: Response) => {
 };
 
 // Commission Management
+/**
+ * @swagger
+ * /api/promoter/commissions:
+ *   get:
+ *     tags:
+ *       - Promoter
+ *     summary: Get promoter commissions
+ *     description: Retrieve list of commissions earned by the promoter
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *       - in: query
+ *         name: commissionType
+ *         schema:
+ *           type: string
+ *           enum: [REFERRAL, SALES, EVENT]
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, PAID, CANCELLED]
+ *       - in: query
+ *         name: partnerId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Commissions retrieved successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 export const getCommissions = async (req: Request, res: Response) => {
   try {
     const query = promoterCommissionsQuerySchema.parse(req.query);

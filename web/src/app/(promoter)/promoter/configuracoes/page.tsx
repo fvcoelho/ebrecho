@@ -47,12 +47,16 @@ export default function ConfiguracoesPage() {
   useEffect(() => {
     const loadPromoterProfile = async () => {
       try {
-        const profile = await promoterService.getProfile();
+        const response = await promoterService.getProfile();
+        console.log('Promoter profile response:', response);
+        
+        // Handle both direct data and wrapped response formats
+        const profile = response.data || response;
         setPromoterProfile(profile);
         
         // Populate forms with existing data
         setProfileForm({
-          name: user?.name || '',
+          name: profile.user?.name || user?.name || '',
           phone: '', // This would come from profile or user
           bio: profile.specialization || '',
           businessName: profile.businessName || '',
@@ -61,10 +65,17 @@ export default function ConfiguracoesPage() {
         });
       } catch (error) {
         console.error('Error loading promoter profile:', error);
-        // If promoter profile doesn't exist, populate with user data
+        
+        // Check if it's a 404 (promoter profile doesn't exist) or another error
+        if (error.response?.status === 404) {
+          console.log('No promoter profile found, user can apply');
+          setPromoterProfile(null);
+        }
+        
+        // Populate with user data for new promoter application
         setProfileForm({
           name: user?.name || '',
-          phone: '', // This would need to come from user profile
+          phone: '', 
           bio: '',
           businessName: '',
           territory: '',
@@ -82,18 +93,28 @@ export default function ConfiguracoesPage() {
     setIsLoading(true);
     try {
       if (!promoterProfile) {
-        // Create new promoter profile
+        // Create new promoter profile (apply for promoter)
         if (!profileForm.businessName || !profileForm.territory || !profileForm.specialization) {
           toast.error('Por favor, preencha Nome do Negócio, Território e Especialização para se candidatar a promotor.');
           return;
         }
 
-        const newProfile = await promoterService.createProfile({
+        console.log('Applying for promoter with data:', {
           businessName: profileForm.businessName,
           territory: profileForm.territory,
           specialization: profileForm.specialization
         });
 
+        const response = await promoterService.createProfile({
+          businessName: profileForm.businessName,
+          territory: profileForm.territory,
+          specialization: profileForm.specialization
+        });
+
+        console.log('Create promoter response:', response);
+        
+        // Handle response format from API
+        const newProfile = response.promoter || response.data || response;
         setPromoterProfile(newProfile);
         toast.success('Candidatura para promotor enviada com sucesso! Aguarde aprovação.');
       } else {
@@ -101,30 +122,55 @@ export default function ConfiguracoesPage() {
         const updateData: UpdatePromoterData = {
           businessName: profileForm.businessName,
           territory: profileForm.territory,
-          specialization: profileForm.specialization,
-          bio: profileForm.bio,
-          phone: profileForm.phone
+          specialization: profileForm.specialization
         };
 
-        await promoterService.updateProfile(updateData);
+        console.log('Updating promoter profile with data:', updateData);
+
+        const response = await promoterService.updateProfile(updateData);
+        console.log('Update promoter response:', response);
+        
+        // Update local state with new data
+        const updatedProfile = response.promoter || response.data || response;
+        setPromoterProfile(updatedProfile);
+        
         toast.success('Perfil atualizado com sucesso!');
       }
     } catch (error) {
       console.error('Error saving profile:', error);
-      toast.error('Erro ao salvar perfil. Tente novamente.');
+      
+      // Better error handling based on API response
+      if (error.response?.data?.errors) {
+        // Handle validation errors
+        const errors = error.response.data.errors;
+        toast.error(`Erro de validação: ${errors.map(e => e.message).join(', ')}`);
+      } else if (error.response?.data?.error) {
+        // Handle general API errors
+        toast.error(error.response.data.error);
+      } else {
+        toast.error('Erro ao salvar perfil. Tente novamente.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleNotificationsSubmit = async () => {
+    if (!promoterProfile) {
+      toast.error('Você precisa ter um perfil de promotor ativo para alterar notificações.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const updateData: UpdatePromoterData = {
         notificationSettings: notifications
       };
 
-      await promoterService.updateProfile(updateData);
+      const response = await promoterService.updateProfile(updateData);
+      const updatedProfile = response.promoter || response.data || response;
+      setPromoterProfile(updatedProfile);
+      
       toast.success('Configurações de notificação atualizadas!');
     } catch (error) {
       console.error('Error updating notifications:', error);
@@ -135,6 +181,11 @@ export default function ConfiguracoesPage() {
   };
 
   const handlePaymentSubmit = async () => {
+    if (!promoterProfile) {
+      toast.error('Você precisa ter um perfil de promotor ativo para alterar informações de pagamento.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const updateData: UpdatePromoterData = {
@@ -144,7 +195,10 @@ export default function ConfiguracoesPage() {
         bankAccount: paymentForm.bankAccount
       };
 
-      await promoterService.updateProfile(updateData);
+      const response = await promoterService.updateProfile(updateData);
+      const updatedProfile = response.promoter || response.data || response;
+      setPromoterProfile(updatedProfile);
+      
       toast.success('Informações de pagamento atualizadas!');
     } catch (error) {
       console.error('Error updating payment info:', error);
@@ -196,13 +250,18 @@ export default function ConfiguracoesPage() {
                 Perfil de Promotor
               </div>
               {promoterProfile && (
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  promoterProfile.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {promoterProfile.isActive ? 'Ativo' : 'Aguardando Aprovação'}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    promoterProfile.isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {promoterProfile.isActive ? 'Ativo' : 'Aguardando Aprovação'}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Tier: {promoterProfile.tier || 'BRONZE'}
+                  </span>
+                </div>
               )}
             </CardTitle>
           </CardHeader>
@@ -244,7 +303,7 @@ export default function ConfiguracoesPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="territory">Território de Atuação</Label>
+                <Label htmlFor="territory">Região de Atuação</Label>
                 <Input
                   id="territory"
                   placeholder="Ex: São Paulo - SP, Rio de Janeiro - RJ"
@@ -280,7 +339,7 @@ export default function ConfiguracoesPage() {
         </Card>
 
         {/* Notification Settings */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Bell className="h-5 w-5 mr-2 text-purple-600" />
@@ -351,10 +410,10 @@ export default function ConfiguracoesPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Payment Settings */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <CreditCard className="h-5 w-5 mr-2 text-purple-600" />
@@ -407,10 +466,10 @@ export default function ConfiguracoesPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Security Settings */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Shield className="h-5 w-5 mr-2 text-purple-600" />
@@ -452,7 +511,7 @@ export default function ConfiguracoesPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </DashboardLayout>
   );

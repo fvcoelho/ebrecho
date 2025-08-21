@@ -93,8 +93,9 @@ test.describe('Promoter Configuration Page E2E Tests', () => {
     // Verify email is pre-populated with user email
     await expect(emailInput).toHaveValue(TEST_CONFIG.promoterCredentials.email);
     
-    // Verify profile save button is present
-    await expect(page.locator('button:has-text("Salvar Alterações")')).toBeVisible();
+    // Verify profile save button is present (can be either text based on promoter state)
+    const saveButton = page.locator('button:has-text("Salvar Alterações")').or(page.locator('button:has-text("Candidatar-se a Promotor")'));
+    await expect(saveButton).toBeVisible();
     
     console.log('✅ Profile form display test passed');
   });
