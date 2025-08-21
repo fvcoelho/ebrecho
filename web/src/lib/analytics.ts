@@ -106,7 +106,8 @@ class AnalyticsTracker {
       if (location.country) sessionData.country = location.country
       if (location.region) sessionData.region = location.region
 
-      await this.sendRequest('/analytics/sessions', 'POST', sessionData)
+      // TODO: Send session data to backend FIX later 
+      //await this.sendRequest('/analytics/sessions', 'POST', sessionData)
       
       this.sessionInitialized = true
       this.sessionInitializing = false
