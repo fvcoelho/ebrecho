@@ -1,0 +1,109 @@
+{
+  "info": {
+    "title": "eBrecho API",
+    "version": "1.0.1",
+    "description": "API for eBrecho - Second-hand fashion marketplace platform"
+  },
+  "onboarding": {
+    "endpoints": [
+      {
+        "path": "/api/onboarding/status",
+        "method": "GET",
+        "summary": "Get onboarding status for current user",
+        "description": "Check if the user has completed onboarding and needs to setup a partner store",
+        "authentication": "Required (Bearer token)",
+        "responses": {
+          "200": {
+            "structure": {
+              "success": true,
+              "data": {
+                "isComplete": "boolean - Whether onboarding is complete",
+                "requiresPartnerSetup": "boolean - Whether user needs to setup partner store",
+                "user": {
+                  "id": "string",
+                  "name": "string",
+                  "email": "string",
+                  "role": "enum: ADMIN, PARTNER_ADMIN, PARTNER_USER, PROMOTER, PARTNER_PROMOTER, CUSTOMER",
+                  "partnerId": "string | null"
+                },
+                "partner": "object | null - Partner details if user has a partner"
+              }
+            }
+          },
+          "401": "Unauthorized - Missing or invalid token",
+          "404": "User not found",
+          "500": "Internal server error"
+        }
+      },
+      {
+        "path": "/api/onboarding/complete-partner",
+        "method": "POST",
+        "summary": "Complete partner registration",
+        "description": "Create a partner store for a PARTNER_ADMIN user",
+        "authentication": "Required (Bearer token)",
+        "requestBody": {
+          "required": [
+            "name",
+            "email",
+            "phone",
+            "document",
+            "documentType",
+            "hasPhysicalStore"
+          ],
+          "properties": {
+            "name": "string - Partner store name",
+            "email": "string - Partner business email",
+            "phone": "string - Partner phone number",
+            "document": "string - Business document (CNPJ or CPF)",
+            "documentType": "enum: CPF, CNPJ",
+            "description": "string (optional) - Store description",
+            "hasPhysicalStore": "boolean - Whether partner has a physical store",
+            "address": {
+              "required_if": "hasPhysicalStore is true",
+              "properties": {
+                "street": "string",
+                "number": "string",
+                "complement": "string (optional)",
+                "neighborhood": "string",
+                "city": "string",
+                "state": "string",
+                "zipCode": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "structure": {
+              "success": true,
+              "message": "Cadastro do parceiro concluído com sucesso",
+              "data": {
+                "partner": "Partner object with all details",
+                "user": "Updated user object with partnerId",
+                "token": "string - New JWT token with updated user data"
+              }
+            }
+          },
+          "400": {
+            "cases": [
+              "Usuário já possui um parceiro associado",
+              "Já existe um parceiro com este documento ou email"
+            ]
+          },
+          "401": "Unauthorized - Missing or invalid token",
+          "403": "Apenas usuários PARTNER_ADMIN podem criar parceiros",
+          "404": "User not found",
+          "500": "Internal server error"
+        }
+      }
+    ]
+  },
+  "notes": {
+    "response_structure": "All API responses follow a consistent structure with 'success' boolean and either 'data' object for success or 'error' string for failures",
+    "authentication": "All onboarding endpoints require JWT Bearer token authentication",
+    "frontend_integration": {
+      "issue": "Frontend expects response.data.data but API returns response.data",
+      "solution": "Frontend should check response structure and handle both patterns"
+    }
+  }
+}
