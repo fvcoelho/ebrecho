@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import SpinningLogo from '@/components/SpinningLogo'
+import { SpinningLogo } from '@/components/ui/spinning-logo'
 
 interface SessionDetail {
   id: string

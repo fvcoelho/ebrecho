@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import SpinningLogo from '@/components/SpinningLogo'
+import { SpinningLogo } from '@/components/ui/spinning-logo'
 
 interface Activity {
   id: string
