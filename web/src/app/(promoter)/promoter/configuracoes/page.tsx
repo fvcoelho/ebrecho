@@ -5,11 +5,11 @@ import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Label, Textarea, Checkbox } from '@/components/ui';
 import { Settings, User, Bell, CreditCard, Shield, Save, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { promoterService, UpdatePromoterData, PromoterProfile } from '@/lib/api';
+import { promoterService, UpdatePromoterData, PromoterProfile, authService } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function ConfiguracoesPage() {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [promoterProfile, setPromoterProfile] = useState<PromoterProfile | null>(null);
   
@@ -92,10 +92,24 @@ export default function ConfiguracoesPage() {
   const handleProfileSubmit = async () => {
     setIsLoading(true);
     try {
+      // First update user name if it has changed
+      if (user && profileForm.name && profileForm.name !== user.name) {
+        console.log('Updating user name from', user.name, 'to', profileForm.name);
+        try {
+          // Use the auth context updateProfile to update user data and refresh context
+          await updateProfile({ name: profileForm.name });
+          console.log('User name updated successfully and context refreshed');
+        } catch (userError) {
+          console.error('Error updating user name:', userError);
+          // Continue with promoter update even if user update fails
+        }
+      }
+
       if (!promoterProfile) {
         // Create new promoter profile (apply for promoter)
         if (!profileForm.businessName || !profileForm.territory || !profileForm.specialization) {
           toast.error('Por favor, preencha Nome do Negócio, Território e Especialização para se candidatar a promotor.');
+          setIsLoading(false);
           return;
         }
 

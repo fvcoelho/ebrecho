@@ -130,10 +130,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = async (userData: Partial<User>) => {
     try {
-      // TODO: Implement updateProfile in authService when API endpoint is available
-      console.log('Update profile:', userData);
-      throw new Error('Update profile not implemented yet');
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log('Updating user profile:', userData);
+      
+      // Call the API to update user data
+      const updatedUser = await authService.updateUser(user.id, {
+        name: userData.name,
+        email: userData.email
+      });
+      
+      // Update local state with new user data
+      const newUserData = { ...user, ...updatedUser };
+      setUser(newUserData);
+      localStorage.setItem('user', JSON.stringify(newUserData));
+      
+      console.log('User profile updated successfully:', newUserData);
+      return;
     } catch (error) {
+      console.error('Error updating profile:', error);
       throw error;
     }
   };

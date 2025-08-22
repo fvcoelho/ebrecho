@@ -181,6 +181,11 @@ export const authService = {
     return response.data.data; // API returns {success: true, data: {user, token}}
   },
 
+  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User> {
+    const response = await api.put(`/api/users/${userId}`, data);
+    return response.data.data || response.data;
+  },
+
   async me(): Promise<AuthResponse['user']> {
     const response = await api.get('/api/auth/me');
     return response.data.data; // API returns {success: true, data: user}
