@@ -142,6 +142,7 @@ export default function ConfiguracoesPage() {
         // Handle response format from API
         const newProfile = response.promoter || response.data || response;
         setPromoterProfile(newProfile);
+        
         toast.success('Perfil de promotor criado com sucesso!');
       } else {
         // Update existing promoter profile
@@ -270,7 +271,6 @@ export default function ConfiguracoesPage() {
       </DashboardLayout>
     );
   }
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -480,7 +480,6 @@ export default function ConfiguracoesPage() {
             {!promoterProfile ? 'Criar Perfil de Promotor' : 'Salvar Alterações'}
           </Button>
         </div>
-
       </div>
     </DashboardLayout>
   );
