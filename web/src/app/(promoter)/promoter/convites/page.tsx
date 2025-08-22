@@ -3,8 +3,11 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Label, Textarea } from '@/components/ui';
-import { UserPlus, Copy, Mail, CheckCircle, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserPlus, Copy, Mail, CheckCircle, Clock, Search, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { BusinessSearch } from '@/components/places/business-search';
+import type { PlaceResult } from '@/components/places/places-autocomplete';
 
 export default function ConvitesPage() {
   const { user } = useAuth();
@@ -20,6 +23,11 @@ export default function ConvitesPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleBusinessInvite = (business: PlaceResult) => {
+    console.log('Enviando convite para:', business);
+    // TODO: Integrate with actual invite API
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -30,81 +38,113 @@ export default function ConvitesPage() {
           </p>
         </div>
 
-        {/* Invite Link Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <UserPlus className="h-5 w-5 mr-2 text-purple-600" />
-              Seu Link de Convite
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex space-x-2">
-              <Input
-                value={inviteLink}
-                readOnly
-                className="flex-1"
-              />
-              <Button
-                onClick={handleCopyLink}
-                variant={copied ? "default" : "outline"}
-              >
-                {copied ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Copiado!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar
-                  </>
-                )}
-              </Button>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              Compartilhe este link com brechós interessados em vender na plataforma
-            </p>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="buscar" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="buscar" className="flex items-center">
+              <Search className="h-4 w-4 mr-2" />
+              Buscar Estabelecimentos
+            </TabsTrigger>
+            <TabsTrigger value="link" className="flex items-center">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Link de Convite
+            </TabsTrigger>
+            <TabsTrigger value="email" className="flex items-center">
+              <Mail className="h-4 w-4 mr-2" />
+              Convite por Email
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Send Invite by Email */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Mail className="h-5 w-5 mr-2 text-purple-600" />
-              Enviar Convite por Email
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email do Brechó</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="contato@brecho.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="message">Mensagem Personalizada (opcional)</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Adicione uma mensagem pessoal ao convite..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                />
-              </div>
-              <Button className="w-full">
-                <Mail className="h-4 w-4 mr-2" />
-                Enviar Convite
-              </Button>
+          {/* Business Search Tab */}
+          <TabsContent value="buscar" className="space-y-6">
+            <div className="text-center py-4">
+              <h2 className="text-xl font-semibold mb-2">Descubra Estabelecimentos na Sua Região</h2>
+              <p className="text-muted-foreground">
+                Use nossa busca por localização para encontrar e convidar estabelecimentos próximos a você
+              </p>
             </div>
-          </CardContent>
-        </Card>
+            <BusinessSearch onBusinessInvite={handleBusinessInvite} />
+          </TabsContent>
+
+          {/* Invite Link Tab */}
+          <TabsContent value="link" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <UserPlus className="h-5 w-5 mr-2 text-purple-600" />
+                  Seu Link de Convite
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex space-x-2">
+                  <Input
+                    value={inviteLink}
+                    readOnly
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleCopyLink}
+                    variant={copied ? "default" : "outline"}
+                  >
+                    {copied ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copiar
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Compartilhe este link com brechós interessados em vender na plataforma
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Email Invite Tab */}
+          <TabsContent value="email" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Mail className="h-5 w-5 mr-2 text-purple-600" />
+                  Enviar Convite por Email
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="email">Email do Brechó</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="contato@brecho.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="message">Mensagem Personalizada (opcional)</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Adicione uma mensagem pessoal ao convite..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                  <Button className="w-full">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Enviar Convite
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Recent Invites */}
         <Card>
