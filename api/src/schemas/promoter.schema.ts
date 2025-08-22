@@ -6,6 +6,9 @@ export const promoterApplicationSchema = z.object({
     businessName: z.string().min(2, 'Business name must be at least 2 characters'),
     territory: z.string().optional(),
     specialization: z.string().optional(),
+    phone: z.string().optional(),
+    whatsappNumber: z.string().optional(),
+    pixKey: z.string().optional(),
   }),
 });
 
@@ -14,6 +17,9 @@ export const promoterUpdateSchema = z.object({
     businessName: z.string().min(2, 'Business name must be at least 2 characters').optional(),
     territory: z.string().optional(),
     specialization: z.string().optional(),
+    phone: z.string().optional(),
+    whatsappNumber: z.string().optional(),
+    pixKey: z.string().optional(),
   }),
 });
 

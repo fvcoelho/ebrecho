@@ -503,18 +503,28 @@ class AnalyticsTracker {
   }
 
   private async sendRequest(url: string, method: string, data: any): Promise<any> {
-    // Validate data based on the type of request
+    // Validate data based on the type of request with graceful fallbacks
     if (url.includes('/sessions')) {
       // Session creation - just needs sessionId
       if (!data || !data.sessionId) {
-        console.error('Invalid session data:', data)
-        throw new Error('Missing sessionId for session creation')
+        console.warn('Analytics: Incomplete session data, using fallback sessionId')
+        data = { ...data, sessionId: this.sessionId || this.generateSessionId() }
       }
     } else if (url.includes('/page-views') || url.includes('/activities')) {
       // Page views and activities need sessionId and page
-      if (!data || !data.sessionId || !data.page) {
-        console.error('Invalid analytics data:', data)
-        throw new Error('Missing required fields for analytics')
+      if (!data || !data.sessionId) {
+        console.warn('Analytics: Missing sessionId, using current session')
+        data = { ...data, sessionId: this.sessionId || this.generateSessionId() }
+      }
+      if (!data.page && typeof window !== 'undefined') {
+        console.warn('Analytics: Missing page, using current location')
+        data = { ...data, page: window.location.pathname || '/' }
+      }
+      
+      // Final validation - if still missing critical data, skip silently
+      if (!data.sessionId || (!data.page && !url.includes('/activities'))) {
+        console.warn('Analytics: Skipping request due to insufficient data')
+        return Promise.resolve({})
       }
     }
     

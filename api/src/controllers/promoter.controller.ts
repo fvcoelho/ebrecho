@@ -47,7 +47,7 @@ function getTierCommissionRate(tier: string): number {
  *     tags:
  *       - Promoter
  *     summary: Apply to become a promoter
- *     description: Submit application to become a promoter. Creates a new promoter profile in pending status.
+ *     description: Submit application to become a promoter. Creates a new promoter profile with immediate activation (auto-approval).
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -58,21 +58,26 @@ function getTierCommissionRate(tier: string): number {
  *             type: object
  *             required:
  *               - businessName
- *               - territory
- *               - specialization
  *             properties:
  *               businessName:
  *                 type: string
+ *                 description: Name of the promoter's business
  *                 example: "Fashion Hub Promotions"
  *               territory:
  *                 type: string
+ *                 description: Territory or region of operation (optional)
  *                 example: "São Paulo - Centro"
  *               specialization:
  *                 type: string
+ *                 description: Specialization area in fashion (optional)
  *                 example: "vintage"
+ *               phone:
+ *                 type: string
+ *                 description: Contact phone number (optional)
+ *                 example: "(11) 99999-9999"
  *     responses:
  *       201:
- *         description: Promoter application submitted successfully
+ *         description: Promoter application submitted and approved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -92,11 +97,19 @@ function getTierCommissionRate(tier: string): number {
  *                       type: string
  *                     specialization:
  *                       type: string
+ *                     phone:
+ *                       type: string
  *                     tier:
  *                       type: string
  *                       enum: [BRONZE, SILVER, GOLD, PLATINUM]
  *                     isActive:
  *                       type: boolean
+ *                       example: true
+ *                       description: Promoters are automatically approved and activated
+ *                     approvedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Timestamp when promoter was approved (auto-set for new applications)
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  *       401:
@@ -135,17 +148,19 @@ export const applyForPromoter = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Only partner administrators can become promoters' });
     }
 
-    // Create promoter application
+    // Create promoter application with auto-approval
     const promoter = await prisma.promoter.create({
       data: {
         userId,
         businessName: data.businessName,
         territory: data.territory,
         specialization: data.specialization,
+        phone: data.phone, // Add phone field support
         tier: 'BRONZE',
         commissionRate: getTierCommissionRate('BRONZE'),
         invitationQuota: getTierQuota('BRONZE'),
-        // isActive defaults to true from schema
+        isActive: true, // Auto-approval: immediately active
+        approvedAt: new Date(), // Auto-approval: set approval timestamp
       },
       include: {
         user: {
@@ -296,10 +311,17 @@ export const getPromoterProfile = async (req: Request, res: Response) => {
  *             properties:
  *               businessName:
  *                 type: string
+ *                 description: Name of the promoter's business
  *               territory:
  *                 type: string
+ *                 description: Territory or region of operation
  *               specialization:
  *                 type: string
+ *                 description: Specialization area in fashion
+ *               phone:
+ *                 type: string
+ *                 description: Contact phone number
+ *                 example: "(11) 99999-9999"
  *     responses:
  *       200:
  *         description: Profile updated successfully

@@ -97,6 +97,7 @@ if (typeof window !== 'undefined') {
   );
 }
 
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -122,6 +123,7 @@ export interface AuthResponse {
 export interface OnboardingStatus {
   isComplete: boolean;
   requiresPartnerSetup: boolean;
+  requiresPromoterSetup: boolean;
   user: {
     id: string;
     name: string;
@@ -180,6 +182,11 @@ export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
     const response = await api.post('/api/auth/register', data);
     return response.data.data; // API returns {success: true, data: {user, token}}
+  },
+
+  async updateUser(userId: string, data: { name?: string; email?: string }): Promise<User> {
+    const response = await api.put(`/api/users/${userId}`, data);
+    return response.data.data || response.data;
   },
 
   async me(): Promise<AuthResponse['user']> {
@@ -536,6 +543,7 @@ export interface UpdatePromoterData {
   specialization?: string;
   bio?: string;
   phone?: string;
+  whatsappNumber?: string;
   pixKey?: string;
   bankName?: string;
   bankAgency?: string;
@@ -557,8 +565,11 @@ export const promoterService = {
 
   async createProfile(data: {
     businessName: string;
-    territory: string;
-    specialization: string;
+    territory?: string;
+    specialization?: string;
+    phone?: string;
+    whatsappNumber?: string;
+    pixKey?: string;
   }): Promise<PromoterProfile> {
     // Use the apply endpoint for new promoter applications
     const response = await api.post('/api/promoter/apply', data);

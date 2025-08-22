@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Loader2, CheckCircle, AlertCircle, X, Download } from 'lucide-react';
+import { CheckCircle, AlertCircle, X, Download } from 'lucide-react';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { type Product } from '@/lib/api';
@@ -253,7 +254,7 @@ export function TryOnComponent({ product, model, onClose }: TryOnComponentProps)
       {tryOnState.isProcessing && (
         <Card>
           <CardContent className="p-6 text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-500 mb-4" />
+            <SpinningLogo size="lg" speed="fast" className="mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Processando Try-On Virtual</h3>
             <p className="text-gray-600 mb-2">
               {tryOnState.eventId ? 

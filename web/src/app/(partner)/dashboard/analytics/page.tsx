@@ -90,7 +90,7 @@ export default function PartnerAnalyticsPage() {
       console.log('🔍 Analytics: Fetching data with token:', token ? 'Present' : 'Missing')
       
       // Use full API URL for backend requests
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001' 
       
       // Fetch dashboard stats
       const statsResponse = await fetch(`${apiUrl}/api/analytics/dashboard/stats?timeframe=${timeframe}`, {

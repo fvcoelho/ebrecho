@@ -1,12 +1,26 @@
 'use client';
 
+import { useState } from 'react';
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/spinning-logo';
 
 export function Header() {
   const { isAuthenticated, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    // add delay 1 second before logging out
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await logout();
+  };
+
+  if (isLoggingOut) {
+    return <LoadingSpinner text="Encerrando a sessão..." size="lg" speed="normal" />;
+  }
   
   return (
     <nav className="border-b bg-background sticky top-0 z-50">
@@ -34,7 +48,7 @@ export function Header() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="rounded-full"
                 >
                   Sair

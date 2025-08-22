@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, User, Mail, Lock, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -302,7 +303,14 @@ export default function CadastroPage() {
                     console.log('[DEBUG] Form values before submit:', form.getValues());
                   }}
                 >
-                  {isLoading ? 'Criando conta...' : 'Criar conta'}
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <SpinningLogo size="sm" speed="fast" className="mr-2" />
+                      Criando conta...
+                    </div>
+                  ) : (
+                    'Criar conta'
+                  )}
                 </Button>
               </form>
             </Form>

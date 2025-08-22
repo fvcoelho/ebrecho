@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -167,7 +168,14 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="w-full"
                 >
-                  {isLoading ? 'Entrando...' : 'Entrar'}
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <SpinningLogo size="sm" speed="fast" className="mr-2" />
+                      Entrando...
+                    </div>
+                  ) : (
+                    'Entrar'
+                  )}
                 </Button>
               </form>
             </Form>

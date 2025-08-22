@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { MapPin, Navigation, ExternalLink } from 'lucide-react'
+import { SpinningLogo } from '@/components/ui/spinning-logo'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PublicStore } from '@/lib/api/public'
@@ -172,7 +173,7 @@ export function StoreMap({ store, height = '300px' }: StoreMapProps) {
           {!isLoaded ? (
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                <SpinningLogo size="sm" speed="normal" className="mx-auto" />
                 <p className="text-xs text-muted-foreground mt-2">Carregando mapa...</p>
               </div>
             </div>

@@ -242,7 +242,8 @@ export const getOnboardingStatus = async (
           include: {
             address: true
           }
-        }
+        },
+        promoter: true
       }
     });
 
@@ -256,6 +257,7 @@ export const getOnboardingStatus = async (
     const onboardingStatus = {
       isComplete: false,
       requiresPartnerSetup: false,
+      requiresPromoterSetup: false,
       user: {
         id: user.id,
         name: user.name,
@@ -271,12 +273,31 @@ export const getOnboardingStatus = async (
       onboardingStatus.requiresPartnerSetup = true;
       onboardingStatus.isComplete = false;
     } 
+    // Se é PARTNER_USER mas não tem partnerId, precisa ser atribuído a um partner
+    else if (userRole === 'PARTNER_USER' && !user.partnerId) {
+      onboardingStatus.requiresPartnerSetup = true;
+      onboardingStatus.isComplete = false;
+    }
+    // Se é PROMOTER mas não tem promoter profile, precisa completar cadastro
+    else if (userRole === 'PROMOTER' && !user.promoter) {
+      onboardingStatus.requiresPromoterSetup = true;
+      onboardingStatus.isComplete = false;
+    }
+    // Se é PARTNER_PROMOTER mas não tem promoter profile, precisa completar cadastro
+    else if (userRole === 'PARTNER_PROMOTER' && !user.promoter) {
+      onboardingStatus.requiresPromoterSetup = true;
+      onboardingStatus.isComplete = false;
+    }
     // Se tem partnerId, cadastro está completo
     else if (user.partnerId && user.partner) {
       onboardingStatus.isComplete = true;
     }
-    // Para outros roles (ADMIN, CUSTOMER, PROMOTER, PARTNER_PROMOTER), considerar completo
-    else if (userRole === 'ADMIN' || userRole === 'CUSTOMER' || userRole === 'PROMOTER' || userRole === 'PARTNER_PROMOTER') {
+    // Se é PROMOTER/PARTNER_PROMOTER e tem promoter profile, cadastro está completo
+    else if ((userRole === 'PROMOTER' || userRole === 'PARTNER_PROMOTER') && user.promoter) {
+      onboardingStatus.isComplete = true;
+    }
+    // Para outros roles (ADMIN, CUSTOMER), considerar completo
+    else if (userRole === 'ADMIN' || userRole === 'CUSTOMER') {
       onboardingStatus.isComplete = true;
     }
 

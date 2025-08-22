@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { MapPin, Search, Sliders, ChevronDown, ChevronUp, X, Loader2 } from 'lucide-react';
+import { MapPin, Search, Sliders, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import {
   Button,
   Card,
@@ -530,7 +531,7 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
                         disabled={!isGoogleMapsLoaded}
                       />
                       {(isLoadingSuggestions || !isGoogleMapsLoaded) && (
-                        <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                        <SpinningLogo size="sm" speed="fast" className="absolute right-3 top-3 text-muted-foreground" />
                       )}
                     </div>
                   </FormControl>
@@ -842,7 +843,7 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <SpinningLogo size="sm" speed="fast" className="mr-2" />
                 Buscando...
               </>
             ) : (

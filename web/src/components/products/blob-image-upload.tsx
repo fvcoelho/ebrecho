@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Upload, X, Loader2, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { blobUploadService, type UploadProgress } from '@/lib/api/blob-upload';
@@ -411,7 +412,7 @@ export const BlobImageUpload: React.FC<BlobImageUploadProps> = ({
               >
                 {isUploading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <SpinningLogo size="sm" speed="fast" className="mr-2" />
                     Uploading to Vercel Blob...
                   </>
                 ) : (
@@ -454,7 +455,7 @@ export const BlobImageUpload: React.FC<BlobImageUploadProps> = ({
                     {/* Upload Progress */}
                     {image.uploading && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-white mb-2" />
+                        <SpinningLogo size="md" speed="fast" className="mb-2" />
                         <div className="w-3/4 bg-gray-700 rounded-full h-2">
                           <div 
                             className="bg-white h-2 rounded-full transition-all duration-300"

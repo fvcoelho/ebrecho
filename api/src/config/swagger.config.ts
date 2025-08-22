@@ -604,6 +604,10 @@ const options: swaggerJsdoc.Options = {
         description: 'User authentication and registration'
       },
       {
+        name: 'Onboarding',
+        description: 'User and partner onboarding flow'
+      },
+      {
         name: 'Users',
         description: 'User management'
       },

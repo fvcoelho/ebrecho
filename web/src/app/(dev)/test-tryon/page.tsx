@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Upload, Loader2, CheckCircle, AlertCircle, User, Shirt } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, User, Shirt } from 'lucide-react';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getApiBaseUrl } from '@/lib/api-config';
@@ -446,7 +447,7 @@ export default function TestTryOnPage() {
         >
           {tryOnState.isProcessing ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <SpinningLogo size="sm" speed="fast" className="mr-2" />
               {tryOnState.eventId ? 'Processing...' : 'Uploading...'}
             </>
           ) : (
@@ -459,7 +460,7 @@ export default function TestTryOnPage() {
       {tryOnState.isProcessing && (
         <Card>
           <CardContent className="p-6 text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-500 mb-4" />
+            <SpinningLogo size="lg" speed="fast" className="mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Processing Your Try-On</h3>
             <p className="text-gray-600 mb-2">
               {tryOnState.eventId ? 
