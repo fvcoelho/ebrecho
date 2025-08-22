@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { blobUploadService, type UploadProgress } from '@/lib/api/blob-upload';
 
 interface UploadedImage {
@@ -395,7 +396,7 @@ export default function TestSimpleUploadPage() {
                   >
                     {isUploading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <SpinningLogo size="sm" speed="fast" className="mr-2" />
                         Uploading {selectedFiles.length} files to REAL Vercel Blob...
                       </>
                     ) : (

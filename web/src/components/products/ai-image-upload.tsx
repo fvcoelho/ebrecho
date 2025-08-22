@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, X, Sparkles, Settings, Info, Loader2, CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import { Upload, X, Sparkles, Settings, Info, CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -441,7 +442,7 @@ export const AIImageUpload: React.FC<AIImageUploadProps> = ({
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <SpinningLogo size="sm" speed="fast" className="mr-2" />
                       Enhancing All...
                     </>
                   ) : (
@@ -482,7 +483,7 @@ export const AIImageUpload: React.FC<AIImageUploadProps> = ({
                 )}
                 {hasEnhancingImages && (
                   <span className="flex items-center gap-1 text-blue-600">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <SpinningLogo size="sm" speed="fast" />
                     Processing
                   </span>
                 )}
@@ -510,7 +511,7 @@ export const AIImageUpload: React.FC<AIImageUploadProps> = ({
                     {imageData.isEnhancing && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                         <div className="text-center text-white">
-                          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                          <SpinningLogo size="md" speed="fast" className="mx-auto mb-2" />
                           <p className="text-xs">Enhancing...</p>
                         </div>
                       </div>

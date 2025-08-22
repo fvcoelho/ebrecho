@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { dashboardService, PartnerStats } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
+import { LoadingSpinner } from '@/components/ui/spinning-logo';
 
 export default function DashboardPage() {
   const { user, onboardingStatus, isLoading: authLoading } = useAuth();
@@ -96,13 +97,7 @@ export default function DashboardPage() {
   };
 
   if (authLoading || loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading dashboard...</div>
-        </div>
-      </DashboardLayout>
-    );
+    return <LoadingSpinner text="Carregando dashboard..." />;
   }
 
   if (error || !stats) {

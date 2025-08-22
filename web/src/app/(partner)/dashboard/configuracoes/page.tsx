@@ -20,7 +20,8 @@ import {
   SelectValue,
   Checkbox
 } from '@/components/ui';
-import { Store, MapPin, Globe, AlertCircle, Loader2, CheckCircle2, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Store, MapPin, Globe, AlertCircle, CheckCircle2, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { 
   maskCEP, 
   maskCPF, 
@@ -409,7 +410,7 @@ function StoreConfigForm() {
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex flex-col items-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <SpinningLogo size="lg" speed="normal" />
             <p className="text-gray-600">Carregando configurações da loja...</p>
           </div>
         </div>
@@ -517,7 +518,7 @@ function StoreConfigForm() {
                         >
                           {logoUploading ? (
                             <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              <SpinningLogo size="sm" speed="fast" className="mr-2" />
                               Enviando...
                             </>
                           ) : (

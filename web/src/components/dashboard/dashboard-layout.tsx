@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui';
+import { LoadingSpinner } from '@/components/ui/spinning-logo';
 import { 
   Users, 
   Store, 
@@ -60,6 +61,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const getNavItems = () => {
     if (user?.role === 'ADMIN') return adminNavItems;
@@ -75,6 +77,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   
   const navItems = getNavItems();
   const dashboardTitle = getDashboardTitle();
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    // add delay 1 second before logging out
+    await new Promise(resolve => setTimeout(resolve, 1000));          
+    await logout();
+  };
+
+  if (isLoggingOut) {
+    return <LoadingSpinner text="Encerrando a sessão..." size="lg" speed="normal" />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex">
@@ -139,7 +152,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={logout}
+                onClick={handleLogout}
                 className="w-full"
               >
                 Sair
