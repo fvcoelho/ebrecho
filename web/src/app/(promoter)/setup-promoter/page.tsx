@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Label, Textarea } from '@/components/ui';
 import { UserPlus, Loader2, MapPin, Briefcase, Phone, User, MessageCircle, CreditCard } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { promoterService } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -259,7 +260,7 @@ function PromoterSetupForm() {
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <SpinningLogo size="sm" speed="fast" className="mr-2" />
                         Criando Perfil...
                       </div>
                     ) : (

@@ -3,6 +3,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { LoadingSpinner } from '@/components/ui/spinning-logo';
+import { time } from 'console';
 
 interface OnboardingGuardProps {
   children: React.ReactNode;
@@ -30,10 +32,12 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   }, [user, onboardingStatus, isLoading, checkOnboardingStatus]);
 
   useEffect(() => {
-    // Se temos status do onboarding e ele requer setup do parceiro
+    // Se temos status do onboarding e ele requer setup
     console.log('OnboardingGuard: Effect 2 - Redirect check', { 
       onboardingStatus,
       requiresPartnerSetup: onboardingStatus?.requiresPartnerSetup,
+      requiresPromoterSetup: onboardingStatus?.requiresPromoterSetup,
+      userRole: user?.role,
       currentPath: pathname,
       windowPath: typeof window !== 'undefined' ? window.location.pathname : 'server-side'
     });
@@ -87,7 +91,8 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
     } else if (onboardingStatus) {
       console.log('OnboardingGuard: Onboarding complete or not required', { 
         isComplete: onboardingStatus.isComplete,
-        requiresPartnerSetup: onboardingStatus.requiresPartnerSetup 
+        requiresPartnerSetup: onboardingStatus.requiresPartnerSetup,
+        requiresPromoterSetup: onboardingStatus.requiresPromoterSetup
       });
     }
   }, [onboardingStatus, router]);
@@ -120,11 +125,7 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   // Se está carregando, mostrar loading
   if (isLoading) {
     console.log('OnboardingGuard: Showing loading state');
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Carregando...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Carregando..." size="lg" />;
   }
 
   // Se não há usuário, deixar o componente pai lidar (ProtectedRoute)
@@ -136,21 +137,19 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   // Se requer setup do parceiro e não está na página de setup, não renderizar conteúdo
   if (onboardingStatus?.requiresPartnerSetup && !pathname.includes('/setup-loja')) {
     console.log('OnboardingGuard: Showing partner redirect message', { pathname });
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Redirecionando para configuração da loja...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Redirecionando para configuração da loja..." size="lg" speed="fast" />;
   }
 
   // Se requer setup do promoter e não está na página de setup, não renderizar conteúdo
   if (onboardingStatus?.requiresPromoterSetup && !pathname.includes('/setup-promoter')) {
     console.log('OnboardingGuard: Showing promoter redirect message', { pathname });
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Redirecionando para configuração do promotor...</div>
-      </div>
-    );
+    
+    //add delay to simulate loading
+    setTimeout(() => {
+      console.log('OnboardingGuard: Delayed redirect to /setup-promoter');
+    }, 1000); // 1 second delay
+
+    return <LoadingSpinner text="Redirecionando para configuração do promotor..." size="lg" speed="fast" />;
   }
 
   // Se o onboarding está completo ou não é necessário, renderizar normalmente

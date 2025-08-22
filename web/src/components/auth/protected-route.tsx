@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { OnboardingGuard } from './onboarding-guard';
+import { LoadingSpinner } from '@/components/ui/spinning-logo';
 
 type UserRole = 'ADMIN' | 'PARTNER_ADMIN' | 'PARTNER_USER' | 'CUSTOMER' | 'PROMOTER' | 'PARTNER_PROMOTER';
 
@@ -77,11 +78,7 @@ export function ProtectedRoute({
 
   if (isLoading) {
     console.log('ProtectedRoute: Rendering loading state');
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinner text="Verificando permissões..." size="lg" />;
   }
 
   if (!isAuthenticated) {
