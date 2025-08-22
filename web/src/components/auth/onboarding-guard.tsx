@@ -61,6 +61,29 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
           alreadyRedirecting: redirectingRef.current
         });
       }
+    } else if (onboardingStatus?.requiresPromoterSetup) {
+      console.log('OnboardingGuard: Requires promoter setup detected');
+      // Redirecionar para setup-promoter apenas se não estiver já na página de setup
+      if (!pathname.includes('/setup-promoter') && !redirectingRef.current) {
+        console.log('OnboardingGuard: Redirecting to /setup-promoter', { 
+          router: !!router, 
+          pathname,
+          targetRoute: '/setup-promoter',
+          alreadyRedirecting: redirectingRef.current
+        });
+        
+        redirectingRef.current = true;
+        
+        // Try router.push with proper async handling
+        console.log('OnboardingGuard: Calling router.push immediately');
+        router.push('/setup-promoter');
+        
+      } else {
+        console.log('OnboardingGuard: Already on promoter setup page or already redirecting', {
+          onSetupPage: pathname.includes('/setup-promoter'),
+          alreadyRedirecting: redirectingRef.current
+        });
+      }
     } else if (onboardingStatus) {
       console.log('OnboardingGuard: Onboarding complete or not required', { 
         isComplete: onboardingStatus.isComplete,
@@ -74,23 +97,25 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
     console.log('OnboardingGuard: Pathname changed to:', pathname);
     
     // Reset redirect flag when:
-    // 1. We successfully reach setup-loja 
+    // 1. We successfully reach setup-loja or setup-promoter
     // 2. Onboarding is no longer required
     // 3. User changes (logout/login)
     if (pathname.includes('/setup-loja') || 
-        !onboardingStatus?.requiresPartnerSetup ||
+        pathname.includes('/setup-promoter') ||
+        (!onboardingStatus?.requiresPartnerSetup && !onboardingStatus?.requiresPromoterSetup) ||
         !user) {
       if (redirectingRef.current) {
         console.log('OnboardingGuard: Resetting redirect flag', { 
           pathname, 
-          requiresSetup: onboardingStatus?.requiresPartnerSetup,
+          requiresPartnerSetup: onboardingStatus?.requiresPartnerSetup,
+          requiresPromoterSetup: onboardingStatus?.requiresPromoterSetup,
           hasUser: !!user,
           wasRedirecting: redirectingRef.current 
         });
         redirectingRef.current = false;
       }
     }
-  }, [pathname, onboardingStatus?.requiresPartnerSetup, user]);
+  }, [pathname, onboardingStatus?.requiresPartnerSetup, onboardingStatus?.requiresPromoterSetup, user]);
 
   // Se está carregando, mostrar loading
   if (isLoading) {
@@ -110,10 +135,20 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
 
   // Se requer setup do parceiro e não está na página de setup, não renderizar conteúdo
   if (onboardingStatus?.requiresPartnerSetup && !pathname.includes('/setup-loja')) {
-    console.log('OnboardingGuard: Showing redirect message', { pathname });
+    console.log('OnboardingGuard: Showing partner redirect message', { pathname });
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Redirecionando para configuração...</div>
+        <div className="text-gray-500">Redirecionando para configuração da loja...</div>
+      </div>
+    );
+  }
+
+  // Se requer setup do promoter e não está na página de setup, não renderizar conteúdo
+  if (onboardingStatus?.requiresPromoterSetup && !pathname.includes('/setup-promoter')) {
+    console.log('OnboardingGuard: Showing promoter redirect message', { pathname });
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500">Redirecionando para configuração do promotor...</div>
       </div>
     );
   }

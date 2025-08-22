@@ -121,6 +121,7 @@ export interface AuthResponse {
 export interface OnboardingStatus {
   isComplete: boolean;
   requiresPartnerSetup: boolean;
+  requiresPromoterSetup: boolean;
   user: {
     id: string;
     name: string;
@@ -540,6 +541,7 @@ export interface UpdatePromoterData {
   specialization?: string;
   bio?: string;
   phone?: string;
+  whatsappNumber?: string;
   pixKey?: string;
   bankName?: string;
   bankAgency?: string;
@@ -561,8 +563,11 @@ export const promoterService = {
 
   async createProfile(data: {
     businessName: string;
-    territory: string;
-    specialization: string;
+    territory?: string;
+    specialization?: string;
+    phone?: string;
+    whatsappNumber?: string;
+    pixKey?: string;
   }): Promise<PromoterProfile> {
     // Use the apply endpoint for new promoter applications
     const response = await api.post('/api/promoter/apply', data);
