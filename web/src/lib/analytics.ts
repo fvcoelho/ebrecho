@@ -307,7 +307,7 @@ class AnalyticsTracker {
         
         // Use Blob to ensure proper Content-Type header
         const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-        navigator.sendBeacon(`${apiUrl}/analytics/page-views`, blob)
+        navigator.sendBeacon(`${apiUrl}/api/analytics/page-views`, blob)
       }
     })
 
@@ -530,7 +530,7 @@ class AnalyticsTracker {
     
     // Use full API URL for backend requests
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const fullUrl = url.startsWith('http') ? url : `${apiUrl}${url}`
+    const fullUrl = url.startsWith('http') ? url : `${apiUrl}/api${url}`
     
     const response = await fetch(fullUrl, {
       method,
