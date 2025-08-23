@@ -13,12 +13,15 @@ interface ProductPageProps {
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug, productSlug } = await params
   
+  // Always generate base URL
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ebrecho.com.br'
+  const productUrl = `${baseUrl}/${slug}/produto/${productSlug}`
+  
   try {
     const { product } = await getPublicProduct(slug, productSlug)
     const store = await getPublicStore(slug)
     
     const imageUrl = product.images[0]?.processedUrl || product.images[0]?.originalUrl
-    const productUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ebrecho.vercel.app'}/${slug}/produto/${productSlug}`
     const priceText = product.price ? `R$ ${product.price.toFixed(2).replace('.', ',')}` : ''
     const cleanDescription = product.description ? product.description.replace(/\n/g, ' ').trim() : ''
     const fullDescription = cleanDescription 
@@ -43,10 +46,20 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
         images: imageUrl ? [imageUrl] : [],
       },
     }
-  } catch {
+  } catch (error) {
+    console.error('Error generating metadata:', error)
+    
+    // Fallback metadata with basic Open Graph
     return {
       title: 'Produto não encontrado - eBrecho',
       description: 'O produto que você está procurando não foi encontrado.',
+      openGraph: {
+        title: 'Produto - eBrecho',
+        description: 'Moda segunda mão sustentável',
+        url: productUrl,
+        type: 'website',
+        siteName: 'eBrecho',
+      },
     }
   }
 }
