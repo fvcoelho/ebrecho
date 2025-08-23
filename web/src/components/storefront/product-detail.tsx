@@ -8,7 +8,7 @@ import { PixQRCodeDisplay } from '@/components/storefront/pix-qrcode-display'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ChevronLeft, ChevronRight, Eye, MessageCircle, ArrowLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, MessageCircle, ArrowLeft, Share2 } from 'lucide-react'
 import { imageApi } from '@/lib/api/images'
 
 interface ProductDetailProps {
@@ -70,6 +70,35 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
     const cleanPhone = store.whatsappNumber?.replace(/\D/g, '') || ''
     const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
+  }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `${product.name} - ${store.name}`,
+      text: `Veja este produto incrível: ${product.name} por ${formatPrice(product.price)} na ${store.name}`,
+      url: window.location.href,
+    }
+
+    try {
+      // Check if Web Share API is available
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href)
+        // You could add a toast notification here
+        alert('Link copiado para a área de transferência!')
+      }
+    } catch (error) {
+      // Final fallback: manual copy
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        alert('Link copiado para a área de transferência!')
+      } catch {
+        // If clipboard API fails, show the URL
+        prompt('Copie o link:', window.location.href)
+      }
+    }
   }
 
   const getImageUrl = (image: any) => {
@@ -234,6 +263,16 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                   Conversar sobre esse item
                 </Button>
               )}
+
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full gap-3 hover:bg-primary hover:text-primary-foreground transition-all duration-300 px-8 py-4 text-lg font-semibold"
+                onClick={handleShare}
+              >
+                <Share2 className="h-6 w-6" />
+                Compartilhar produto
+              </Button>
               
               {/* PIX QR Code */}
               {store.pixKey && (
