@@ -7,7 +7,7 @@ import { StoreHero } from '@/components/storefront/store-hero'
 import { ProductGrid } from '@/components/storefront/product-grid'
 import { StoreInfo } from '@/components/storefront/store-info'
 import { StoreMap } from '@/components/storefront/store-map'
-import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
+import WhatsAppButton from '@/components/storefront/whatsapp-button'
 import { Footer } from '@/components/layout/footer'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -315,7 +315,7 @@ export default function StorePage({ params }: StorePageProps) {
       </div>
 
       {store.whatsappNumber && (
-        <WhatsAppButton phoneNumber={store.whatsappNumber} />
+        <WhatsAppButton />
       )}
       
       <Footer />

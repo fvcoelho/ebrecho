@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { PublicStore } from '@/lib/api/public'
-import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
+import WhatsAppButton from '@/components/storefront/whatsapp-button'
 import { PixQRCodeDisplay } from '@/components/storefront/pix-qrcode-display'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -316,9 +316,7 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
       </div>
 
       {store.whatsappNumber && (
-        <WhatsAppButton 
-          phoneNumber={store.whatsappNumber} 
-          message={`Olá! Tenho interesse no produto "${product.name}" que vi na sua loja no eBrecho.`}
+        <WhatsAppButton
         />
       )}
     </div>
