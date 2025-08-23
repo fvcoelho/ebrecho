@@ -18,13 +18,27 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     const store = await getPublicStore(slug)
     
     const imageUrl = product.images[0]?.processedUrl || product.images[0]?.originalUrl
+    const productUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ebrecho.vercel.app'}/${slug}/produto/${productSlug}`
+    const priceText = product.price ? `R$ ${product.price.toFixed(2).replace('.', ',')}` : ''
+    const fullDescription = product.description 
+      ? `${product.description}${priceText ? ` - ${priceText}` : ''} - Disponível em ${store.name}`
+      : `${product.name}${priceText ? ` por ${priceText}` : ''} disponível em ${store.name}`
     
     return {
       title: `${product.name} - ${store.name} | eBrecho`,
-      description: product.description || `${product.name} disponível em ${store.name}`,
+      description: fullDescription,
       openGraph: {
         title: `${product.name} - ${store.name}`,
-        description: product.description || `${product.name} disponível em ${store.name}`,
+        description: fullDescription,
+        images: imageUrl ? [imageUrl] : [],
+        url: productUrl,
+        type: 'website',
+        siteName: 'eBrecho',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${product.name} - ${store.name}`,
+        description: fullDescription,
         images: imageUrl ? [imageUrl] : [],
       },
     }
