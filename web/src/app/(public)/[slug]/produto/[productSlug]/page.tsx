@@ -20,8 +20,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     const imageUrl = product.images[0]?.processedUrl || product.images[0]?.originalUrl
     const productUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://ebrecho.vercel.app'}/${slug}/produto/${productSlug}`
     const priceText = product.price ? `R$ ${product.price.toFixed(2).replace('.', ',')}` : ''
-    const fullDescription = product.description 
-      ? `${product.description}${priceText ? ` - ${priceText}` : ''} - Disponível em ${store.name}`
+    const cleanDescription = product.description ? product.description.replace(/\n/g, ' ').trim() : ''
+    const fullDescription = cleanDescription 
+      ? `${cleanDescription}${priceText ? ` - ${priceText}` : ''} - Disponível em ${store.name}`
       : `${product.name}${priceText ? ` por ${priceText}` : ''} disponível em ${store.name}`
     
     return {
