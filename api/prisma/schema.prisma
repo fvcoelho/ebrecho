@@ -179,6 +179,7 @@ model Partner {
   publicBanner      String?
   publicLogo        String?
   whatsappNumber    String?
+  whatsappName      String?
   publicEmail       String?
   businessHours     Json?
   socialLinks       Json?

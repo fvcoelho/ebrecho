@@ -167,6 +167,7 @@ export const getPublicStoreBySlug = async (req: Request, res: Response) => {
         publicBanner: true,
         publicLogo: true,
         whatsappNumber: true,
+        whatsappName: true,
         publicEmail: true,
         businessHours: true,
         socialLinks: true,

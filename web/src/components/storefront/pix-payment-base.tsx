@@ -17,6 +17,8 @@ interface PixPaymentBaseProps {
   merchantCity?: string
   productId: string
   partnerId: string
+  whatsappNumber?: string
+  whatsappName?: string
   buttonClassName?: string
   buttonText?: string
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon'
@@ -32,6 +34,8 @@ export function PixPaymentBase({
   merchantCity = 'SAO PAULO',
   productId,
   partnerId,
+  whatsappNumber,
+  whatsappName,
   buttonClassName = "relative gap-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white border-none shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 px-8 py-4 text-lg font-semibold",
   buttonText = "Pagar com PIX",
   buttonSize = "lg",
@@ -212,18 +216,24 @@ export function PixPaymentBase({
               </p>
               
               {/* WhatsApp button for payment confirmation */}
-              <Button 
-                onClick={() => {
-                  const message = `Olá! Realizei o pagamento PIX para o produto "${productName}" (ID: ${productId}) no valor de ${formatPrice(amount)}. Segue o comprovante para confirmação da compra.`
-                  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
-                  window.open(whatsappUrl, '_blank')
-                }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                size="sm"
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Enviar Comprovante via WhatsApp
-              </Button>
+              {whatsappNumber && (
+                <Button 
+                  onClick={() => {
+                    const greeting = whatsappName ? `Olá ${whatsappName}!` : 'Olá!'
+                    const message = `${greeting} Realizei o pagamento PIX para o produto "${productName}" (ID: ${productId}) no valor de ${formatPrice(amount)}. Segue o comprovante para confirmação da compra.`
+                    // Format phone number for WhatsApp (remove all non-digit chars and add country code if needed)
+                    const cleanNumber = whatsappNumber.replace(/\D/g, '')
+                    const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`
+                    const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`
+                    window.open(whatsappUrl, '_blank')
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Enviar Comprovante para {whatsappName || 'WhatsApp'}
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>

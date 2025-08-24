@@ -210,6 +210,8 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
             storeName={store.name}
             productId={product.id}
             partnerId={store.id}
+            whatsappNumber={store.whatsappNumber}
+            whatsappName={store.whatsappName}
           />
         )}
       </CardContent>

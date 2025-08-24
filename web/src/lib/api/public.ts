@@ -7,6 +7,7 @@ export interface PublicStore {
   publicDescription?: string
   publicEmail?: string
   whatsappNumber?: string
+  whatsappName?: string
   publicBanner?: string
   publicLogo?: string
   businessHours?: any

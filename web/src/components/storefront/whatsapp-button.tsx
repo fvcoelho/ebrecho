@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from 'react'
 
-export default function WhatsAppButton() {
-  const phoneNumber = '5511940147157' // Format: country code + area code + number (no spaces)
-  const message = 'Olá! Gostaria de solicitar um orçamento para pisos.'
+interface WhatsAppButtonProps {
+  phoneNumber?: string
+  whatsappName?: string
+  storeName?: string
+}
+
+export default function WhatsAppButton({ phoneNumber, whatsappName, storeName }: WhatsAppButtonProps = {}) {
+  const defaultPhoneNumber = '5511940147157' // Fallback number if not provided
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -17,7 +22,16 @@ export default function WhatsAppButton() {
   }, [])
 
   const handleWhatsAppClick = () => {
-    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
+    // Format phone number (remove non-digits and add country code if needed)
+    const cleanNumber = (phoneNumber || defaultPhoneNumber).replace(/\D/g, '')
+    const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`
+    
+    // Create personalized message
+    const greeting = whatsappName ? `Olá ${whatsappName}!` : 'Olá!'
+    const storeMessage = storeName ? ` Vi a loja ${storeName} no eBrecho` : ' Vi sua loja no eBrecho'
+    const message = `${greeting}${storeMessage} e gostaria de mais informações.`
+    
+    const url = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank')
   }
 

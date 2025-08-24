@@ -43,6 +43,7 @@ interface StoreConfigData {
   description: string;
   slug: string;
   whatsappNumber: string;
+  whatsappName: string;
   publicDescription: string;
   isPublicActive: boolean;
   hasPhysicalStore: boolean;
@@ -83,6 +84,7 @@ function StoreConfigForm() {
     description: '',
     slug: '',
     whatsappNumber: '',
+    whatsappName: '',
     publicDescription: '',
     isPublicActive: true,
     hasPhysicalStore: true,
@@ -198,6 +200,7 @@ function StoreConfigForm() {
         description: partnerData.description || '',
         slug: partnerData.slug || '',
         whatsappNumber: maskPhone(partnerData.whatsappNumber || ''),
+        whatsappName: partnerData.whatsappName || '',
         publicDescription: partnerData.publicDescription || '',
         isPublicActive: partnerData.isPublicActive ?? true,
         hasPhysicalStore: partnerData.hasPhysicalStore ?? true,
@@ -369,6 +372,7 @@ function StoreConfigForm() {
         description: formData.description,
         slug: formData.slug,
         whatsappNumber: removeMask(formData.whatsappNumber),
+        whatsappName: formData.whatsappName || undefined,
         publicDescription: formData.publicDescription,
         isPublicActive: Boolean(formData.isPublicActive),
         hasPhysicalStore: Boolean(formData.hasPhysicalStore),
@@ -594,6 +598,22 @@ function StoreConfigForm() {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Será usado para contato direto na vitrine pública
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="whatsappName">Nome no WhatsApp</Label>
+                  <Input
+                    id="whatsappName"
+                    value={formData.whatsappName}
+                    onChange={(e) => handleInputChange('whatsappName', e.target.value)}
+                    placeholder="Ex: Maria, João, Equipe Brechó"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Nome que aparecerá na mensagem de WhatsApp ao cliente
                   </p>
                 </div>
               </div>

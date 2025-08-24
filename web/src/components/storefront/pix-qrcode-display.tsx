@@ -10,6 +10,8 @@ interface PixQRCodeDisplayProps {
   merchantCity?: string
   productId: string
   partnerId: string
+  whatsappNumber?: string
+  whatsappName?: string
   buttonText: string
 }
 

@@ -66,7 +66,8 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
   }
 
   const handleWhatsAppClick = () => {
-    const message = `Olá! Tenho interesse no produto "${product.name}" que vi na sua loja no eBrecho.`
+    const greeting = store.whatsappName ? `Olá ${store.whatsappName}!` : 'Olá!'
+    const message = `${greeting} Tenho interesse no produto "${product.name}" que vi na sua loja no eBrecho.`
     const cleanPhone = store.whatsappNumber?.replace(/\D/g, '') || ''
     const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
@@ -264,7 +265,7 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                 </Button>
               )}
 
-              <Button
+              {/* <Button
                 size="lg"
                 variant="outline"
                 className="w-full gap-3 hover:bg-primary hover:text-primary-foreground transition-all duration-300 px-8 py-4 text-lg font-semibold"
@@ -272,7 +273,7 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
               >
                 <Share2 className="h-6 w-6" />
                 Compartilhar produto
-              </Button>
+              </Button> */}
               
               {/* PIX QR Code */}
               {store.pixKey && (
@@ -284,6 +285,8 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
                     storeName={store.name}
                     productId={product.id}
                     partnerId={store.id}
+                    whatsappNumber={store.whatsappNumber}
+                    whatsappName={store.whatsappName}
                   />
               )}
               
@@ -356,6 +359,9 @@ export function ProductDetail({ store, product, relatedProducts }: ProductDetail
 
       {store.whatsappNumber && (
         <WhatsAppButton
+          phoneNumber={store.whatsappNumber}
+          whatsappName={store.whatsappName}
+          storeName={store.name}
         />
       )}
     </div>

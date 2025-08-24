@@ -315,7 +315,11 @@ export default function StorePage({ params }: StorePageProps) {
       </div>
 
       {store.whatsappNumber && (
-        <WhatsAppButton />
+        <WhatsAppButton 
+          phoneNumber={store.whatsappNumber}
+          whatsappName={store.whatsappName}
+          storeName={store.name}
+        />
       )}
       
       <Footer />

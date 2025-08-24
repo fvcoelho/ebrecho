@@ -43,7 +43,11 @@ export function StoreInfo({ store }: StoreInfoProps) {
             <div className="flex items-center gap-3 text-sm">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <a
-                href={`https://wa.me/55${store.whatsappNumber}`}
+                href={`https://wa.me/55${store.whatsappNumber}?text=${encodeURIComponent(
+                  store.whatsappName 
+                    ? `Olá ${store.whatsappName}! Vi sua loja no eBrecho e gostaria de mais informações.`
+                    : `Olá! Vi sua loja no eBrecho e gostaria de mais informações.`
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:underline"

@@ -434,6 +434,7 @@ export interface Partner {
   publicBanner?: string;
   publicLogo?: string;
   whatsappNumber?: string;
+  whatsappName?: string;
   publicEmail?: string;
   businessHours?: Record<string, unknown>;
   socialLinks?: Record<string, unknown>;
@@ -465,6 +466,7 @@ export interface UpdatePartnerData {
   isPublicActive?: boolean;
   hasPhysicalStore?: boolean;
   whatsappNumber?: string;
+  whatsappName?: string;
   publicEmail?: string;
   businessHours?: Record<string, unknown>;
   socialLinks?: Record<string, unknown>;
