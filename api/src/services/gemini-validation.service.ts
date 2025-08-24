@@ -74,33 +74,39 @@ export class GeminiValidationService {
   }
 
   private buildValidationPrompt(data: ProductValidationRequest): string {
-    return `Você é um assistente especializado em melhorar listagens de produtos para e-commerce de roupas usadas (brechó) no Brasil.
+    return `Você é um assistente especializado em padronização de catálogo de produtos para e-commerce de roupas usadas (brechó) no Brasil.
 
-Analise o nome e descrição do produto fornecidos e sugira melhorias APENAS se necessário:
+Sua tarefa é revisar e melhorar o nome e descrição de um produto para que sejam claros, consistentes e visualmente bem organizados.
 
 PRODUTO:
 Nome: "${data.name}"
 Descrição: "${data.description || ''}"
 
-INSTRUÇÕES:
-1. Para o NOME do produto:
-   - Verifique capitalização (primeira letra de cada palavra importante em maiúscula)
-   - Corrija erros gramaticais óbvios
-   - Mantenha o estilo brasileiro e informal quando apropriado
-   - NÃO mude o significado ou adicione informações que não estão no original
+REGRAS DE PADRONIZAÇÃO:
 
-2. Para a DESCRIÇÃO do produto:
-   - Corrija erros gramaticais e de digitação
-   - Melhore a clareza e fluidez do texto
-   - Mantenha o tom e estilo original
-   - NÃO adicione informações que não estão no texto original
-   - NÃO mude o significado
+1. O NOME do produto deve ser:
+   - Conciso (até 60 caracteres)
+   - Escrito em Title Case (primeira letra de cada palavra importante em maiúscula, exceto artigos e preposições)
+   - Sem abreviações confusas ou termos redundantes
+   - Corrija erros gramaticais óbvios
+   - Mantenha o significado original
+
+2. A DESCRIÇÃO do produto deve ser:
+   - Escrita em frases claras e objetivas
+   - Destacar as principais características (material, cor, tamanho, finalidade)
+   - Usar marcadores se houver mais de 3 características
+   - Máximo de 200 palavras
+   - Sempre verificar correção gramatical e boa legibilidade
+   - Melhorar a organização visual quando necessário
 
 3. REGRAS IMPORTANTES:
-   - Apenas sugira mudanças se houver problemas óbvios (erros, capitalização incorreta)
-   - Se o texto está bom, retorne hasSuggestions: false
+   - APENAS sugira mudanças se houver problemas óbvios (erros, capitalização incorreta, texto confuso)
+   - Se o texto já está bom, retorne hasSuggestions: false
    - Seja conservador - prefira não sugerir a sugerir mudanças desnecessárias
    - Mantenha a personalidade e estilo do vendedor
+   - O idioma de saída deve ser sempre Português (Brasil)
+   - NÃO adicione informações que não estão no original
+   - NÃO mude drasticamente o significado
 
 RESPOSTA OBRIGATÓRIA EM JSON:
 {
@@ -108,10 +114,10 @@ RESPOSTA OBRIGATÓRIA EM JSON:
   "suggestions": [
     {
       "type": "name" | "description",
-      "field": "name" | "description",
+      "field": "name" | "description", 
       "original": "texto original",
-      "suggested": "texto melhorado",
-      "reason": "explicação da melhoria em português"
+      "suggested": "texto melhorado seguindo as regras de padronização",
+      "reason": "explicação da melhoria aplicada (correção gramatical, capitalização, organização, etc.)"
     }
   ]
 }

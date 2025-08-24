@@ -4,6 +4,52 @@ import { AuthRequest } from '../types';
 import { generateProductSlug } from '../services/slug.service';
 import { GeminiValidationService } from '../services/gemini-validation.service';
 
+// Generate SKU in format: FirstLetter + 4 random digits (e.g., "C1234")
+const generateSKU = (productName: string): string => {
+  const firstLetter = productName.charAt(0).toUpperCase();
+  const randomNumber = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+  return `${firstLetter}${randomNumber}`;
+};
+
+// Check if SKU is unique for the partner and generate a new one if needed
+const generateUniqueSKU = async (productName: string, partnerId: string, excludeProductId?: string): Promise<string> => {
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (attempts < maxAttempts) {
+    const sku = generateSKU(productName);
+    
+    const whereCondition: any = {
+      partnerId_sku: {
+        partnerId,
+        sku
+      }
+    };
+    
+    // If updating existing product, exclude it from the check
+    if (excludeProductId) {
+      whereCondition.id = {
+        not: excludeProductId
+      };
+    }
+    
+    const existingProduct = await prisma.product.findUnique({
+      where: whereCondition
+    });
+    
+    if (!existingProduct) {
+      return sku;
+    }
+    
+    attempts++;
+  }
+  
+  // Fallback: use timestamp if we can't generate unique SKU
+  const timestamp = Date.now().toString().slice(-4);
+  const firstLetter = productName.charAt(0).toUpperCase();
+  return `${firstLetter}${timestamp}`;
+};
+
 export const createProduct = async (
   req: AuthRequest,
   res: Response,
@@ -32,7 +78,7 @@ export const createProduct = async (
       status = 'AVAILABLE'
     } = req.body;
 
-    // Handle SKU - make it optional and generate if needed
+    // Handle SKU - auto-generate if not provided or empty
     let finalSku = sku;
     
     // If SKU is provided, check if it exists for this partner
@@ -53,8 +99,9 @@ export const createProduct = async (
         });
       }
     } else {
-      // If no SKU provided or empty, set to null (database allows null SKUs)
-      finalSku = null;
+      // Auto-generate SKU when not provided or empty
+      finalSku = await generateUniqueSKU(name, partnerId);
+      console.log(`🏷️ Auto-generated SKU for "${name}": ${finalSku}`);
     }
 
     // Generate unique slug for product
@@ -278,13 +325,40 @@ export const updateProduct = async (
       status
     } = req.body;
 
+    // Handle SKU - auto-generate if not provided or empty
+    let finalSku = sku;
+    
+    // If SKU is provided, check if it exists for another product of this partner
+    if (finalSku && finalSku.trim() !== '') {
+      const existingProduct = await prisma.product.findFirst({
+        where: {
+          partnerId,
+          sku: finalSku,
+          id: {
+            not: id // Exclude current product from check
+          }
+        }
+      });
+      
+      if (existingProduct) {
+        return res.status(409).json({
+          success: false,
+          error: `O SKU "${finalSku}" já está em uso. Por favor, escolha um SKU diferente.`
+        });
+      }
+    } else if (!finalSku || finalSku.trim() === '') {
+      // Auto-generate SKU when not provided or empty
+      finalSku = await generateUniqueSKU(name, partnerId, id);
+      console.log(`🏷️ Auto-generated SKU for update "${name}": ${finalSku}`);
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: {
         name,
         description,
         price,
-        sku,
+        sku: finalSku,
         category,
         brand,
         size,

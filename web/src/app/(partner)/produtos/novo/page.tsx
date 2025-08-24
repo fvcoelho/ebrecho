@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -728,8 +728,8 @@ export default function NewProductPage() {
                   <Button type="submit" disabled={loading || validating}>
                     {validating ? (
                       <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Validando ...
+                        <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
+                        Validando...
                       </>
                     ) : loading ? (
                       <>
@@ -739,7 +739,7 @@ export default function NewProductPage() {
                     ) : (
                       <>
                         <Save className="mr-2 h-4 w-4" />
-                        Validar Produto
+                        Salvar Alterações
                       </>
                     )}
                   </Button>

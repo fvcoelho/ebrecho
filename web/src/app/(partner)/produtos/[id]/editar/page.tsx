@@ -28,12 +28,13 @@ import {
   Combobox,
 } from '@/components/ui';
 import { DashboardLayout } from '@/components/dashboard';
-import { productService, type CreateProductData, type Product } from '@/lib/api';
+import { productService, type CreateProductData, type Product, type ValidationSuggestion } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
 import { CATEGORY_OPTIONS } from '@/lib/constants/categories';
 import { BRAND_OPTIONS } from '@/lib/constants/brands';
+import { GeminiSuggestionsDialog } from '@/components/products/gemini-suggestions-dialog';
 
 const productFormSchema = z.object({
   name: z.string()
@@ -89,9 +90,13 @@ export default function EditProductPage() {
   const params = useParams();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<ValidationSuggestion[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
+  const [imageError, setImageError] = useState(false);
 
   const productId = params.id as string;
 
@@ -154,7 +159,58 @@ export default function EditProductPage() {
     }
   };
 
-  const onSubmit = async (data: ProductFormData) => {
+  const handleAIValidation = async (data: ProductFormData) => {
+    try {
+      setValidating(true);
+      console.log('🤖 Starting AI validation for edit...');
+      
+      const validationResult = await productService.validateWithAI({
+        name: data.name,
+        description: data.description
+      });
+      
+      console.log('✅ AI validation completed:', validationResult);
+      
+      if (validationResult.hasSuggestions && validationResult.suggestions.length > 0) {
+        setSuggestions(validationResult.suggestions);
+        setShowSuggestions(true);
+        return false; // Don't proceed with product update yet
+      } else {
+        // No suggestions, proceed directly with product update
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Error in AI validation:', error);
+      // Continue with product update even if validation fails
+      return true;
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleAcceptSuggestions = (acceptedSuggestions: ValidationSuggestion[]) => {
+    console.log('✅ Applying accepted suggestions:', acceptedSuggestions);
+    
+    // Apply suggestions to form
+    const currentValues = form.getValues();
+    const updatedValues = { ...currentValues };
+    
+    acceptedSuggestions.forEach(suggestion => {
+      if (suggestion.field === 'name') {
+        updatedValues.name = suggestion.suggested;
+        form.setValue('name', suggestion.suggested);
+      } else if (suggestion.field === 'description') {
+        updatedValues.description = suggestion.suggested;
+        form.setValue('description', suggestion.suggested);
+      }
+    });
+    
+    setShowSuggestions(false);
+    // Now proceed with product update
+    updateProduct(updatedValues);
+  };
+
+  const updateProduct = async (data: ProductFormData) => {
     try {
       setLoading(true);
       
@@ -174,8 +230,46 @@ export default function EditProductPage() {
     }
   };
 
+  const onSubmit = async (data: ProductFormData) => {
+    try {
+      // Validate that at least one image is uploaded
+      if (productImages.length === 0) {
+        setImageError(true);
+        alert('Por favor, adicione pelo menos uma imagem do produto.');
+        return;
+      }
+      
+      setImageError(false);
+      setLoading(true);
+      
+      console.log('🔍 Starting form submission with AI validation...');
+      
+      // First, validate with AI
+      const shouldProceed = await handleAIValidation(data);
+      
+      if (shouldProceed) {
+        // No suggestions or user wants to proceed, update product directly
+        await updateProduct(data);
+      }
+      // If shouldProceed is false, the suggestions dialog will be shown
+      // and the user can accept suggestions which will trigger updateProduct
+      
+    } catch (error) {
+      console.error('❌ Error in form submission:', error);
+      alert('Erro ao processar formulário. Tente novamente.');
+    } finally {
+      if (!showSuggestions) {
+        // Only set loading to false if we're not showing suggestions dialog
+        setLoading(false);
+      }
+    }
+  };
+
   const handleImageUpload = async (files: File[]): Promise<ProductImage[]> => {
     const uploadedImages = await imageApi.uploadImages(productId, files);
+    
+    // Clear image error when images are uploaded
+    setImageError(false);
     
     // Convert relative URLs to full URLs
     return uploadedImages.map(img => ({
@@ -360,7 +454,7 @@ export default function EditProductPage() {
                       <FormItem>
                         <FormLabel>SKU</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: CAM-001" {...field} />
+                          <Input readOnly placeholder="Ex: CAM-001" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -487,13 +581,35 @@ export default function EditProductPage() {
                   <BlobImageUpload
                     productId={productId}
                     existingImages={productImages}
-                    onImagesChange={setProductImages}
+                    onImagesChange={(images) => {
+                      setProductImages(images);
+                      // Clear image error when images are added/removed
+                      if (images.length > 0) {
+                        setImageError(false);
+                      }
+                    }}
                     onUploadComplete={(uploadedImages) => {
                       console.log('✅ Upload completed in EditProductPage:', uploadedImages);
                       setProductImages(prev => [...prev, ...uploadedImages]);
+                      setImageError(false);
                     }}
                     maxImages={10}
                   />
+                  
+                  {imageError && (
+                    <div className="rounded-md bg-red-50 p-4 border border-red-200">
+                      <div className="flex">
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800">
+                            Imagem obrigatória
+                          </h3>
+                          <div className="mt-2 text-sm text-red-700">
+                            <p>Por favor, adicione pelo menos uma imagem do produto antes de continuar.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit Button */}
@@ -501,8 +617,13 @@ export default function EditProductPage() {
                   <Button type="button" variant="outline" onClick={() => router.back()}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? (
+                  <Button type="submit" disabled={loading || validating}>
+                    {validating ? (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
+                        Validando...
+                      </>
+                    ) : loading ? (
                       <>
                         <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                         Salvando...
@@ -519,6 +640,17 @@ export default function EditProductPage() {
             </Form>
           </CardContent>
         </Card>
+        
+        {/* AI Suggestions Dialog */}
+        <GeminiSuggestionsDialog
+          open={showSuggestions}
+          onClose={() => {
+            setShowSuggestions(false);
+            setLoading(false);
+          }}
+          suggestions={suggestions}
+          onAcceptSuggestions={handleAcceptSuggestions}
+        />
       </div>
     </DashboardLayout>
   );
