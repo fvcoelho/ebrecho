@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle2, Store, TrendingUp, Users, Sparkles, BarChart3, Clock, UserPlus, Gift, Rocket } from 'lucide-react';
+import { CheckCircle2, Store, TrendingUp, Users, Sparkles, BarChart3, Clock, UserPlus, Gift, Rocket, Smartphone, CreditCard, MessageCircle, Zap, ShoppingBag } from 'lucide-react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { VersionDisplay } from '@/components/ui/version-display';
 
@@ -17,6 +17,41 @@ export default function Home() {
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 md:py-24">
+        {/* Hero Image */}
+        <div className="mb-12 relative">
+          <div className="max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
+            <img 
+              src="https://res.cloudinary.com/dlayq4t4o/image/upload/w_1200,h_400,c_fill,q_auto,f_auto,e_brightness:10,e_contrast:10/ebrecho_platform_hero.jpg" 
+              alt="eBrecho Platform - PIX, WhatsApp e Loja Mobile" 
+              className="w-full h-64 md:h-96 object-cover"
+            />
+            {/* Overlay with feature badges */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent flex items-center justify-start p-8">
+              <div className="space-y-4 max-w-xl">
+                <h2 className="text-2xl md:text-4xl font-bold text-white">
+                  Tecnologia que Transforma
+                </h2>
+                <p className="text-white/90 text-lg">
+                  PIX, WhatsApp, Mobile e Analytics em uma só plataforma
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-green-500/90 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                    <CreditCard className="w-3 h-3" /> PIX
+                  </span>
+                  <span className="bg-green-500/90 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                    <MessageCircle className="w-3 h-3" /> WhatsApp
+                  </span>
+                  <span className="bg-blue-500/90 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                    <Smartphone className="w-3 h-3" /> Mobile
+                  </span>
+                  <span className="bg-purple-500/90 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                    <BarChart3 className="w-3 h-3" /> Analytics
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="text-center space-y-8 max-w-5xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-2">
             <Sparkles className="w-4 h-4" />
@@ -30,9 +65,29 @@ export default function Home() {
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Seja um parceiro vendendo produtos sustentáveis ou um promotor expandindo nossa rede. 
-              Junte-se à maior plataforma de brechós do país.
+              Pagamento via PIX, integração WhatsApp e ferramentas completas para seu negócio. 
+              Transforme seu brechó em uma loja online profissional.
             </p>
+            
+            {/* New Features Highlight */}
+            <div className="flex flex-wrap justify-center gap-3 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 rounded-full px-4 py-2 text-sm font-medium">
+                <CreditCard className="w-4 h-4" />
+                <span>PIX Instantâneo</span>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 rounded-full px-4 py-2 text-sm font-medium">
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp Integrado</span>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 rounded-full px-4 py-2 text-sm font-medium">
+                <ShoppingBag className="w-4 h-4" />
+                <span>Loja Completa</span>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 rounded-full px-4 py-2 text-sm font-medium">
+                <Smartphone className="w-4 h-4" />
+                <span>Mobile First</span>
+              </div>
+            </div>
           </div>
 
           {/* Stats Preview */}
@@ -235,6 +290,276 @@ export default function Home() {
         </div>
       </section>
 
+      {/* New Platform Features Section */}
+      <section className="py-20 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-16">
+            <Badge className="bg-gradient-to-r from-green-600 to-blue-600 text-white">
+              <Zap className="w-3 h-3 mr-1" />
+              Novas Funcionalidades
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+              Recursos que fazem a <span className="text-green-600">diferença</span>
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Ferramentas modernas para potencializar seu brechó no mundo digital
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            <Card className="border-2 border-green-200 hover:border-green-400 transition-all hover:scale-105 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-6 space-y-4 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto">
+                  <CreditCard className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold">PIX Instantâneo</h3>
+                <p className="text-muted-foreground text-sm">
+                  Receba pagamentos em segundos com total segurança e praticidade
+                </p>
+                <div className="text-xs text-green-600 font-medium bg-green-100 px-3 py-1 rounded-full">
+                  ✨ Novo
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-green-200 hover:border-green-400 transition-all hover:scale-105 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-6 space-y-4 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto">
+                  <MessageCircle className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold">WhatsApp Integrado</h3>
+                <p className="text-muted-foreground text-sm">
+                  Atendimento direto pelo WhatsApp com botão de compra
+                </p>
+                <div className="text-xs text-green-600 font-medium bg-green-100 px-3 py-1 rounded-full">
+                  ✨ Novo
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-blue-200 hover:border-blue-400 transition-all hover:scale-105 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-6 space-y-4 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto">
+                  <Smartphone className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold">Mobile First</h3>
+                <p className="text-muted-foreground text-sm">
+                  Experiência perfeita em smartphones e tablets
+                </p>
+                <div className="text-xs text-blue-600 font-medium bg-blue-100 px-3 py-1 rounded-full">
+                  🚀 Melhorado
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-purple-200 hover:border-purple-400 transition-all hover:scale-105 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-6 space-y-4 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto">
+                  <BarChart3 className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold">Analytics Avançado</h3>
+                <p className="text-muted-foreground text-sm">
+                  Relatórios detalhados de vendas e performance
+                </p>
+                <div className="text-xs text-purple-600 font-medium bg-purple-100 px-3 py-1 rounded-full">
+                  🚀 Melhorado
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Platform Gallery Section */}
+      <section className="py-20 bg-gradient-to-b from-muted/30 to-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-16">
+            <Badge variant="outline" className="mb-4">
+              <Sparkles className="w-3 h-3 mr-1" />
+              Plataforma em Ação
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+              Veja como funciona na prática
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Cada funcionalidade foi pensada para facilitar a vida do empreendedor do brechó
+            </p>
+          </div>
+          
+          <div className="max-w-7xl mx-auto">
+            {/* Main Feature Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {/* PIX Payment */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <div className="relative">
+                  <img 
+                    src="https://res.cloudinary.com/dlayq4t4o/image/upload/w_400,h_250,c_fill,q_auto,f_auto,e_brightness:-10/ebrecho_pix_payment.jpg" 
+                    alt="PIX Payment Interface" 
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <div className="flex items-center gap-2 text-white text-sm font-medium">
+                        <CreditCard className="w-4 h-4" />
+                        <span>Pagamento Instantâneo</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-4 h-4 text-white" />
+                    </div>
+                    PIX Integrado
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Seus clientes pagam via PIX e você recebe na hora. Segurança total e praticidade máxima.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* WhatsApp Integration */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <div className="relative">
+                  <img 
+                    src="https://res.cloudinary.com/dlayq4t4o/image/upload/w_400,h_250,c_fill,q_auto,f_auto,e_brightness:-10/ebrecho_whatsapp_chat.jpg" 
+                    alt="WhatsApp Integration" 
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <div className="flex items-center gap-2 text-white text-sm font-medium">
+                        <MessageCircle className="w-4 h-4" />
+                        <span>Atendimento Direto</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                      <MessageCircle className="w-4 h-4 text-white" />
+                    </div>
+                    WhatsApp Business
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Botão de compra que leva direto para o WhatsApp. Atendimento personalizado que seus clientes adoram.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Mobile Experience */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <div className="relative">
+                  <img 
+                    src="https://res.cloudinary.com/dlayq4t4o/image/upload/w_400,h_250,c_fill,q_auto,f_auto,e_brightness:-10/ebrecho_mobile_shop.jpg" 
+                    alt="Mobile Shopping Experience" 
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <div className="flex items-center gap-2 text-white text-sm font-medium">
+                        <Smartphone className="w-4 h-4" />
+                        <span>Mobile Perfeito</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <Smartphone className="w-4 h-4 text-white" />
+                    </div>
+                    Experiência Mobile
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Mais de 80% das compras acontecem no celular. Sua loja funciona perfeitamente em qualquer tela.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Secondary Feature Grid */}
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Analytics Dashboard */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  <div className="md:w-1/2">
+                    <img 
+                      src="https://res.cloudinary.com/dlayq4t4o/image/upload/w_400,h_200,c_fill,q_auto,f_auto,e_brightness:-10/ebrecho_analytics_dashboard.jpg" 
+                      alt="Analytics Dashboard" 
+                      className="w-full h-32 md:h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <CardContent className="p-6 md:w-1/2 flex flex-col justify-center">
+                    <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <BarChart3 className="w-4 h-4 text-white" />
+                      </div>
+                      Analytics Inteligente
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      Descubra quais produtos vendem mais, os horários de pico e o perfil dos seus clientes.
+                    </p>
+                  </CardContent>
+                </div>
+              </Card>
+
+              {/* Thrift Store Management */}
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  <div className="md:w-1/2">
+                    <img 
+                      src="https://res.cloudinary.com/dlayq4t4o/image/upload/w_400,h_200,c_fill,q_auto,f_auto,e_brightness:-10/ebrecho_thrift_store.jpg" 
+                      alt="Thrift Store Management" 
+                      className="w-full h-32 md:h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <CardContent className="p-6 md:w-1/2 flex flex-col justify-center">
+                    <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                        <Store className="w-4 h-4 text-white" />
+                      </div>
+                      Gestão Completa
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      Controle estoque, cadastre produtos, gerencie pedidos. Tudo em um lugar só.
+                    </p>
+                  </CardContent>
+                </div>
+              </Card>
+            </div>
+
+            {/* Call to Action */}
+            <div className="text-center mt-16">
+              <Card className="bg-gradient-to-r from-primary/10 via-orange-500/10 to-pink-500/10 border-primary/20 inline-block">
+                <CardContent className="p-8">
+                  <h3 className="text-2xl font-bold mb-4">Pronto para revolucionar seu brechó?</h3>
+                  <p className="text-muted-foreground mb-6 max-w-2xl">
+                    Junte-se aos centenas de brechós que já estão vendendo mais com nossa plataforma
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-4">
+                    <Button asChild size="lg" className="rounded-full">
+                      <Link href="/cadastro">
+                        <Store className="mr-2 h-5 w-5" />
+                        Começar Agora
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" className="rounded-full">
+                      <Link href="#demo">
+                        <Sparkles className="mr-2 h-5 w-5" />
+                        Ver Demo
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Value Proposition Section */}
       <section className="py-20 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4">
@@ -254,11 +579,11 @@ export default function Home() {
             <Card className="border-2 hover:border-primary transition-colors">
               <CardContent className="p-6 space-y-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-primary" />
+                  <CreditCard className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">Maior visibilidade</h3>
+                <h3 className="text-xl font-semibold">Pagamentos PIX</h3>
                 <p className="text-muted-foreground">
-                  Alcance milhares de clientes que buscam produtos sustentáveis e únicos
+                  Receba pagamentos instantâneos via PIX com total segurança e praticidade
                 </p>
               </CardContent>
             </Card>
@@ -266,11 +591,11 @@ export default function Home() {
             <Card className="border-2 hover:border-primary transition-colors">
               <CardContent className="p-6 space-y-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-primary" />
+                  <MessageCircle className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">Clientes qualificados</h3>
+                <h3 className="text-xl font-semibold">WhatsApp Integrado</h3>
                 <p className="text-muted-foreground">
-                  Conecte-se com compradores interessados em moda sustentável
+                  Atenda clientes via WhatsApp direto da sua loja online
                 </p>
               </CardContent>
             </Card>
@@ -278,11 +603,11 @@ export default function Home() {
             <Card className="border-2 hover:border-primary transition-colors">
               <CardContent className="p-6 space-y-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-primary" />
+                  <Smartphone className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">Gestão simplificada</h3>
+                <h3 className="text-xl font-semibold">Mobile Otimizado</h3>
                 <p className="text-muted-foreground">
-                  Sistema intuitivo para gerenciar produtos, vendas e clientes
+                  Loja responsiva que funciona perfeitamente em todos os dispositivos
                 </p>
               </CardContent>
             </Card>
@@ -290,11 +615,11 @@ export default function Home() {
             <Card className="border-2 hover:border-primary transition-colors">
               <CardContent className="p-6 space-y-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-primary" />
+                  <Zap className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">Suporte dedicado</h3>
+                <h3 className="text-xl font-semibold">Ferramentas Avançadas</h3>
                 <p className="text-muted-foreground">
-                  Equipe pronta para ajudar no crescimento do seu brechó
+                  Analytics, relatórios, gestão de estoque e muito mais
                 </p>
               </CardContent>
             </Card>
@@ -316,36 +641,36 @@ export default function Home() {
                   <div className="flex gap-3">
                     <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold">Dificuldade em alcançar novos clientes</h4>
+                      <h4 className="font-semibold">Pagamentos complicados e demorados</h4>
                       <p className="text-sm text-muted-foreground">
-                        Nossa plataforma conecta você a milhares de compradores
+                        PIX instantâneo integrado para recebimento rápido e seguro
                       </p>
                     </div>
                   </div>
                   <div className="flex gap-3">
                     <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold">Gestão manual de estoque</h4>
+                      <h4 className="font-semibold">Atendimento disperso em várias plataformas</h4>
                       <p className="text-sm text-muted-foreground">
-                        Sistema automatizado para controlar produtos e vendas
+                        WhatsApp integrado para centralizar toda comunicação com clientes
                       </p>
                     </div>
                   </div>
                   <div className="flex gap-3">
                     <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold">Falta de presença digital</h4>
+                      <h4 className="font-semibold">Loja que não funciona bem no celular</h4>
                       <p className="text-sm text-muted-foreground">
-                        Loja online profissional sem precisar de conhecimento técnico
+                        Design mobile-first otimizado para smartphone e tablet
                       </p>
                     </div>
                   </div>
                   <div className="flex gap-3">
                     <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold">Custos altos com marketing</h4>
+                      <h4 className="font-semibold">Falta de dados para melhorar vendas</h4>
                       <p className="text-sm text-muted-foreground">
-                        Visibilidade garantida no marketplace sem gastos extras
+                        Analytics completo com relatórios de vendas e performance
                       </p>
                     </div>
                   </div>
@@ -358,20 +683,20 @@ export default function Home() {
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <span>Plano gratuito para começar</span>
+                    <CreditCard className="w-5 h-5 text-green-600" />
+                    <span>Pagamentos PIX instantâneos</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <span>Loja online profissional</span>
+                    <MessageCircle className="w-5 h-5 text-green-600" />
+                    <span>WhatsApp integrado</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <span>Sistema de gestão completo</span>
+                    <Smartphone className="w-5 h-5 text-blue-600" />
+                    <span>Loja mobile-first</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <span>Suporte técnico especializado</span>
+                    <BarChart3 className="w-5 h-5 text-purple-600" />
+                    <span>Analytics e relatórios</span>
                   </li>
                 </ul>
                 <Button asChild size="lg" className="w-full rounded-full">
@@ -522,6 +847,128 @@ export default function Home() {
                 <Clock className="w-4 h-4" />
                 <span>Cadastro em menos de 5 minutos</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Before vs After Section */}
+      <section className="py-20 bg-gradient-to-r from-gray-50 to-primary/5">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-16">
+            <Badge className="bg-gradient-to-r from-red-500 to-green-500 text-white">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Transformação Digital
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+              Antes vs. <span className="text-primary">Depois</span> do eBrecho
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Veja a diferença que nossa plataforma faz no seu negócio
+            </p>
+          </div>
+          
+          <div className="max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Before */}
+              <div className="space-y-6">
+                <div className="text-center">
+                  <Badge variant="destructive" className="mb-4">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Antes
+                  </Badge>
+                  <h3 className="text-2xl font-bold text-gray-600 mb-4">Brechó Tradicional</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span>Vendas apenas presenciais</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span>Pagamentos em dinheiro/cartão</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span>Atendimento apenas no balcão</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span>Controle manual de estoque</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span>Sem dados de vendas</span>
+                  </div>
+                </div>
+                <div className="bg-gray-100 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-600">Alcance Limitado</div>
+                  <div className="text-sm text-gray-500">Apenas clientes locais</div>
+                </div>
+              </div>
+              
+              {/* After */}
+              <div className="space-y-6">
+                <div className="text-center">
+                  <Badge className="bg-gradient-to-r from-green-600 to-blue-600 text-white mb-4">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Depois
+                  </Badge>
+                  <h3 className="text-2xl font-bold text-primary mb-4">Com eBrecho</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">Loja online 24h funcionando</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">PIX instantâneo + cartão</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">WhatsApp integrado</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">Gestão automática completa</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">Analytics e relatórios</span>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-4 text-center border-2 border-green-200">
+                  <div className="text-2xl font-bold text-primary">Alcance Nacional</div>
+                  <div className="text-sm text-primary/80">Clientes em todo o Brasil</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Results Preview */}
+            <div className="grid md:grid-cols-3 gap-6 mt-16">
+              <Card className="text-center p-6 bg-gradient-to-b from-green-50 to-white border-green-200">
+                <div className="text-3xl font-bold text-green-600 mb-2">3x</div>
+                <div className="text-sm text-gray-600">Mais vendas mensais</div>
+              </Card>
+              <Card className="text-center p-6 bg-gradient-to-b from-blue-50 to-white border-blue-200">
+                <div className="text-3xl font-bold text-blue-600 mb-2">24h</div>
+                <div className="text-sm text-gray-600">Loja sempre aberta</div>
+              </Card>
+              <Card className="text-center p-6 bg-gradient-to-b from-purple-50 to-white border-purple-200">
+                <div className="text-3xl font-bold text-purple-600 mb-2">0</div>
+                <div className="text-sm text-gray-600">Custo para começar</div>
+              </Card>
             </div>
           </div>
         </div>
