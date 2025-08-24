@@ -23,7 +23,7 @@ const speedClasses = {
 };
 
 export function SpinningLogo({ 
-  size = 'md', 
+  size = 'xl', 
   className = '', 
   speed = 'normal' 
 }: SpinningLogoProps) {
