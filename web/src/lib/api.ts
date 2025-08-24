@@ -312,6 +312,24 @@ export interface CreateProductData {
   status?: Product['status'];
 }
 
+export interface ValidationSuggestion {
+  type: 'name' | 'description';
+  field: string;
+  original: string;
+  suggested: string;
+  reason: string;
+}
+
+export interface ValidationResponse {
+  hasSuggestions: boolean;
+  suggestions: ValidationSuggestion[];
+}
+
+export interface ProductValidationRequest {
+  name: string;
+  description?: string;
+}
+
 export interface Category {
   name: string;
   count: number;
@@ -414,6 +432,31 @@ export const productService = {
   async getCategories(): Promise<Category[]> {
     const response = await api.get('/api/products/categories');
     return response.data.data;
+  },
+
+  async validateWithAI(data: ProductValidationRequest): Promise<ValidationResponse> {
+    console.log('🤖 productService.validateWithAI called with:', {
+      name: data.name,
+      hasDescription: !!data.description
+    });
+
+    try {
+      const response = await api.post('/api/products/validate', data);
+      console.log('✅ productService.validateWithAI API response:', {
+        success: response.data.success,
+        hasSuggestions: response.data.data.hasSuggestions,
+        suggestionsCount: response.data.data.suggestions?.length || 0
+      });
+
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Error in AI validation:', error);
+      // Return empty suggestions on error to allow form submission to continue
+      return {
+        hasSuggestions: false,
+        suggestions: []
+      };
+    }
   }
 };
 

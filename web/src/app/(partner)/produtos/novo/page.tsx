@@ -15,13 +15,14 @@ import { Combobox } from '@/components/ui/combobox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { DashboardLayout } from '@/components/dashboard';
-import { productService, type CreateProductData } from '@/lib/api';
+import { productService, type CreateProductData, type ValidationSuggestion } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { BlobImageUpload } from '@/components/products/blob-image-upload';
 import { imageApi, type ProductImage } from '@/lib/api/images';
 import { productRefreshManager } from '@/lib/product-refresh';
 import { BRAND_OPTIONS } from '@/lib/constants/brands';
 import { CATEGORY_OPTIONS } from '@/lib/constants/categories';
+import { GeminiSuggestionsDialog } from '@/components/products/gemini-suggestions-dialog';
 
 const productFormSchema = z.object({
   name: z.string()
@@ -76,10 +77,14 @@ export default function NewProductPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<ValidationSuggestion[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [createdProductId, setCreatedProductId] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isReorganizationComplete, setIsReorganizationComplete] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Debug logging initialization
   console.log('🔧 NewProductPage initialized with debug logging enabled. Look for these emojis in console:', {
@@ -110,11 +115,61 @@ export default function NewProductPage() {
     }
   });
 
-  const onSubmit = async (data: ProductFormData) => {
+  const handleAIValidation = async (data: ProductFormData) => {
+    try {
+      setValidating(true);
+      console.log('🤖 Starting AI validation...');
+      
+      const validationResult = await productService.validateWithAI({
+        name: data.name,
+        description: data.description
+      });
+      
+      console.log('✅ AI validation completed:', validationResult);
+      
+      if (validationResult.hasSuggestions && validationResult.suggestions.length > 0) {
+        setSuggestions(validationResult.suggestions);
+        setShowSuggestions(true);
+        return false; // Don't proceed with product creation yet
+      } else {
+        // No suggestions, proceed directly with product creation
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Error in AI validation:', error);
+      // Continue with product creation even if validation fails
+      return true;
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleAcceptSuggestions = (acceptedSuggestions: ValidationSuggestion[]) => {
+    console.log('✅ Applying accepted suggestions:', acceptedSuggestions);
+    
+    // Apply suggestions to form
+    const currentValues = form.getValues();
+    const updatedValues = { ...currentValues };
+    
+    acceptedSuggestions.forEach(suggestion => {
+      if (suggestion.field === 'name') {
+        updatedValues.name = suggestion.suggested;
+        form.setValue('name', suggestion.suggested);
+      } else if (suggestion.field === 'description') {
+        updatedValues.description = suggestion.suggested;
+        form.setValue('description', suggestion.suggested);
+      }
+    });
+    
+    setShowSuggestions(false);
+    // Now proceed with product creation
+    createProduct(updatedValues);
+  };
+
+  const createProduct = async (data: ProductFormData) => {
     try {
       setLoading(true);
-      
-      console.log('🔍 Submitting product form:', {
+      console.log('🔍 Creating product with data:', {
         formData: data,
         hasImages: productImages.length > 0,
         imageCount: productImages.length,
@@ -233,6 +288,41 @@ export default function NewProductPage() {
       alert(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onSubmit = async (data: ProductFormData) => {
+    try {
+      // Validate that at least one image is uploaded
+      if (productImages.length === 0 && uploadedFiles.length === 0) {
+        setImageError(true);
+        alert('Por favor, adicione pelo menos uma imagem do produto.');
+        return;
+      }
+      
+      setImageError(false);
+      setLoading(true);
+      
+      console.log('🔍 Starting form submission with AI validation...');
+      
+      // First, validate with AI
+      const shouldProceed = await handleAIValidation(data);
+      
+      if (shouldProceed) {
+        // No suggestions or user wants to proceed, create product directly
+        await createProduct(data);
+      }
+      // If shouldProceed is false, the suggestions dialog will be shown
+      // and the user can accept suggestions which will trigger createProduct
+      
+    } catch (error) {
+      console.error('❌ Error in form submission:', error);
+      alert('Erro ao processar formulário. Tente novamente.');
+    } finally {
+      if (!showSuggestions) {
+        // Only set loading to false if we're not showing suggestions dialog
+        setLoading(false);
+      }
     }
   };
 
@@ -589,10 +679,17 @@ export default function NewProductPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-medium">Imagens do Produto</h3>
+                      <h3 className="text-lg font-medium">
+                        Imagens do Produto <span className="text-red-500">*</span>
+                      </h3>
                       <p className="text-sm text-muted-foreground">
-                        Adicione até 10 imagens do produto. A primeira imagem será a principal.
+                        Adicione pelo menos 1 imagem do produto (máximo 10). A primeira imagem será a principal.
                       </p>
+                      {imageError && (
+                        <p className="text-sm text-red-500 mt-1">
+                          É obrigatório adicionar pelo menos uma imagem do produto.
+                        </p>
+                      )}
                     </div>
                   </div>
                   
@@ -605,6 +702,10 @@ export default function NewProductPage() {
                         previousCount: productImages.length
                       });
                       setProductImages(newImages);
+                      // Clear image error when images are added
+                      if (newImages.length > 0) {
+                        setImageError(false);
+                      }
                     }}
                     onUploadComplete={(uploadedImages) => {
                       console.log('✅ Upload completed in NewProductPage:', uploadedImages);
@@ -624,8 +725,13 @@ export default function NewProductPage() {
                   <Button type="button" variant="outline" onClick={() => router.back()}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? (
+                  <Button type="submit" disabled={loading || validating}>
+                    {validating ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Validando ...
+                      </>
+                    ) : loading ? (
                       <>
                         <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                         Salvando...
@@ -633,7 +739,7 @@ export default function NewProductPage() {
                     ) : (
                       <>
                         <Save className="mr-2 h-4 w-4" />
-                        Salvar Produto
+                        Validar Produto
                       </>
                     )}
                   </Button>
@@ -643,6 +749,17 @@ export default function NewProductPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Suggestions Dialog */}
+      <GeminiSuggestionsDialog
+        open={showSuggestions}
+        onClose={() => {
+          setShowSuggestions(false);
+          setLoading(false); // Reset loading state when dialog is closed
+        }}
+        suggestions={suggestions}
+        onAcceptSuggestions={handleAcceptSuggestions}
+      />
     </DashboardLayout>
   );
 }

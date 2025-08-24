@@ -8,7 +8,8 @@ import {
   updateProduct,
   deleteProduct,
   getProductCategories,
-  updateProductStatus
+  updateProductStatus,
+  validateProductWithAI
 } from '../controllers/product.controller';
 import {
   createProductSchema,
@@ -16,7 +17,8 @@ import {
   getProductsSchema,
   getProductByIdSchema,
   deleteProductSchema,
-  updateProductStatusSchema
+  updateProductStatusSchema,
+  validateProductSchema
 } from '../schemas/product.schema';
 
 const router = Router();
@@ -24,6 +26,73 @@ const router = Router();
 // All routes require authentication and partner role
 router.use(authenticate);
 router.use(authorize(['PARTNER_ADMIN', 'PARTNER_USER']));
+
+/**
+ * @swagger
+ * /api/products/validate:
+ *   post:
+ *     summary: Validate product with AI
+ *     description: Use Google Gemini AI to validate and suggest improvements for product name and description
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: "camiseta vintage rock band"
+ *               description:
+ *                 type: string
+ *                 example: "camiseta usada em bom estado, marca wilson"
+ *     responses:
+ *       200:
+ *         description: Validation completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     hasSuggestions:
+ *                       type: boolean
+ *                     suggestions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           type:
+ *                             type: string
+ *                             enum: [name, description]
+ *                           field:
+ *                             type: string
+ *                           original:
+ *                             type: string
+ *                           suggested:
+ *                             type: string
+ *                           reason:
+ *                             type: string
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ */
+router.post(
+  '/validate',
+  validate(validateProductSchema),
+  validateProductWithAI
+);
 
 /**
  * @swagger

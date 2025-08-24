@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../prisma';
 import { AuthRequest } from '../types';
 import { generateProductSlug } from '../services/slug.service';
+import { GeminiValidationService } from '../services/gemini-validation.service';
 
 export const createProduct = async (
   req: AuthRequest,
@@ -440,5 +441,55 @@ export const updateProductStatus = async (
   } catch (error) {
     console.error('Error updating product status:', error);
     next(error);
+  }
+};
+
+export const validateProductWithAI = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log('🤖 Starting AI validation for product');
+    
+    const { name, description } = req.body;
+    
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.log('⚠️ Gemini API key not configured, skipping validation');
+      return res.json({
+        success: true,
+        data: {
+          hasSuggestions: false,
+          suggestions: []
+        }
+      });
+    }
+    
+    const geminiService = new GeminiValidationService(apiKey);
+    const validationResult = await geminiService.validateProduct({
+      name,
+      description
+    });
+    
+    console.log('✅ AI validation completed:', {
+      hasSuggestions: validationResult.hasSuggestions,
+      suggestionsCount: validationResult.suggestions.length
+    });
+    
+    res.json({
+      success: true,
+      data: validationResult
+    });
+  } catch (error) {
+    console.error('❌ Error in AI validation controller:', error);
+    // Return empty suggestions on error to allow form submission to continue
+    res.json({
+      success: true,
+      data: {
+        hasSuggestions: false,
+        suggestions: []
+      }
+    });
   }
 };

@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+export const validateProductSchema = z.object({
+  body: z.object({
+    name: z.string()
+      .min(3, 'Nome deve ter pelo menos 3 caracteres')
+      .max(100, 'Nome deve ter no máximo 100 caracteres'),
+    description: z.string()
+      .max(1000, 'Descrição deve ter no máximo 1000 caracteres')
+      .optional()
+  })
+});
+
 export const createProductSchema = z.object({
   body: z.object({
     name: z.string()
