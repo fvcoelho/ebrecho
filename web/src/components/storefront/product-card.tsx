@@ -197,11 +197,16 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
             </p>
           )}
 
-          {/* Brand and Size */}
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-            <span>{product.category || 'sem marca'}</span>
-            <span>•</span>
-            <span>{product.size || 'P'}</span>
+          {/* Category and Size Badges */}
+          <div className="flex items-center gap-1.5 mb-2">
+            {product.category && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-200 text-xs px-2 py-0.5 font-medium">
+                {product.category}
+              </Badge>
+            )}
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200 text-xs px-2 py-0.5 font-semibold">
+              {(product.size || 'P').toUpperCase()}
+            </Badge>
           </div>
           
           {/* Spacer */}
