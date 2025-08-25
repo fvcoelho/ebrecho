@@ -1,0 +1,864 @@
+╭───────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                         │
+│                                                   │
+│   /help for help, /status for your current setup  │
+│                                                   │
+│   cwd: /Users/fvcoelho/Working/ebrecho            │
+╰───────────────────────────────────────────────────╯
+
+> /clear 
+  ⎿  (no content)
+
+> search projet for whatsapp integration
+
+⏺ I'll search the project for WhatsApp integration code to see what's currently implemented.
+
+⏺ Search(pattern: "whatsapp")
+  ⎿  Found 38 files (ctrl+r to expand)
+
+⏺ Let me examine the key WhatsApp integration files:
+
+⏺ Read(web/src/components/storefront/whatsapp-button.tsx)
+  ⎿  Read 57 lines (ctrl+r to expand)
+
+⏺ Read(api/prisma/schema.prisma)
+  ⎿  Read 50 lines (ctrl+r to expand)
+  ⎿  web/CLAUDE.md
+  ⎿  api/CLAUDE.md
+
+⏺ Now let me check the WhatsApp button styles and search for more WhatsApp-related implementation:
+
+⏺ Read(web/src/components/storefront/whatsapp-button.css)
+  ⎿  Read 38 lines (ctrl+r to expand)
+
+⏺ Search(pattern: "whatsapp.*name", output_mode: "content")
+  ⎿  Found 34 lines (ctrl+r to expand)
+
+⏺ Let me check one more key component to understand the full integration:
+
+⏺ Read(web/src/components/storefront/store-info.tsx)
+  ⎿  Read 20 lines (ctrl+r to expand)
+
+⏺ WhatsApp Integration Summary
+
+  The eBrecho project has comprehensive WhatsApp integration with the following components:
+
+  Database Schema
+
+  - Partner table includes whatsappName field for personalized messaging
+  - Migration 20250824172926_add_whatsapp_name_to_partner added this field
+
+  Frontend Components
+
+  1. WhatsApp Button (/web/src/components/storefront/whatsapp-button.tsx)
+    - Floating button with animated appearance
+    - Personalized messages using store name and WhatsApp name
+    - Automatic phone number formatting (adds Brazil country code 55)
+    - Default fallback number: 5511940147157
+  2. Store Info (/web/src/components/storefront/store-info.tsx)
+    - Displays WhatsApp contact link in store information
+    - Uses personalized greeting with whatsappName
+  3. Product Components
+    - Product cards and detail pages include WhatsApp contact integration
+    - PIX payment flow includes WhatsApp receipt sharing
+
+  Key Features
+
+  - Personalized Messages: Uses whatsappName for custom greetings
+  - Phone Formatting: Automatically formats Brazilian phone numbers
+  - Multi-Integration: Used in storefronts, product pages, payment flows
+  - Partner Configuration: Partners can set their WhatsApp name in dashboard settings
+
+  API Integration
+
+  - Public store controller returns whatsappName in store data
+  - Partner configuration endpoints handle WhatsApp name updates
+  - Used across multiple business flows (products, payments, general inquiries)
+
+  The integration is fully functional and provides a seamless way for customers to contact store owners via WhatsApp with context-aware messages.
+
+> lets create new whatsapp API  integration plan
+
+⏺ I'll create a comprehensive WhatsApp API integration plan for the eBrecho project.
+
+⏺ Update Todos
+  ⎿  ☐ Research WhatsApp Business API options and requirements
+     ☐ Design WhatsApp API integration architecture
+     ☐ Plan database schema changes for WhatsApp integration
+     ☐ Design API endpoints for WhatsApp functionality
+     ☐ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ Update Todos
+  ⎿  ☐ Research WhatsApp Business API options and requirements
+     ☐ Design WhatsApp API integration architecture
+     ☐ Plan database schema changes for WhatsApp integration
+     ☐ Design API endpoints for WhatsApp functionality
+     ☐ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ Let me research WhatsApp Business API integration options:
+
+⏺ Web Search("WhatsApp Business API integration 2025 webhook message sending requirements")
+  ⎿  Did 1 search in 26s                                                                                                                                                     
+
+⏺ Update Todos
+  ⎿  ☒ Research WhatsApp Business API options and requirements
+     ☐ Design WhatsApp API integration architecture
+     ☐ Plan database schema changes for WhatsApp integration
+     ☐ Design API endpoints for WhatsApp functionality
+     ☐ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ Web Search("WhatsApp Cloud API vs Business API 2025 comparison serverless Node.js")
+  ⎿  No (tell Claude what to do differently)
+
+> lets use offcial API WhatsApp Cloud API
+
+⏺ Update Todos
+  ⎿  ☒ Research WhatsApp Business API options and requirements
+     ☐ Design WhatsApp Cloud API integration architecture
+     ☐ Plan database schema changes for WhatsApp integration
+     ☐ Design API endpoints for WhatsApp functionality
+     ☐ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ Perfect! Using the official WhatsApp Cloud API is the best choice. Let me design the integration architecture based on the existing eBrecho structure and WhatsApp Cloud
+  API requirements:
+
+  WhatsApp Cloud API Integration Architecture
+
+  1. Architecture Design
+
+  Integration Points:
+  - Backend: Express.js API with new WhatsApp service layer
+  - Database: Extend existing Prisma schema for WhatsApp data
+  - Webhooks: Serverless-compatible webhook handlers
+  - Message Queue: For reliable message delivery (using existing patterns)
+
+  Core Components:
+  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+  │   Frontend      │────│   eBrecho API   │────│  WhatsApp       │
+  │   Components    │    │   (Express.js)  │    │  Cloud API      │
+  └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                         ┌─────────────────┐
+                         │   PostgreSQL    │
+                         │   (Prisma ORM)  │
+                         └─────────────────┘
+
+⏺ Update Todos
+  ⎿  ☒ Research WhatsApp Business API options and requirements
+     ☒ Design WhatsApp Cloud API integration architecture
+     ☐ Plan database schema changes for WhatsApp integration
+     ☐ Design API endpoints for WhatsApp functionality
+     ☐ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ 2. Database Schema Changes
+
+  New Tables:
+  -- WhatsApp Business Account Configuration
+  model WhatsAppBusinessAccount {
+    id                 String   @id @default(cuid())
+    partnerId          String   @unique
+    partner            Partner  @relation(fields: [partnerId], references: [id])
+
+    businessAccountId  String   // Meta Business Account ID
+    phoneNumberId      String   // WhatsApp Phone Number ID
+    accessToken        String   // Encrypted access token
+    webhookToken       String   // Webhook verification token
+
+    isActive           Boolean  @default(false)
+    isVerified         Boolean  @default(false)
+
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+  }
+
+  -- Message Templates
+  model WhatsAppTemplate {
+    id          String   @id @default(cuid())
+    partnerId   String
+    partner     Partner  @relation(fields: [partnerId], references: [id])
+
+    name        String   // Template name in WhatsApp
+    category    String   // marketing, utility, authentication, service
+    language    String   @default("pt_BR")
+    status      String   // PENDING, APPROVED, REJECTED
+    content     Json     // Template structure
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@unique([partnerId, name])
+  }
+
+  -- Message History
+  model WhatsAppMessage {
+    id              String   @id @default(cuid())
+    partnerId       String
+    partner         Partner  @relation(fields: [partnerId], references: [id])
+
+    whatsappId      String   // WhatsApp message ID
+    phoneNumber     String   // Customer phone number
+    type            String   // text, template, image, etc.
+    direction       String   // inbound, outbound
+    content         Json     // Message content
+    status          String   // sent, delivered, read, failed
+
+    orderId         String?  // Link to order if applicable
+    order           Order?   @relation(fields: [orderId], references: [id])
+
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    @@index([partnerId, createdAt])
+    @@index([phoneNumber])
+  }
+
+  -- Webhook Events Log
+  model WhatsAppWebhookEvent {
+    id        String   @id @default(cuid())
+    partnerId String?
+
+    eventType String   // message, status, etc.
+    payload   Json     // Full webhook payload
+    processed Boolean  @default(false)
+
+    createdAt DateTime @default(now())
+
+    @@index([processed, createdAt])
+  }
+
+  Update Existing Partner Table:
+  -- Add to existing Partner model
+  whatsappBusinessAccount WhatsAppBusinessAccount?
+  whatsappTemplates       WhatsAppTemplate[]
+  whatsappMessages        WhatsAppMessage[]
+
+⏺ Update Todos
+  ⎿  ☒ Research WhatsApp Business API options and requirements
+     ☒ Design WhatsApp Cloud API integration architecture
+     ☒ Plan database schema changes for WhatsApp integration
+     ☐ Design API endpoints for WhatsApp functionality
+     ☐ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ 3. API Endpoints Design
+
+  WhatsApp Configuration Endpoints:
+  POST   /api/whatsapp/setup           # Initial WhatsApp Business setup
+  PUT    /api/whatsapp/config          # Update WhatsApp configuration
+  GET    /api/whatsapp/status          # Get integration status
+  DELETE /api/whatsapp/disconnect      # Disconnect WhatsApp Business
+
+  # Template Management
+  GET    /api/whatsapp/templates       # List partner's templates
+  POST   /api/whatsapp/templates       # Create new template
+  PUT    /api/whatsapp/templates/:id   # Update template
+  DELETE /api/whatsapp/templates/:id   # Delete template
+
+  # Messaging
+  POST   /api/whatsapp/send            # Send message to customer
+  GET    /api/whatsapp/messages        # Get message history
+  GET    /api/whatsapp/conversations   # Get conversations by customer
+
+  # Webhooks (Public endpoints)
+  GET    /api/whatsapp/webhook         # Webhook verification
+  POST   /api/whatsapp/webhook         # Receive webhook events
+
+  # Analytics
+  GET    /api/whatsapp/analytics       # WhatsApp usage analytics
+
+  Integration with Existing Features:
+  - Order Management: Auto-send order confirmations via WhatsApp
+  - Product Inquiries: Handle product questions through WhatsApp
+  - PIX Payments: Send payment confirmations and receipts
+  - Customer Support: Centralized conversation management
+
+⏺ Update Todos
+  ⎿  ☒ Research WhatsApp Business API options and requirements
+     ☒ Design WhatsApp Cloud API integration architecture
+     ☒ Plan database schema changes for WhatsApp integration
+     ☒ Design API endpoints for WhatsApp functionality
+     ☐ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ 4. Frontend Components Planning
+
+  Partner Dashboard Integration:
+  /dashboard/configuracoes/
+  ├── WhatsApp Setup Section (existing page enhanced)
+  ├── whatsapp/
+  │   ├── setup/              # Initial WhatsApp Business setup
+  │   ├── templates/          # Manage message templates
+  │   ├── messages/           # Message history & conversations
+  │   └── analytics/          # WhatsApp usage metrics
+
+  New shadcn/ui Components:
+  - WhatsAppSetupWizard: Multi-step setup for Business API
+  - TemplateManager: Create/edit message templates
+  - ConversationView: Customer chat interface
+  - WhatsAppAnalytics: Message delivery and engagement metrics
+  - MessageTemplateBuilder: Visual template creation tool
+
+  Enhanced Existing Components:
+  - WhatsAppButton: Add API message sending capability
+  - OrderCard: Include WhatsApp notification options
+  - ProductCard: Direct WhatsApp inquiry integration
+  - PIXPayment: WhatsApp receipt delivery
+
+⏺ Update Todos
+  ⎿  ☒ Research WhatsApp Business API options and requirements
+     ☒ Design WhatsApp Cloud API integration architecture
+     ☒ Plan database schema changes for WhatsApp integration
+     ☒ Design API endpoints for WhatsApp functionality
+     ☒ Plan frontend components for WhatsApp management
+     ☐ Create implementation roadmap with phases
+
+⏺ 5. Implementation Roadmap
+
+⏺ Update Todos
+  ⎿  ☒ Research WhatsApp Business API options and requirements
+     ☒ Design WhatsApp Cloud API integration architecture
+     ☒ Plan database schema changes for WhatsApp integration
+     ☒ Design API endpoints for WhatsApp functionality
+     ☒ Plan frontend components for WhatsApp management
+     ☒ Create implementation roadmap with phases
+  ⎿  User rejected Claude's plan:
+     ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+     │ WhatsApp Cloud API Integration Plan for eBrecho                                                                                                                    │
+     │                                                                                                                                                                    │
+     │ Phase 1: Foundation (Week 1-2)                                                                                                                                     │
+     │                                                                                                                                                                    │
+     │ Backend Infrastructure:                                                                                                                                            │
+     │ - Add WhatsApp Cloud API service layer to Express.js API                                                                                                           │
+     │ - Create Prisma database schema for WhatsApp integration                                                                                                           │
+     │ - Implement webhook endpoints with serverless compatibility                                                                                                        │
+     │ - Set up environment variables and security configurations                                                                                                         │
+     │                                                                                                                                                                    │
+     │ Database Changes:                                                                                                                                                  │
+     │ - WhatsAppBusinessAccount table for partner API configuration                                                                                                      │
+     │ - WhatsAppTemplate table for message template management                                                                                                           │
+     │ - WhatsAppMessage table for conversation history                                                                                                                   │
+     │ - WhatsAppWebhookEvent table for webhook event logging                                                                                                             │
+     │                                                                                                                                                                    │
+     │ Phase 2: Core API (Week 3-4)                                                                                                                                       │
+     │                                                                                                                                                                    │
+     │ WhatsApp Integration Endpoints:                                                                                                                                    │
+     │ - Business account setup and configuration endpoints                                                                                                               │
+     │ - Message template CRUD operations                                                                                                                                 │
+     │ - Send/receive message functionality                                                                                                                               │
+     │ - Webhook verification and event processing                                                                                                                        │
+     │ - Message status tracking and analytics                                                                                                                            │
+     │                                                                                                                                                                    │
+     │ Security & Compliance:                                                                                                                                             │
+     │ - Access token encryption and secure storage                                                                                                                       │
+     │ - Webhook signature validation                                                                                                                                     │
+     │ - Rate limiting for WhatsApp API calls                                                                                                                             │
+     │ - Error handling and retry mechanisms                                                                                                                              │
+     │                                                                                                                                                                    │
+     │ Phase 3: Frontend Integration (Week 5-6)                                                                                                                           │
+     │                                                                                                                                                                    │
+     │ Partner Dashboard Components (using shadcn/ui):                                                                                                                    │
+     │ - WhatsApp setup wizard for business account connection                                                                                                            │
+     │ - Template management interface with visual builder                                                                                                                │
+     │ - Conversation view for customer interactions                                                                                                                      │
+     │ - Analytics dashboard for message metrics                                                                                                                          │
+     │                                                                                                                                                                    │
+     │ Enhanced Existing Features:                                                                                                                                        │
+     │ - Upgrade WhatsApp button with API message sending                                                                                                                 │
+     │ - Add WhatsApp notifications to order management                                                                                                                   │
+     │ - Integrate WhatsApp receipts with PIX payments                                                                                                                    │
+     │ - Product inquiry handling through WhatsApp                                                                                                                        │
+     │                                                                                                                                                                    │
+     │ Phase 4: Advanced Features (Week 7-8)                                                                                                                              │
+     │                                                                                                                                                                    │
+     │ Automation & Integration:                                                                                                                                          │
+     │ - Automated order confirmations via WhatsApp templates                                                                                                             │
+     │ - Customer support conversation management                                                                                                                         │
+     │ - Product catalog sharing through WhatsApp                                                                                                                         │
+     │ - Bulk messaging capabilities with rate limiting                                                                                                                   │
+     │                                                                                                                                                                    │
+     │ Analytics & Monitoring:                                                                                                                                            │
+     │ - Message delivery and read rate analytics                                                                                                                         │
+     │ - Customer engagement metrics                                                                                                                                      │
+     │ - Template performance tracking                                                                                                                                    │
+     │ - Integration health monitoring                                                                                                                                    │
+     │                                                                                                                                                                    │
+     │ Key Technical Considerations:                                                                                                                                      │
+     │                                                                                                                                                                    │
+     │ - Serverless Compatibility: All components designed for AWS Lambda/Vercel deployment                                                                               │
+     │ - Multi-tenancy: Partner-scoped data isolation maintained                                                                                                          │
+     │ - Rate Limiting: WhatsApp API rate limits respected with queuing                                                                                                   │
+     │ - Template Management: Pre-approved templates required for business messaging                                                                                      │
+     │ - Webhook Security: Signature validation and secure token handling                                                                                                 │
+     │ - Database Optimization: Indexes for message history and analytics queries                                                                                         │
+     │                                                                                                                                                                    │
+     │ Environment Variables Required:                                                                                                                                    │
+     │                                                                                                                                                                    │
+     │ WHATSAPP_ACCESS_TOKEN=your_permanent_access_token                                                                                                                  │
+     │ WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token                                                                                                            │
+     │ WHATSAPP_GRAPH_API_URL=https://graph.facebook.com/v18.0                                                                                                            │
+     │ ENCRYPTION_KEY=for_storing_partner_tokens_securely                                                                                                                 │
+     │                                                                                                                                                                    │
+     │ This plan integrates WhatsApp Cloud API seamlessly with eBrecho's existing multi-tenant architecture while maintaining serverless compatibility and security best  │
+     │ practices.                                                                                                                                                         │
+     ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+> make sure databese new models have Partner relation applyed, whats app channel will act as a proxy for receice and send msg
+
+⏺ Perfect! Let me revise the database schema to ensure proper Partner relations and design the WhatsApp channel as a message proxy system.
+
+  Revised Database Schema with Partner Relations
+
+  Updated Models with Proper Partner Relations:
+
+  -- WhatsApp Business Account Configuration
+  model WhatsAppBusinessAccount {
+    id                 String   @id @default(cuid())
+    partnerId          String   @unique
+    partner            Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+    businessAccountId  String   // Meta Business Account ID
+    phoneNumberId      String   // WhatsApp Phone Number ID
+    accessToken        String   // Encrypted access token
+    webhookToken       String   // Webhook verification token
+
+    isActive           Boolean  @default(false)
+    isVerified         Boolean  @default(false)
+
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+
+    // Relations
+    templates          WhatsAppTemplate[]
+    messages           WhatsAppMessage[]
+    channels           WhatsAppChannel[]
+
+    @@map("whatsapp_business_accounts")
+  }
+
+  -- WhatsApp Channel (Message Proxy)
+  model WhatsAppChannel {
+    id                    String   @id @default(cuid())
+    partnerId             String
+    partner               Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+    businessAccountId     String
+    businessAccount       WhatsAppBusinessAccount @relation(fields: [businessAccountId], references: [id], onDelete: Cascade)
+
+    customerPhoneNumber   String   // Customer's phone number
+    customerName          String?  // Customer's display name
+    lastMessageAt         DateTime @default(now())
+    isActive              Boolean  @default(true)
+
+    // Channel metadata
+    channelType           String   @default("customer_support") // customer_support, order_inquiry, product_question
+    contextData           Json?    // Additional context (orderId, productId, etc.)
+
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
+    // Relations
+    messages              WhatsAppMessage[]
+
+    @@unique([partnerId, customerPhoneNumber])
+    @@index([partnerId, lastMessageAt])
+    @@map("whatsapp_channels")
+  }
+
+  -- Message Templates
+  model WhatsAppTemplate {
+    id                    String   @id @default(cuid())
+    partnerId             String
+    partner               Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+    businessAccountId     String
+    businessAccount       WhatsAppBusinessAccount @relation(fields: [businessAccountId], references: [id], onDelete: Cascade)
+
+    name                  String   // Template name in WhatsApp
+    category              String   // marketing, utility, authentication, service
+    language              String   @default("pt_BR")
+    status                String   // PENDING, APPROVED, REJECTED
+    content               Json     // Template structure
+    variables             Json?    // Template variables definition
+
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
+    // Relations
+    messages              WhatsAppMessage[]
+
+    @@unique([partnerId, name])
+    @@index([partnerId, status])
+    @@map("whatsapp_templates")
+  }
+
+  -- Message History (Proxy Messages)
+  model WhatsAppMessage {
+    id                    String   @id @default(cuid())
+    partnerId             String
+    partner               Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+    channelId             String
+    channel               WhatsAppChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+    businessAccountId     String?
+    businessAccount       WhatsAppBusinessAccount? @relation(fields: [businessAccountId], references: [id], onDelete: SetNull)
+
+    whatsappId            String?  // WhatsApp message ID (null for outbound pending)
+    phoneNumber           String   // Customer phone number
+    type                  String   // text, template, image, document, etc.
+    direction             String   // inbound, outbound
+    content               Json     // Message content
+    status                String   // pending, sent, delivered, read, failed
+
+    // Template relation (for outbound template messages)
+    templateId            String?
+    template              WhatsAppTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+    // Context relations
+    orderId               String?  // Link to order if applicable
+    order                 Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+    productId             String?  // Link to product if applicable
+    product               Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+    // Metadata
+    errorMessage          String?  // Error details if failed
+    retryCount            Int      @default(0)
+    scheduledAt           DateTime? // For scheduled messages
+
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
+    @@index([partnerId, createdAt])
+    @@index([channelId, createdAt])
+    @@index([phoneNumber])
+    @@index([status, scheduledAt])
+    @@map("whatsapp_messages")
+  }
+
+  -- Webhook Events Log
+  model WhatsAppWebhookEvent {
+    id                    String   @id @default(cuid())
+    partnerId             String?
+    partner               Partner? @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+    eventType             String   // message, status, etc.
+    webhookId             String?  // WhatsApp webhook event ID
+    phoneNumberId         String?  // WhatsApp Phone Number ID
+    payload               Json     // Full webhook payload
+    processed             Boolean  @default(false)
+    processedAt           DateTime?
+    errorMessage          String?  // Processing error details
+
+    createdAt             DateTime @default(now())
+
+    @@index([processed, createdAt])
+    @@index([partnerId, eventType])
+    @@map("whatsapp_webhook_events")
+  }
+
+  Update Partner Model Relations:
+
+  model Partner {
+    // ... existing fields ...
+
+    // WhatsApp Relations
+    whatsappBusinessAccount WhatsAppBusinessAccount?
+    whatsappChannels        WhatsAppChannel[]
+    whatsappTemplates       WhatsAppTemplate[]
+    whatsappMessages        WhatsAppMessage[]
+    whatsappWebhookEvents   WhatsAppWebhookEvent[]
+  }
+
+  // Also update existing models that will link to WhatsApp
+  model Order {
+    // ... existing fields ...
+    whatsappMessages        WhatsAppMessage[]
+  }
+
+  model Product {
+    // ... existing fields ...
+    whatsappMessages        WhatsAppMessage[]
+  }
+
+  WhatsApp Channel Proxy Architecture
+
+  Channel-Based Message Routing:
+
+  1. Channel Creation: Automatically created when first message received from customer
+  2. Message Routing: All messages flow through channels for proper partner isolation
+  3. Context Awareness: Channels maintain context (orders, products, support type)
+  4. Partner Scoping: All data properly scoped to partnerId with cascade deletes
+
+  Key Benefits:
+
+  - Multi-tenant Safe: All WhatsApp data properly isolated by Partner
+  - Message Proxy: Channels act as conversation containers
+  - Context Rich: Links messages to orders, products, and business context
+  - Scalable: Proper indexing for performance at scale
+  - Audit Trail: Complete webhook event logging with partner attribution
+
+  Channel Proxy Flow:
+
+  Customer WhatsApp → WhatsApp Cloud API → Webhook → eBrecho API → Channel Proxy → Partner
+  Partner → eBrecho API → Channel Proxy → WhatsApp Cloud API → Customer WhatsApp
+
+  This design ensures that the WhatsApp integration respects eBrecho's multi-tenant architecture while providing a robust message proxy system for reliable communication
+  between partners and customers.
+
+> curl -i -X POST \
+    https://graph.facebook.com/v22.0/826543520541078/messages \
+    -H 'Authorization: Bearer EAAHZCAzIO6ZA0BPdD21cCXYqLclZCSmCpqmToZB4LBMlOIbVZCy84jdFXG0pZBREyIzRZBMTsxYw7I6ihN0nDZBE0rV5RQWGDWKcD1u5F8dZCUJqj1MZBaqjOXEK2qw8LzafEdhh30H4Iv
+  1pIHWrKzSgoKKdxodJxuhOnFWoNOF2DcytlN9eEtGXyWhnZCZBxMYQe9xj61tJRtZCsBhi4OFrpFP1ZCZCXTipY8VY3OZAgeMXgjU6SzjMAlEz' \
+    -H 'Content-Type: application/json' \
+    -d '{ "messaging_product": "whatsapp", "to": "5511963166165", "type": "template", "template": { "name": "hello_world", "language": { "code": "en_US" } } }'
+
+⏺ Perfect! I can see you have a working WhatsApp Cloud API setup with the credentials. Let me incorporate this into the comprehensive implementation plan.
+  ⎿  User rejected Claude's plan:
+     ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+     │ WhatsApp Cloud API Integration Plan for eBrecho                                                                                                                  │
+     │                                                                                                                                                                  │
+     │ Phase 1: Database Foundation (Week 1)                                                                                                                            │
+     │                                                                                                                                                                  │
+     │ Prisma Schema Updates:                                                                                                                                           │
+     │ - Add WhatsApp models with proper Partner relations and cascade deletes                                                                                          │
+     │ - Create WhatsAppChannel model as message proxy system                                                                                                           │
+     │ - Update Partner model with WhatsApp relations                                                                                                                   │
+     │ - Create migration for new database structure                                                                                                                    │
+     │                                                                                                                                                                  │
+     │ Key Models:                                                                                                                                                      │
+     │ - WhatsAppBusinessAccount - Partner's API configuration                                                                                                          │
+     │ - WhatsAppChannel - Message proxy per customer conversation                                                                                                      │
+     │ - WhatsAppTemplate - Partner's approved message templates                                                                                                        │
+     │ - WhatsAppMessage - All messages routed through channels                                                                                                         │
+     │ - WhatsAppWebhookEvent - Event logging with partner attribution                                                                                                  │
+     │                                                                                                                                                                  │
+     │ Phase 2: Backend API Integration (Week 2-3)                                                                                                                      │
+     │                                                                                                                                                                  │
+     │ WhatsApp Service Layer:                                                                                                                                          │
+     │ - Create WhatsApp Cloud API client service using provided credentials                                                                                            │
+     │ - Implement channel-based message proxy system                                                                                                                   │
+     │ - Build webhook endpoints for receiving messages and status updates                                                                                              │
+     │ - Add message sending with template support                                                                                                                      │
+     │                                                                                                                                                                  │
+     │ API Endpoints:                                                                                                                                                   │
+     │ POST /api/whatsapp/setup           # Connect partner's WhatsApp Business                                                                                         │
+     │ GET  /api/whatsapp/channels        # Get partner's conversation channels                                                                                         │
+     │ POST /api/whatsapp/send            # Send message through channel proxy                                                                                          │
+     │ POST /api/whatsapp/webhook         # Receive WhatsApp events                                                                                                     │
+     │ GET  /api/whatsapp/templates       # Manage partner templates                                                                                                    │
+     │                                                                                                                                                                  │
+     │ Integration Points:                                                                                                                                              │
+     │ - Order confirmations via WhatsApp templates                                                                                                                     │
+     │ - Product inquiries through channel routing                                                                                                                      │
+     │ - PIX payment receipts via WhatsApp messaging                                                                                                                    │
+     │                                                                                                                                                                  │
+     │ Phase 3: Frontend Dashboard (Week 4-5)                                                                                                                           │
+     │                                                                                                                                                                  │
+     │ Partner Dashboard Components (shadcn/ui):                                                                                                                        │
+     │ - WhatsApp setup wizard for business account connection                                                                                                          │
+     │ - Channel-based conversation interface                                                                                                                           │
+     │ - Template management with visual builder                                                                                                                        │
+     │ - Message analytics and delivery tracking                                                                                                                        │
+     │                                                                                                                                                                  │
+     │ Enhanced Features:                                                                                                                                               │
+     │ - Upgrade existing WhatsApp button to use API instead of wa.me links                                                                                             │
+     │ - Add WhatsApp notification toggles to order management                                                                                                          │
+     │ - Integrate conversation context with products/orders                                                                                                            │
+     │ - Real-time message status updates                                                                                                                               │
+     │                                                                                                                                                                  │
+     │ Phase 4: Advanced Automation (Week 6)                                                                                                                            │
+     │                                                                                                                                                                  │
+     │ Business Logic Integration:                                                                                                                                      │
+     │ - Automated order status updates via templates                                                                                                                   │
+     │ - Product catalog sharing through WhatsApp                                                                                                                       │
+     │ - Customer support conversation routing                                                                                                                          │
+     │ - Bulk messaging with rate limiting compliance                                                                                                                   │
+     │                                                                                                                                                                  │
+     │ Analytics & Monitoring:                                                                                                                                          │
+     │ - Channel activity metrics per partner                                                                                                                           │
+     │ - Message delivery and engagement tracking                                                                                                                       │
+     │ - Template performance analytics                                                                                                                                 │
+     │ - Integration health monitoring                                                                                                                                  │
+     │                                                                                                                                                                  │
+     │ Technical Implementation Details:                                                                                                                                │
+     │                                                                                                                                                                  │
+     │ WhatsApp Cloud API Configuration:                                                                                                                                │
+     │ - Phone Number ID: 826543520541078 (from your curl example)                                                                                                      │
+     │ - Access Token: Securely stored per partner                                                                                                                      │
+     │ - Graph API Version: v22.0                                                                                                                                       │
+     │ - Webhook verification and signature validation                                                                                                                  │
+     │                                                                                                                                                                  │
+     │ Channel Proxy System:                                                                                                                                            │
+     │ - Each customer conversation creates a WhatsAppChannel                                                                                                           │
+     │ - All messages routed through channels for proper partner isolation                                                                                              │
+     │ - Context linking to orders, products, and support tickets                                                                                                       │
+     │ - Automatic channel management and customer identification                                                                                                       │
+     │                                                                                                                                                                  │
+     │ Multi-Tenant Security:                                                                                                                                           │
+     │ - All WhatsApp data scoped to partnerId with cascade deletes                                                                                                     │
+     │ - Partner access tokens encrypted and securely stored                                                                                                            │
+     │ - Webhook events properly attributed to correct partner                                                                                                          │
+     │ - Rate limiting applied per partner to comply with WhatsApp limits                                                                                               │
+     │                                                                                                                                                                  │
+     │ Serverless Compatibility:                                                                                                                                        │
+     │ - Stateless webhook processing                                                                                                                                   │
+     │ - Database connection pooling for serverless functions                                                                                                           │
+     │ - Async message processing with retry mechanisms                                                                                                                 │
+     │ - Environment variables for secure credential management                                                                                                         │
+     │                                                                                                                                                                  │
+     │ This plan leverages your existing WhatsApp Cloud API setup while building a robust, multi-tenant message proxy system that integrates seamlessly with eBrecho's  │
+     │ architecture.                                                                                                                                                    │
+     ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+> please remore  model Partner WhatsApp Relations, lets start simple 
+      whatsappBusinessAccount WhatsAppBusinessAccount?
+      whatsappChannels        WhatsAppChannel[]
+      whatsappTemplates       WhatsAppTemplate[]
+      whatsappMessages        WhatsAppMessage[]
+      whatsappWebhookEvents   WhatsAppWebhookEvent[]
+
+⏺ Perfect! Let's keep it simple and start with a clean implementation. Here's the revised database schema without adding relations to the Partner model:
+
+  Simplified Database Schema (Start Simple)
+
+  Core WhatsApp Models with Partner References:
+
+  -- WhatsApp Business Account Configuration
+  model WhatsAppBusinessAccount {
+    id                 String   @id @default(cuid())
+    partnerId          String   @unique
+    partner            Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+    businessAccountId  String   // Meta Business Account ID
+    phoneNumberId      String   // WhatsApp Phone Number ID
+    accessToken        String   // Encrypted access token
+    webhookToken       String   // Webhook verification token
+
+    isActive           Boolean  @default(false)
+    isVerified         Boolean  @default(false)
+
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+
+    @@map("whatsapp_business_accounts")
+  }
+
+  -- WhatsApp Channel (Message Proxy)
+  model WhatsAppChannel {
+    id                    String   @id @default(cuid())
+    partnerId             String
+    partner               Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+    customerPhoneNumber   String   // Customer's phone number
+    customerName          String?  // Customer's display name
+    lastMessageAt         DateTime @default(now())
+    isActive              Boolean  @default(true)
+
+    // Channel metadata
+    channelType           String   @default("customer_support") // customer_support, order_inquiry, product_question
+    contextData           Json?    // Additional context (orderId, productId, etc.)
+
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
+    @@unique([partnerId, customerPhoneNumber])
+    @@index([partnerId, lastMessageAt])
+    @@map("whatsapp_channels")
+  }
+
+  -- Message Templates
+  model WhatsAppTemplate {
+    id                    String   @id @default(cuid())
+    partnerId             String
+    partner               Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+    name                  String   // Template name in WhatsApp
+    category              String   // marketing, utility, authentication, service
+    language              String   @default("pt_BR")
+    status                String   // PENDING, APPROVED, REJECTED
+    content               Json     // Template structure
+    variables             Json?    // Template variables definition
+
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
+    @@unique([partnerId, name])
+    @@index([partnerId, status])
+    @@map("whatsapp_templates")
+  }
+
+  -- Message History (Proxy Messages)
+  model WhatsAppMessage {
+    id                    String   @id @default(cuid())
+    partnerId             String
+    partner               Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+    channelId             String
+    channel               WhatsAppChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+    whatsappId            String?  // WhatsApp message ID
+    phoneNumber           String   // Customer phone number
+    type                  String   // text, template, image, document, etc.
+    direction             String   // inbound, outbound
+    content               Json     // Message content
+    status                String   // pending, sent, delivered, read, failed
+
+    // Context relations (optional)
+    orderId               String?  // Link to order if applicable
+    productId             String?  // Link to product if applicable
+
+    // Metadata
+    errorMessage          String?  // Error details if failed
+    retryCount            Int      @default(0)
+
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
+    @@index([partnerId, createdAt])
+    @@index([channelId, createdAt])
+    @@index([phoneNumber])
+    @@map("whatsapp_messages")
+  }
+
+  -- Webhook Events Log
+  model WhatsAppWebhookEvent {
+    id                    String   @id @default(cuid())
+    partnerId             String?
+    partner               Partner? @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+    eventType             String   // message, status, etc.
+    webhookId             String?  // WhatsApp webhook event ID
+    phoneNumberId         String?  // WhatsApp Phone Number ID
+    payload               Json     // Full webhook payload
+    processed             Boolean  @default(false)
+    processedAt           DateTime?
+    errorMessage          String?  // Processing error details
+
+    createdAt             DateTime @default(now())
+
+    @@index([processed, createdAt])
+    @@index([partnerId, eventType])
+    @@map("whatsapp_webhook_events")
+  }
+
+  Partner Model Changes:
+
+  Keep the Partner model unchanged - no WhatsApp relations added initially.
+
+  Key Benefits of This Simple Approach:
+
+  1. Clean Start: No modifications to existing Partner model
+  2. Forward References: WhatsApp models reference Partner, but Partner doesn't know about WhatsApp
+  3. Easy Rollback: Can be easily removed without affecting existing functionality
+  4. Gradual Integration: Add Partner relations later if needed
+  5. Data Integrity: Still maintains proper foreign keys and cascade deletes
+
+  Channel Proxy System:
+
+  - Each customer conversation creates a WhatsAppChannel
+  - All messages flow through channels with partnerId scoping
+  - Simple and focused on core messaging functionality
+  - Can be enhanced later with additional features
+
+  This approach lets us build the WhatsApp integration incrementally without modifying the core Partner model structure initially.
+

@@ -20,7 +20,8 @@ const testFiles = [
     'analytics.test.js',
     'pix-transactions.test.js',
     'promoter.test.js',
-    'customers.test.js'
+    'customers.test.js',
+    'whatsapp.test.js'
 ];
 
 // Colors for console output

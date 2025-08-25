@@ -28,6 +28,7 @@ import testBlobRoutes from './routes/test-blob.routes';
 import pixTransactionRoutes from './routes/pix-transaction.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import placesRoutes from './routes/places.routes';
+import whatsappRoutes from './routes/whatsapp.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
@@ -88,7 +89,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
 }));
-app.use(express.json());
+// Apply JSON parsing to all routes except webhook
+app.use((req, res, next) => {
+  if (req.path === '/api/whatsapp/webhook' && req.method === 'POST') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files (uploaded images)
@@ -488,6 +496,9 @@ app.use('/api/pix-transactions', pixTransactionRoutes);
 
 // Places API routes
 app.use('/api/places', placesRoutes);
+
+// WhatsApp Cloud API routes
+app.use('/api/whatsapp', whatsappRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

@@ -133,6 +133,31 @@ enum PixTransactionStatus {
   REFUNDED    // Payment refunded
 }
 
+enum WhatsAppMessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum WhatsAppMessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  AUDIO
+  VIDEO
+  TEMPLATE
+  INTERACTIVE
+}
+
+enum WhatsAppTemplateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAUSED
+  DISABLED
+}
+
 // Models
 model User {
   id         String   @id @default(cuid())
@@ -178,12 +203,15 @@ model Partner {
   isPublicActive    Boolean  @default(true)
   publicBanner      String?
   publicLogo        String?
-  whatsappNumber    String?
-  whatsappName      String?
-  publicEmail       String?
-  businessHours     Json?
-  socialLinks       Json?
-  pixKey            String?
+  whatsappNumber         String?
+  whatsappName           String?
+  whatsappBusinessVerified Boolean @default(false)
+  whatsappApiEnabled     Boolean @default(false)
+  whatsappPhoneNumberId  String?
+  publicEmail            String?
+  businessHours          Json?
+  socialLinks            Json?
+  pixKey                 String?
   
   address      Address?
   users        User[]
@@ -205,6 +233,10 @@ model Partner {
   userSessions       UserSession[]
   pageViews          PageView[]
   userActivities     UserActivity[]
+  
+  // WhatsApp relations
+  whatsappMessages   WhatsAppMessage[]
+  whatsappTemplates  WhatsAppTemplate[]
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -807,6 +839,104 @@ model PixTransaction {
   @@index([status])
   @@index([createdAt])
   @@index([customerId])
+}
+
+// WhatsApp Models
+model WhatsAppMessage {
+  id              String                @id @default(cuid())
+  messageId       String                @unique // WhatsApp message ID
+  partnerId       String
+  partner         Partner               @relation(fields: [partnerId], references: [id])
+  
+  // Message details
+  fromNumber      String                // Phone number that sent the message
+  toNumber        String                // Phone number that received the message
+  direction       String                // 'inbound' or 'outbound'
+  messageType     WhatsAppMessageType
+  status          WhatsAppMessageStatus @default(SENT)
+  
+  // Message content
+  textContent     String?               // For text messages
+  mediaId         String?               // For media messages
+  mediaUrl        String?               // For media messages
+  fileName        String?               // For document messages
+  caption         String?               // For media messages with captions
+  
+  // Template message details
+  templateName    String?
+  templateLanguage String?
+  templateParams  Json?                 // Template parameters
+  
+  // Metadata
+  timestamp       DateTime
+  conversationId  String?               // Group messages by conversation
+  contextMessageId String?              // Reply to message ID
+  
+  // Error handling
+  errorCode       String?
+  errorMessage    String?
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  
+  @@index([partnerId])
+  @@index([messageId])
+  @@index([fromNumber])
+  @@index([toNumber])
+  @@index([conversationId])
+  @@index([timestamp])
+  @@index([status])
+}
+
+model WhatsAppTemplate {
+  id              String                 @id @default(cuid())
+  partnerId       String
+  partner         Partner                @relation(fields: [partnerId], references: [id])
+  
+  // Template details
+  templateId      String?                // WhatsApp template ID after approval
+  name            String                 // Template name
+  language        String                 // Language code (e.g., 'pt_BR', 'en_US')
+  category        String                 // AUTHENTICATION, MARKETING, UTILITY
+  status          WhatsAppTemplateStatus @default(PENDING)
+  
+  // Template content
+  headerText      String?
+  bodyText        String
+  footerText      String?
+  buttonConfig    Json?                  // Button configuration if any
+  
+  // Approval details
+  rejectionReason String?
+  approvedAt      DateTime?
+  
+  // Usage tracking
+  sentCount       Int                    @default(0)
+  deliveredCount  Int                    @default(0)
+  readCount       Int                    @default(0)
+  failedCount     Int                    @default(0)
+  
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  
+  @@unique([partnerId, name, language])
+  @@index([partnerId])
+  @@index([status])
+  @@index([category])
+  @@index([templateId])
+}
+
+model WhatsAppWebhookLog {
+  id              String   @id @default(cuid())
+  webhookType     String   // 'messages', 'message_template_status_update', etc.
+  payload         Json     // Full webhook payload
+  processed       Boolean  @default(false)
+  processingError String?
+  createdAt       DateTime @default(now())
+  
+  @@index([webhookType])
+  @@index([processed])
+  @@index([createdAt])
 }
 
 // Analytics Models

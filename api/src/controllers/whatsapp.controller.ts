@@ -1,0 +1,712 @@
+import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import whatsappService from '../services/whatsapp.service';
+import {
+  webhookVerificationSchema,
+  sendTextMessageSchema,
+  sendTemplateMessageSchema,
+  sendMediaMessageSchema,
+  createTemplateSchema,
+  updateTemplateSchema,
+  getConversationHistorySchema,
+  getAnalyticsSchema,
+  webhookPayloadSchema,
+  updatePartnerWhatsAppConfigSchema,
+  testMessageSchema,
+  messageSearchSchema,
+} from '../schemas/whatsapp.schema';
+
+const prisma = new PrismaClient();
+
+export class WhatsAppController {
+  /**
+   * Verify webhook (GET request from Meta)
+   */
+  async verifyWebhook(req: Request, res: Response) {
+    try {
+      const validation = webhookVerificationSchema.safeParse(req.query);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid webhook verification parameters',
+          details: validation.error.format(),
+        });
+      }
+
+      const { 'hub.mode': mode, 'hub.challenge': challenge, 'hub.verify_token': verifyToken } = validation.data;
+      
+      const expectedToken = process.env.WHATSAPP_VERIFY_TOKEN;
+      if (verifyToken !== expectedToken) {
+        return res.status(403).json({ error: 'Invalid verify token' });
+      }
+
+      // Return the challenge to verify the webhook
+      res.status(200).send(challenge);
+    } catch (error) {
+      console.error('Webhook verification error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
+   * Handle webhook events (POST request from Meta)
+   */
+  async handleWebhook(req: Request, res: Response) {
+    try {
+      const signature = req.headers['x-hub-signature-256'] as string;
+      const rawPayload = (req as any).rawBody ? (req as any).rawBody.toString() : JSON.stringify(req.body);
+
+      // Verify webhook signature
+      if (!whatsappService.verifyWebhook(signature, rawPayload)) {
+        return res.status(403).json({ error: 'Invalid webhook signature' });
+      }
+
+      const validation = webhookPayloadSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        console.error('Invalid webhook payload:', validation.error);
+        return res.status(400).json({ error: 'Invalid webhook payload' });
+      }
+
+      // Process the webhook asynchronously
+      whatsappService.processWebhook(validation.data as any).catch(error => {
+        console.error('Error processing webhook:', error);
+      });
+
+      // Always respond with 200 OK to acknowledge receipt
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Webhook handling error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
+   * Send text message
+   */
+  async sendTextMessage(req: Request, res: Response) {
+    try {
+      const validation = sendTextMessageSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request data',
+          details: validation.error.format(),
+        });
+      }
+
+      const { to, message } = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      // Check if partner has WhatsApp API enabled
+      const partner = await prisma.partner.findUnique({
+        where: { id: partnerId },
+        select: { whatsappApiEnabled: true, whatsappPhoneNumberId: true },
+      });
+
+      if (!partner?.whatsappApiEnabled || !partner?.whatsappPhoneNumberId) {
+        return res.status(403).json({ 
+          error: 'WhatsApp API not enabled for this partner' 
+        });
+      }
+
+      const result = await whatsappService.sendTextMessage({ to, message, partnerId });
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Send text message error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send message',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Send template message
+   */
+  async sendTemplateMessage(req: Request, res: Response) {
+    try {
+      const validation = sendTemplateMessageSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request data',
+          details: validation.error.format(),
+        });
+      }
+
+      const { to, templateName, languageCode, parameters } = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      // Check if partner has WhatsApp API enabled
+      const partner = await prisma.partner.findUnique({
+        where: { id: partnerId },
+        select: { whatsappApiEnabled: true, whatsappPhoneNumberId: true },
+      });
+
+      if (!partner?.whatsappApiEnabled || !partner?.whatsappPhoneNumberId) {
+        return res.status(403).json({ 
+          error: 'WhatsApp API not enabled for this partner' 
+        });
+      }
+
+      const result = await whatsappService.sendTemplateMessage({ 
+        to, 
+        templateName, 
+        languageCode, 
+        parameters,
+        partnerId 
+      });
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Send template message error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send template message',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Send media message
+   */
+  async sendMediaMessage(req: Request, res: Response) {
+    try {
+      const validation = sendMediaMessageSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request data',
+          details: validation.error.format(),
+        });
+      }
+
+      const { to, mediaType, mediaId, mediaUrl, caption, fileName } = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      // Check if partner has WhatsApp API enabled
+      const partner = await prisma.partner.findUnique({
+        where: { id: partnerId },
+        select: { whatsappApiEnabled: true, whatsappPhoneNumberId: true },
+      });
+
+      if (!partner?.whatsappApiEnabled || !partner?.whatsappPhoneNumberId) {
+        return res.status(403).json({ 
+          error: 'WhatsApp API not enabled for this partner' 
+        });
+      }
+
+      const result = await whatsappService.sendMediaMessage({ 
+        to,
+        mediaType,
+        mediaId,
+        mediaUrl,
+        caption,
+        fileName,
+        partnerId 
+      });
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Send media message error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send media message',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Get conversation history
+   */
+  async getConversationHistory(req: Request, res: Response) {
+    try {
+      const validation = getConversationHistorySchema.safeParse(req.query);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid query parameters',
+          details: validation.error.format(),
+        });
+      }
+
+      const { phoneNumber, limit } = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const messages = await whatsappService.getConversationHistory(partnerId, phoneNumber, limit);
+      
+      res.status(200).json({ 
+        success: true,
+        data: messages,
+        count: messages.length,
+      });
+    } catch (error) {
+      console.error('Get conversation history error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch conversation history',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Get message analytics
+   */
+  async getAnalytics(req: Request, res: Response) {
+    try {
+      const validation = getAnalyticsSchema.safeParse(req.query);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid query parameters',
+          details: validation.error.format(),
+        });
+      }
+
+      const { startDate, endDate } = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const analytics = await whatsappService.getMessageAnalytics(partnerId, startDate, endDate);
+      
+      res.status(200).json({ 
+        success: true,
+        data: analytics,
+      });
+    } catch (error) {
+      console.error('Get analytics error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch analytics',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Create message template
+   */
+  async createTemplate(req: Request, res: Response) {
+    try {
+      const validation = createTemplateSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request data',
+          details: validation.error.format(),
+        });
+      }
+
+      const templateData = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      // Check if template with same name and language already exists
+      const existingTemplate = await prisma.whatsAppTemplate.findUnique({
+        where: {
+          partnerId_name_language: {
+            partnerId,
+            name: templateData.name,
+            language: templateData.language,
+          },
+        },
+      });
+
+      if (existingTemplate) {
+        return res.status(409).json({ 
+          error: 'Template with this name and language already exists' 
+        });
+      }
+
+      const template = await prisma.whatsAppTemplate.create({
+        data: {
+          partnerId,
+          name: templateData.name,
+          language: templateData.language,
+          category: templateData.category,
+          headerText: templateData.headerText,
+          bodyText: templateData.bodyText,
+          footerText: templateData.footerText,
+          buttonConfig: templateData.buttonConfig,
+        },
+      });
+      
+      res.status(201).json({ 
+        success: true,
+        data: template,
+      });
+    } catch (error) {
+      console.error('Create template error:', error);
+      res.status(500).json({ 
+        error: 'Failed to create template',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Get partner templates
+   */
+  async getTemplates(req: Request, res: Response) {
+    try {
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const templates = await prisma.whatsAppTemplate.findMany({
+        where: { partnerId },
+        orderBy: { createdAt: 'desc' },
+      });
+      
+      res.status(200).json({ 
+        success: true,
+        data: templates,
+        count: templates.length,
+      });
+    } catch (error) {
+      console.error('Get templates error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch templates',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Update template
+   */
+  async updateTemplate(req: Request, res: Response) {
+    try {
+      const { templateId } = req.params;
+      const validation = updateTemplateSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request data',
+          details: validation.error.format(),
+        });
+      }
+
+      const updateData = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const template = await prisma.whatsAppTemplate.findFirst({
+        where: { 
+          id: templateId,
+          partnerId 
+        },
+      });
+
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+
+      const updatedTemplate = await prisma.whatsAppTemplate.update({
+        where: { id: templateId },
+        data: updateData,
+      });
+      
+      res.status(200).json({ 
+        success: true,
+        data: updatedTemplate,
+      });
+    } catch (error) {
+      console.error('Update template error:', error);
+      res.status(500).json({ 
+        error: 'Failed to update template',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Delete template
+   */
+  async deleteTemplate(req: Request, res: Response) {
+    try {
+      const { templateId } = req.params;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const template = await prisma.whatsAppTemplate.findFirst({
+        where: { 
+          id: templateId,
+          partnerId 
+        },
+      });
+
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+
+      await prisma.whatsAppTemplate.delete({
+        where: { id: templateId },
+      });
+      
+      res.status(200).json({ 
+        success: true,
+        message: 'Template deleted successfully',
+      });
+    } catch (error) {
+      console.error('Delete template error:', error);
+      res.status(500).json({ 
+        error: 'Failed to delete template',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Update partner WhatsApp configuration
+   */
+  async updatePartnerConfig(req: Request, res: Response) {
+    try {
+      const validation = updatePartnerWhatsAppConfigSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request data',
+          details: validation.error.format(),
+        });
+      }
+
+      const configData = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const updatedPartner = await prisma.partner.update({
+        where: { id: partnerId },
+        data: configData,
+        select: {
+          whatsappNumber: true,
+          whatsappName: true,
+          whatsappBusinessVerified: true,
+          whatsappApiEnabled: true,
+          whatsappPhoneNumberId: true,
+        },
+      });
+      
+      res.status(200).json({ 
+        success: true,
+        data: updatedPartner,
+      });
+    } catch (error) {
+      console.error('Update partner config error:', error);
+      res.status(500).json({ 
+        error: 'Failed to update WhatsApp configuration',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Get partner WhatsApp configuration
+   */
+  async getPartnerConfig(req: Request, res: Response) {
+    try {
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const partner = await prisma.partner.findUnique({
+        where: { id: partnerId },
+        select: {
+          whatsappNumber: true,
+          whatsappName: true,
+          whatsappBusinessVerified: true,
+          whatsappApiEnabled: true,
+          whatsappPhoneNumberId: true,
+        },
+      });
+
+      if (!partner) {
+        return res.status(404).json({ error: 'Partner not found' });
+      }
+      
+      res.status(200).json({ 
+        success: true,
+        data: partner,
+      });
+    } catch (error) {
+      console.error('Get partner config error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch WhatsApp configuration',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Test message sending (development only)
+   */
+  async testMessage(req: Request, res: Response) {
+    try {
+      // Only allow in development environment
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ error: 'Test endpoint not available in production' });
+      }
+
+      const validation = testMessageSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid request data',
+          details: validation.error.format(),
+        });
+      }
+
+      const { phoneNumber, messageType, message, templateName, languageCode } = validation.data;
+      const partnerId = req.user?.partnerId || 'test-partner';
+
+      let result;
+
+      if (messageType === 'text') {
+        result = await whatsappService.sendTextMessage({ 
+          to: phoneNumber, 
+          message: message!, 
+          partnerId 
+        });
+      } else if (messageType === 'template') {
+        result = await whatsappService.sendTemplateMessage({ 
+          to: phoneNumber, 
+          templateName: templateName!, 
+          languageCode: languageCode!, 
+          partnerId 
+        });
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Test message error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send test message',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Search messages
+   */
+  async searchMessages(req: Request, res: Response) {
+    try {
+      const validation = messageSearchSchema.safeParse(req.query);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'Invalid query parameters',
+          details: validation.error.format(),
+        });
+      }
+
+      const { 
+        phoneNumber, 
+        messageType, 
+        status, 
+        direction, 
+        startDate, 
+        endDate, 
+        search, 
+        limit, 
+        offset 
+      } = validation.data;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      const where: any = { partnerId };
+
+      if (phoneNumber) {
+        const cleanPhone = phoneNumber.replace(/\D/g, '');
+        where.OR = [
+          { fromNumber: { contains: cleanPhone } },
+          { toNumber: { contains: cleanPhone } },
+        ];
+      }
+
+      if (messageType) where.messageType = messageType;
+      if (status) where.status = status;
+      if (direction) where.direction = direction;
+
+      if (startDate || endDate) {
+        where.timestamp = {};
+        if (startDate) where.timestamp.gte = startDate;
+        if (endDate) where.timestamp.lte = endDate;
+      }
+
+      if (search) {
+        where.textContent = { contains: search, mode: 'insensitive' };
+      }
+
+      const [messages, total] = await Promise.all([
+        prisma.whatsAppMessage.findMany({
+          where,
+          orderBy: { timestamp: 'desc' },
+          take: limit,
+          skip: offset,
+        }),
+        prisma.whatsAppMessage.count({ where }),
+      ]);
+      
+      res.status(200).json({ 
+        success: true,
+        data: messages,
+        pagination: {
+          total,
+          limit,
+          offset,
+          pages: Math.ceil(total / limit),
+          currentPage: Math.floor(offset / limit) + 1,
+        },
+      });
+    } catch (error) {
+      console.error('Search messages error:', error);
+      res.status(500).json({ 
+        error: 'Failed to search messages',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+}
+
+export default new WhatsAppController();

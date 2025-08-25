@@ -89,6 +89,13 @@ Required for all deployments:
 - `BLOB_READ_WRITE_TOKEN`: Vercel Blob storage token (for production)
 - `BLOB_BASE_URL`: Blob storage base URL (for production)
 
+WhatsApp Cloud API (optional, required for WhatsApp features):
+- `WHATSAPP_ACCESS_TOKEN`: WhatsApp Cloud API access token from Meta
+- `WHATSAPP_VERIFY_TOKEN`: Webhook verification token (set by you)
+- `WHATSAPP_PHONE_NUMBER_ID`: WhatsApp Business phone number ID
+- `WHATSAPP_BUSINESS_ACCOUNT_ID`: WhatsApp Business Account ID
+- `WHATSAPP_API_VERSION`: WhatsApp API version (default: v22.0)
+
 ### File Storage
 - Local development: `./uploads` directory
 - Serverless: Configure S3 bucket or similar cloud storage
