@@ -27,6 +27,7 @@ import blobUploadRoutes from './routes/blob-upload.routes';
 import testBlobRoutes from './routes/test-blob.routes';
 import pixTransactionRoutes from './routes/pix-transaction.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import placesRoutes from './routes/places.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
@@ -45,6 +46,7 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001', // Allow Swagger UI
+      'http://localhost:3002', // Allow frontend when 3000 is in use
       'http://localhost:8080',
       process.env.FRONTEND_URL,
       process.env.NEXT_PUBLIC_APP_URL,
@@ -483,6 +485,9 @@ app.use('/api/public', publicRoutes);
 
 // PIX Transaction routes
 app.use('/api/pix-transactions', pixTransactionRoutes);
+
+// Places API routes
+app.use('/api/places', placesRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

@@ -18,7 +18,6 @@ export const api = axios.create({
 });
 
 // Add debugging interceptors
-/*
 api.interceptors.request.use(
   (config) => {
     console.log('[DEBUG] API Request:', {
@@ -54,7 +53,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-*/
 
 // Add auth token to requests (only on client-side)
 if (typeof window !== 'undefined') {

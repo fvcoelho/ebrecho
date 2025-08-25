@@ -42,7 +42,7 @@ export default function ConvitesPage() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="buscar" className="flex items-center">
               <Search className="h-4 w-4 mr-2" />
-              Buscar Estabelecimentos
+              Buscar Estabelecimentos por Endereço
             </TabsTrigger>
             <TabsTrigger value="link" className="flex items-center">
               <UserPlus className="h-4 w-4 mr-2" />

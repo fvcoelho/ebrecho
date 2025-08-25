@@ -11,7 +11,7 @@ import { Search, MapPin, Filter, X, RefreshCw } from 'lucide-react';
 import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { PlacesAutocomplete, type PlaceResult } from './places-autocomplete';
 import { BusinessCard } from './business-card';
-import { loadGoogleMapsAPI } from '@/lib/google-maps-loader';
+import { api } from '@/lib/api';
 
 interface BusinessSearchProps {
   onBusinessInvite?: (business: PlaceResult) => void;
@@ -74,66 +74,123 @@ export function BusinessSearch({ onBusinessInvite, className = '' }: BusinessSea
     setBusinesses([]);
 
     try {
-      await loadGoogleMapsAPI();
+      console.log('🔍 Searching businesses via backend nearby API:', { location, searchFilters });
       
-      if (!window.google?.maps?.places) {
-        throw new Error('Google Places API não carregada');
-      }
-
-      const map = new window.google.maps.Map(document.createElement('div'));
-      const service = new window.google.maps.places.PlacesService(map);
-
-      const searchPromises = searchFilters.types.map(type => {
-        return new Promise<PlaceResult[]>((resolve, reject) => {
-          const request = {
-            location: new window.google.maps.LatLng(location.lat, location.lng),
-            radius: searchFilters.radius,
-            type: type === 'establishment' ? undefined : type,
-            fields: [
-              'place_id',
-              'name',
-              'formatted_address',
-              'geometry',
-              'rating',
-              'user_ratings_total',
-              'photos',
-              'types',
-              'vicinity'
-            ]
-          };
-
-          service.nearbySearch(request, (results, status) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-              const filteredResults = results
-                .filter(place => 
-                  place.rating ? place.rating >= searchFilters.minRating : searchFilters.minRating === 0
-                )
-                .map(place => ({
-                  place_id: place.place_id || '',
-                  name: place.name || '',
-                  formatted_address: place.formatted_address || '',
-                  geometry: {
-                    location: {
-                      lat: place.geometry?.location?.lat() || 0,
-                      lng: place.geometry?.location?.lng() || 0
-                    }
-                  },
-                  rating: place.rating,
-                  user_ratings_total: place.user_ratings_total,
-                  photos: place.photos?.map(photo => ({
-                    photo_reference: photo.getUrl()
-                  })),
-                  types: place.types || [],
-                  vicinity: place.vicinity
-                }));
-              
-              resolve(filteredResults);
-            } else {
-              console.warn(`Search failed for type ${type}:`, status);
-              resolve([]);
+      // Search for each business type using the new nearby search API
+      const searchPromises = searchFilters.types.map(async (type) => {
+        try {
+          console.log(`🔍 Searching for type: ${type} near ${location.lat},${location.lng}`);
+          
+          // Use the new nearby search endpoint
+          const nearbyResponse = await api.get('/api/places/nearby', {
+            params: {
+              location: `${location.lat},${location.lng}`,
+              radius: searchFilters.radius,
+              type: type === 'establishment' ? 'establishment' : type,
+              language: 'pt-BR'
             }
           });
-        });
+
+          if (!nearbyResponse.data.success) {
+            console.warn(`Nearby search failed for type ${type}:`, nearbyResponse.data.error);
+            return [];
+          }
+
+          const nearbyResults = nearbyResponse.data.data.results || [];
+          console.log(`📍 Found ${nearbyResults.length} nearby places for type ${type}`);
+          
+          // Get detailed information for each place (including phone numbers)
+          const detailPromises = nearbyResults.slice(0, 15).map(async (place: any) => {
+            try {
+              // Get full place details which includes phone numbers
+              const detailResponse = await api.get('/api/places/details', {
+                params: {
+                  placeId: place.place_id,
+                  language: 'pt-BR'
+                }
+              });
+
+              if (detailResponse.data.success && detailResponse.data.data.result) {
+                const fullPlace = detailResponse.data.data.result;
+                
+                // Filter by minimum rating if specified
+                if (searchFilters.minRating > 0 && (!place.rating || place.rating < searchFilters.minRating)) {
+                  return null;
+                }
+                
+                // Calculate distance from search location
+                const distance = place.geometry?.location ? 
+                  calculateDistance(
+                    location.lat, 
+                    location.lng,
+                    place.geometry.location.lat,
+                    place.geometry.location.lng
+                  ) : null;
+                
+                // Merge nearby search data with detailed place data
+                return {
+                  place_id: place.place_id,
+                  name: fullPlace.name || place.name || '',
+                  formatted_address: fullPlace.formatted_address || place.vicinity || '',
+                  geometry: place.geometry || { location: { lat: 0, lng: 0 } },
+                  rating: place.rating,
+                  user_ratings_total: place.user_ratings_total,
+                  photos: place.photos || [],
+                  types: place.types || [],
+                  vicinity: place.vicinity || '',
+                  formatted_phone_number: fullPlace.formatted_phone_number,
+                  international_phone_number: fullPlace.international_phone_number,
+                  business_status: place.business_status,
+                  price_level: place.price_level,
+                  distance: distance
+                } as PlaceResult & { distance?: number };
+              } else {
+                // Use nearby data if details fail
+                const distance = place.geometry?.location ? 
+                  calculateDistance(
+                    location.lat, 
+                    location.lng,
+                    place.geometry.location.lat,
+                    place.geometry.location.lng
+                  ) : null;
+                
+                return {
+                  place_id: place.place_id,
+                  name: place.name || '',
+                  formatted_address: place.vicinity || '',
+                  geometry: place.geometry || { location: { lat: 0, lng: 0 } },
+                  rating: place.rating,
+                  user_ratings_total: place.user_ratings_total,
+                  photos: place.photos || [],
+                  types: place.types || [],
+                  vicinity: place.vicinity || '',
+                  business_status: place.business_status,
+                  distance: distance
+                } as PlaceResult & { distance?: number };
+              }
+            } catch (error) {
+              console.warn('Failed to get detailed info for place:', place.place_id, error);
+              // Return basic info if details fail
+              return {
+                place_id: place.place_id,
+                name: place.name || '',
+                formatted_address: place.vicinity || '',
+                geometry: place.geometry || { location: { lat: 0, lng: 0 } },
+                rating: place.rating,
+                user_ratings_total: place.user_ratings_total,
+                photos: place.photos || [],
+                types: place.types || [],
+                vicinity: place.vicinity || '',
+              } as PlaceResult;
+            }
+          });
+
+          const results = await Promise.all(detailPromises);
+          return results.filter((result): result is PlaceResult => result !== null);
+        } catch (error) {
+          console.error(`Error searching nearby for type ${type}:`, error);
+          return [];
+        }
       });
 
       const allResults = await Promise.all(searchPromises);
@@ -144,8 +201,16 @@ export function BusinessSearch({ onBusinessInvite, className = '' }: BusinessSea
         array.findIndex(b => b.place_id === business.place_id) === index
       );
 
-      // Sort by rating (highest first), then by review count
+      // Sort by distance first (if available), then by rating
       const sortedResults = uniqueResults.sort((a, b) => {
+        const distA = (a as any).distance;
+        const distB = (b as any).distance;
+        
+        if (distA !== undefined && distB !== undefined) {
+          return distA - distB;
+        }
+        
+        // Then sort by rating
         if (a.rating && b.rating) {
           if (a.rating !== b.rating) return b.rating - a.rating;
           return (b.user_ratings_total || 0) - (a.user_ratings_total || 0);
@@ -156,12 +221,26 @@ export function BusinessSearch({ onBusinessInvite, className = '' }: BusinessSea
       });
 
       setBusinesses(sortedResults);
+      console.log('✅ Found nearby businesses:', sortedResults.length);
     } catch (error) {
-      console.error('Erro na busca por estabelecimentos:', error);
+      console.error('❌ Erro na busca por estabelecimentos próximos:', error);
     } finally {
       setIsSearching(false);
     }
   }, []);
+
+  // Helper function to calculate distance between two coordinates
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in meters
+  };
 
   const handleLocationSelect = useCallback((location: { lat: number; lng: number; address: string }) => {
     setSearchLocation(location);
@@ -217,8 +296,8 @@ export function BusinessSearch({ onBusinessInvite, className = '' }: BusinessSea
         <CardHeader>
           <CardTitle className="flex items-center">
             <Search className="h-5 w-5 mr-2" />
-            Buscar Estabelecimentos
-          </CardTitle>
+            Estabelecimentos por Endereço
+            </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>

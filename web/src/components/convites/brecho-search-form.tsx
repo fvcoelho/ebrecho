@@ -29,13 +29,16 @@ import {
   Badge,
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { loadGoogleMapsAPI } from '@/lib/google-maps-loader';
+import { api } from '@/lib/api';
 
-// Extend window object to include Google Maps API
-declare global {
-  interface Window {
-    google: any;
-  }
+// Types for API responses
+interface AutocompletePrediction {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
 }
 
 interface SearchCriteria {
@@ -87,64 +90,70 @@ const searchFormSchema = z.object({
 
 type SearchFormData = z.infer<typeof searchFormSchema>;
 
-// Google Places Autocomplete service
-const searchLocationWithGoogle = async (input: string): Promise<LocationSuggestion[]> => {
-  return new Promise((resolve, reject) => {
-    // Check if Google Maps API is loaded
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
-      reject(new Error('Google Maps API not loaded'));
-      return;
-    }
-
-    const service = new window.google.maps.places.AutocompleteService();
+// Backend API location search service
+const searchLocationWithAPI = async (input: string): Promise<LocationSuggestion[]> => {
+  try {
+    console.log('🔍 Searching locations via backend API:', { input });
     
-    const request = {
-      input: input,
-      componentRestrictions: { country: 'BR' }, // Restrict to Brazil
-      types: ['geocode'], // Only geocoded results (addresses, cities, etc.)
-      language: 'pt-BR',
-    };
-
-    service.getPlacePredictions(request, (predictions: any, status: any) => {
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-        // Get place details for each prediction to get coordinates
-        const placesService = new window.google.maps.places.PlacesService(
-          document.createElement('div')
-        );
-
-        const detailPromises = predictions.slice(0, 5).map((prediction: any) => {
-          return new Promise<LocationSuggestion | null>((detailResolve) => {
-            placesService.getDetails(
-              {
-                placeId: prediction.place_id,
-                fields: ['geometry', 'formatted_address', 'place_id']
-              },
-              (place: any, detailStatus: any) => {
-                if (detailStatus === window.google.maps.places.PlacesServiceStatus.OK && place) {
-                  detailResolve({
-                    address: place.formatted_address || prediction.description,
-                    lat: place.geometry?.location?.lat() || 0,
-                    lng: place.geometry?.location?.lng() || 0,
-                    placeId: place.place_id || prediction.place_id
-                  });
-                } else {
-                  detailResolve(null);
-                }
-              }
-            );
-          });
-        });
-
-        Promise.all(detailPromises).then((results) => {
-          const validResults = results.filter((result): result is LocationSuggestion => result !== null);
-          resolve(validResults);
-        });
-      } else {
-        console.warn('Places Autocomplete failed:', status);
-        resolve([]);
+    // Call backend autocomplete endpoint
+    const autocompleteResponse = await api.get('/api/places/autocomplete', {
+      params: {
+        input,
+        country: 'BR',
+        types: 'geocode',
+        language: 'pt-BR'
       }
     });
-  });
+
+    if (!autocompleteResponse.data.success) {
+      console.warn('Backend autocomplete failed:', autocompleteResponse.data.error);
+      return [];
+    }
+
+    const predictions: AutocompletePrediction[] = autocompleteResponse.data.data.predictions || [];
+    console.log('📍 Got autocomplete predictions:', predictions.length);
+
+    // Get place details for each prediction to get coordinates
+    const detailPromises = predictions.slice(0, 5).map(async (prediction) => {
+      try {
+        const detailResponse = await api.get('/api/places/details', {
+          params: {
+            placeId: prediction.place_id,
+            fields: 'place_id,formatted_address,geometry',
+            language: 'pt-BR'
+          }
+        });
+
+        if (detailResponse.data.success && detailResponse.data.data.result) {
+          const place = detailResponse.data.data.result;
+          return {
+            address: place.formatted_address || prediction.description,
+            lat: place.geometry?.location?.lat || 0,
+            lng: place.geometry?.location?.lng || 0,
+            placeId: place.place_id
+          } as LocationSuggestion;
+        }
+        return null;
+      } catch (error) {
+        console.warn('Failed to get place details:', error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(detailPromises);
+    const validResults = results.filter((result): result is LocationSuggestion => result !== null);
+    
+    console.log('✅ Location search completed:', {
+      input,
+      predictionsFound: predictions.length,
+      validResults: validResults.length
+    });
+    
+    return validResults;
+  } catch (error) {
+    console.error('❌ Location search error:', error);
+    return [];
+  }
 };
 
 
@@ -197,22 +206,12 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
     timestamp: new Date().toISOString()
   });
 
-  // Load Google Maps API on component mount using centralized loader
+  // No need to load Google Maps API since we're using backend
   useEffect(() => {
-    const initializeGoogleMaps = async () => {
-      try {
-        await loadGoogleMapsAPI();
-        setIsGoogleMapsLoaded(true);
-        setGoogleMapsError(null);
-        console.log('✅ Google Maps API ready for autocomplete');
-      } catch (error) {
-        console.error('❌ Failed to initialize Google Maps API:', error);
-        setIsGoogleMapsLoaded(false);
-        setGoogleMapsError(error instanceof Error ? error.message : 'Failed to load location service');
-      }
-    };
-
-    initializeGoogleMaps();
+    // Backend API is always available
+    setIsGoogleMapsLoaded(true);
+    setGoogleMapsError(null);
+    console.log('✅ Backend location API ready');
   }, []);
 
   // Handle location input changes with debounced geocoding
@@ -221,7 +220,7 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
       clearTimeout(searchTimeout);
     }
 
-    if (locationInput.length < 3 || !isGoogleMapsLoaded) {
+    if (locationInput.length < 3) {
       setLocationSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -236,15 +235,15 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
           query: locationInput,
           queryLength: locationInput.length,
           timestamp: new Date().toISOString(),
-          isGoogleMapsLoaded: isGoogleMapsLoaded,
+          usingBackendAPI: true,
           existingSuggestions: locationSuggestions.length
         });
         
-        // Use Google Places Autocomplete API
-        const suggestions = await searchLocationWithGoogle(locationInput);
+        // Use Backend Places API
+        const suggestions = await searchLocationWithAPI(locationInput);
         const searchDuration = performance.now() - searchStartTime;
         
-        console.log('✅ [GEOCODING] Location suggestions received:', {
+        console.log('✅ [BACKEND API] Location suggestions received:', {
           suggestionsCount: suggestions.length,
           duration: `${searchDuration.toFixed(2)}ms`,
           suggestions: suggestions.map(s => ({
@@ -258,12 +257,12 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
         setShowSuggestions(suggestions.length > 0);
         
         if (suggestions.length === 0) {
-          console.warn('⚠️ [GEOCODING] No suggestions found for query:', locationInput);
+          console.warn('⚠️ [BACKEND API] No suggestions found for query:', locationInput);
         }
       } catch (error) {
         const searchDuration = performance.now() - searchStartTime;
         
-        console.error('❌ [GEOCODING] Location search failed:', {
+        console.error('❌ [BACKEND API] Location search failed:', {
           error: error,
           query: locationInput,
           duration: `${searchDuration.toFixed(2)}ms`,
@@ -273,10 +272,12 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
         setLocationSuggestions([]);
         setShowSuggestions(false);
         
-        // Enhanced error handling for different API states
+        // Enhanced error handling for backend API
         if (error instanceof Error) {
-          if (error.message.includes('Google Maps API not loaded')) {
-            console.warn('⚠️ [GEOCODING] Google Maps API not ready, user should wait...');
+          if (error.message.includes('Network Error') || error.message.includes('timeout')) {
+            console.warn('⚠️ [BACKEND API] Network error, please check connection');
+          } else if (error.message.includes('401') || error.message.includes('403')) {
+            console.warn('⚠️ [BACKEND API] Authentication error, please login again');
           } else if (error.message.includes('quota') || error.message.includes('billing')) {
             console.error('💰 [GEOCODING] Google API quota/billing issue detected');
           } else if (error.message.includes('key') || error.message.includes('API')) {
@@ -294,7 +295,7 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [locationInput, isGoogleMapsLoaded]);
+  }, [locationInput]);
 
   const handleLocationSelect = (suggestion: LocationSuggestion) => {
     console.log('📍 [FORM] Location selected:', {
@@ -537,10 +538,10 @@ export function BrechoSearchForm({ onSearch, onLocationSelect, loading = false }
                   </FormControl>
                   <FormMessage />
                   
-                  {/* Google Maps Error */}
+                  {/* Backend API Error */}
                   {googleMapsError && (
                     <div className="text-sm text-red-600 flex items-center gap-2">
-                      <span>⚠️ {googleMapsError}</span>
+                      <span>⚠️ Erro no serviço de localização: {googleMapsError}</span>
                       <Button
                         type="button"
                         variant="ghost"

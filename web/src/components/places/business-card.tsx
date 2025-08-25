@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Star, Users, Camera, Send, CheckCircle } from 'lucide-react';
+import { MapPin, Star, Users, Camera, Send, CheckCircle, Phone, MessageCircle } from 'lucide-react';
 import { SpinningLogo } from '@/components/ui/spinning-logo';
+import { api } from '@/lib/api';
 import type { PlaceResult } from './places-autocomplete';
 
 interface BusinessCardProps {
@@ -25,6 +26,8 @@ export function BusinessCard({
   className = ''
 }: BusinessCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
 
   const handleInvite = () => {
     if (onInvite && !isInviting && !isInvited) {
@@ -42,15 +45,63 @@ export function BusinessCard({
     );
   };
 
-  const getBusinessPhoto = (business: PlaceResult) => {
-    if (business.photos && business.photos.length > 0) {
-      return business.photos[0].photo_reference;
+  // Effect to fetch photo URL from backend API
+  useEffect(() => {
+    const fetchPhotoUrl = async () => {
+      if (!business.photos || business.photos.length === 0) return;
+      
+      setIsLoadingPhoto(true);
+      try {
+        const photoReference = business.photos[0].photo_reference;
+        const response = await api.get('/api/places/photo', {
+          params: {
+            photoReference,
+            maxWidth: 400
+          }
+        });
+        
+        if (response.data.success && response.data.data.photoUrl) {
+          setPhotoUrl(response.data.data.photoUrl);
+        }
+      } catch (error) {
+        console.warn('Failed to load business photo:', error);
+      } finally {
+        setIsLoadingPhoto(false);
+      }
+    };
+
+    fetchPhotoUrl();
+  }, [business.photos]);
+
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove all non-numeric characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // If starts with +55 (Brazil), return as is
+    if (cleaned.startsWith('55')) {
+      return cleaned;
     }
-    return null;
+    
+    // If Brazilian number without country code, add +55
+    if (cleaned.length === 10 || cleaned.length === 11) {
+      return `55${cleaned}`;
+    }
+    
+    return cleaned;
+  };
+
+  const handleWhatsAppClick = (phone: string, businessName: string) => {
+    const formattedPhone = formatPhoneForWhatsApp(phone);
+    const message = encodeURIComponent(`Olá! Vim através do eBrecho e gostaria de saber mais sobre ${businessName}.`);
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handlePhoneClick = (phone: string) => {
+    window.open(`tel:${phone}`, '_self');
   };
 
   const businessTypes = formatBusinessTypes(business.types);
-  const photoUrl = getBusinessPhoto(business);
 
   return (
     <Card className={`transition-all duration-200 hover:shadow-md ${className}`}>
@@ -67,15 +118,22 @@ export function BusinessCard({
             </div>
           </div>
           
-          {photoUrl && (
+          {(photoUrl || isLoadingPhoto || business.photos?.length) && (
             <div className="ml-3 flex-shrink-0">
               <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-                <img 
-                  src={photoUrl} 
-                  alt={business.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+                {isLoadingPhoto ? (
+                  <Camera className="h-4 w-4 text-muted-foreground animate-pulse" />
+                ) : photoUrl ? (
+                  <img 
+                    src={photoUrl} 
+                    alt={business.name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={() => setPhotoUrl(null)}
+                  />
+                ) : (
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                )}
               </div>
             </div>
           )}
@@ -107,6 +165,36 @@ export function BusinessCard({
                 {type}
               </Badge>
             ))}
+          </div>
+        )}
+
+        {/* Phone Number */}
+        {business.formatted_phone_number && (
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Phone className="h-3 w-3 mr-1" />
+              <span>{business.formatted_phone_number}</span>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => handlePhoneClick(business.formatted_phone_number!)}
+                title="Ligar"
+              >
+                <Phone className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
+                onClick={() => handleWhatsAppClick(business.formatted_phone_number!, business.name)}
+                title="WhatsApp"
+              >
+                <MessageCircle className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         )}
 
