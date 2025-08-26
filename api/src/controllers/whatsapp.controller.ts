@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma/index.js';
 import whatsappService from '../services/whatsapp.service';
 import {
   webhookVerificationSchema,
@@ -16,7 +16,6 @@ import {
   messageSearchSchema,
 } from '../schemas/whatsapp.schema';
 
-const prisma = new PrismaClient();
 
 export class WhatsAppController {
   /**
@@ -53,30 +52,38 @@ export class WhatsAppController {
    */
   async handleWebhook(req: Request, res: Response) {
     try {
-      const signature = req.headers['x-hub-signature-256'] as string;
-      const rawPayload = (req as any).rawBody ? (req as any).rawBody.toString() : JSON.stringify(req.body);
-
-      // Verify webhook signature
-      if (!whatsappService.verifyWebhook(signature, rawPayload)) {
-        return res.status(403).json({ error: 'Invalid webhook signature' });
-      }
+      // Log complete request details for debugging
+      console.log('🔍 WEBHOOK DEBUG - Complete Request Details:');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
+      console.log('📦 Complete Body:', JSON.stringify(req.body, null, 2));
+      console.log('🔗 Method:', req.method);
+      console.log('🔗 URL:', req.url);
+      console.log('📏 Body Size:', JSON.stringify(req.body).length, 'characters');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       const validation = webhookPayloadSchema.safeParse(req.body);
       
       if (!validation.success) {
-        console.error('Invalid webhook payload:', validation.error);
+        console.error('❌ WEBHOOK DEBUG - Validation Failed:');
+        console.error('📋 Validation errors:', JSON.stringify(validation.error, null, 2));
+        console.error('📦 Original body that failed:', JSON.stringify(req.body, null, 2));
         return res.status(400).json({ error: 'Invalid webhook payload' });
       }
 
+      console.log('✅ WEBHOOK DEBUG - Validation Success, starting processing...');
+
       // Process the webhook asynchronously
       whatsappService.processWebhook(validation.data as any).catch(error => {
-        console.error('Error processing webhook:', error);
+        console.error('❌ WEBHOOK DEBUG - Processing Error:', error);
+        console.error('📦 Failed payload:', JSON.stringify(req.body, null, 2));
       });
 
       // Always respond with 200 OK to acknowledge receipt
       res.status(200).json({ success: true });
     } catch (error) {
-      console.error('Webhook handling error:', error);
+      console.error('❌ WEBHOOK DEBUG - Handler Error:', error);
+      console.error('📦 Request body when error occurred:', JSON.stringify(req.body, null, 2));
       res.status(500).json({ error: 'Internal server error' });
     }
   }

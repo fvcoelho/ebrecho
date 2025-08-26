@@ -926,16 +926,25 @@ model WhatsAppTemplate {
   @@index([templateId])
 }
 
+enum WebhookStatus {
+  RECEIVED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model WhatsAppWebhookLog {
-  id              String   @id @default(cuid())
-  webhookType     String   // 'messages', 'message_template_status_update', etc.
-  payload         Json     // Full webhook payload
-  processed       Boolean  @default(false)
+  id              String        @id @default(cuid())
+  webhookType     String        // 'messages', 'message_template_status_update', etc.
+  payload         Json          // Full webhook payload
+  processed       Boolean       @default(false) // Keep for backward compatibility
   processingError String?
-  createdAt       DateTime @default(now())
+  status          WebhookStatus @default(RECEIVED) // New status field
+  createdAt       DateTime      @default(now())
   
   @@index([webhookType])
   @@index([processed])
+  @@index([status])
   @@index([createdAt])
 }
 

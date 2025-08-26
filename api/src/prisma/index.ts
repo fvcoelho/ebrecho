@@ -15,7 +15,7 @@ const prismaClientSingleton = () => {
   // Ensure connection pooling parameters for serverless
   if (isVercel && !databaseUrl.includes('pgbouncer=true')) {
     const separator = databaseUrl.includes('?') ? '&' : '?';
-    databaseUrl = `${databaseUrl}${separator}pgbouncer=true&connection_limit=1&pool_timeout=20`;
+    databaseUrl = `${databaseUrl}${separator}pgbouncer=true&connection_limit=3&pool_timeout=60&connect_timeout=30`;
   }
   
   return new PrismaClient({

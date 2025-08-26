@@ -1,7 +1,6 @@
-import { PrismaClient, WhatsAppMessageType, WhatsAppMessageStatus } from '@prisma/client';
+import { WhatsAppMessageType, WhatsAppMessageStatus } from '@prisma/client';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma/index.js';
 
 interface WhatsAppConfig {
   accessToken: string;
@@ -319,24 +318,43 @@ class WhatsAppService {
    * Process incoming webhook
    */
   async processWebhook(payload: WebhookPayload): Promise<void> {
+    let webhookLogId: string | undefined;
+    
     try {
-      // Log the webhook for debugging
-      await prisma.whatsAppWebhookLog.create({
-        data: {
-          webhookType: payload.entry[0]?.changes[0]?.field || 'unknown',
-          payload: payload as any,
-          processed: false,
-        },
-      });
+      console.log('🚀 DEBUG: Starting webhook processing');
+      console.log('   Entries:', payload.entry?.length || 0);
+      
+      // Log webhook received status - single attempt, non-blocking
+      try {
+        const webhookLog = await prisma.whatsAppWebhookLog.create({
+          data: {
+            webhookType: payload.entry[0]?.changes[0]?.field || 'unknown',
+            payload: payload as any,
+            processed: false,
+            status: 'RECEIVED',
+          },
+        });
+        webhookLogId = webhookLog.id;
+        console.log(`📝 DEBUG: Webhook logged with ID: ${webhookLogId} (Status: RECEIVED)`);
+      } catch (logError) {
+        // Don't fail the entire webhook processing if logging fails
+        console.error('⚠️ DEBUG: Failed to log webhook received status, but continuing processing:', logError);
+      }
 
       for (const entry of payload.entry) {
+        console.log(`🔄 DEBUG: Processing entry ID: ${entry.id}, Changes: ${entry.changes?.length || 0}`);
+        
         for (const change of entry.changes) {
+          console.log(`📋 DEBUG: Processing change field: ${change.field}`);
+          
           switch (change.field) {
             case 'messages':
               if (change.value.messages) {
+                console.log(`📨 DEBUG: Found messages to process: ${change.value.messages.length}`);
                 await this.processIncomingMessages(change.value);
               }
               if (change.value.statuses) {
+                console.log(`📊 DEBUG: Found statuses to process: ${change.value.statuses.length}`);
                 await this.processMessageStatuses(change.value);
               }
               break;
@@ -370,12 +388,51 @@ class WhatsAppService {
               break;
 
             default:
-              console.log(`Unhandled webhook field: ${change.field}`);
+              console.log(`⚠️ DEBUG: Unhandled webhook field: ${change.field}`);
           }
         }
       }
+      
+      // Log webhook completion status - INSERT instead of UPDATE
+      try {
+        await prisma.whatsAppWebhookLog.create({
+          data: {
+            webhookType: payload.entry[0]?.changes[0]?.field || 'unknown',
+            payload: { webhookId: webhookLogId, status: 'completed' } as any,
+            processed: true,
+            status: 'COMPLETED',
+          },
+        });
+        console.log(`✅ DEBUG: Webhook completion logged (Original ID: ${webhookLogId})`);
+      } catch (logError) {
+        console.error(`⚠️ DEBUG: Failed to log webhook completion status, but processing succeeded:`, logError);
+      }
+      
+      console.log('🎉 DEBUG: Webhook processing completed successfully');
+      
     } catch (error) {
-      console.error('Error processing webhook:', error);
+      console.error('❌ DEBUG: Error processing webhook:', error);
+      console.error('   Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Log webhook failure status - INSERT instead of UPDATE
+      try {
+        await prisma.whatsAppWebhookLog.create({
+          data: {
+            webhookType: payload.entry[0]?.changes[0]?.field || 'unknown',
+            payload: { webhookId: webhookLogId, error: error instanceof Error ? error.message : 'Unknown error' } as any,
+            processed: false,
+            status: 'FAILED',
+            processingError: error instanceof Error ? error.message : 'Unknown error',
+          },
+        });
+        console.log(`❌ DEBUG: Webhook failure logged (Original ID: ${webhookLogId})`);
+      } catch (logError) {
+        console.error(`⚠️ DEBUG: Failed to log webhook failure status:`, logError);
+      }
+      
       throw error;
     }
   }
@@ -386,8 +443,21 @@ class WhatsAppService {
   private async processIncomingMessages(messageData: any): Promise<void> {
     const { messages, metadata, contacts } = messageData;
     
+    console.log('🔍 WEBHOOK DEBUG - Processing Incoming Messages:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 Message Data Summary:', {
+      messagesCount: messages?.length || 0,
+      phoneNumberId: metadata?.phone_number_id,
+      displayPhone: metadata?.display_phone_number,
+      contacts: contacts?.map((c: any) => ({ name: c.profile?.name, waId: c.wa_id }))
+    });
+    console.log('📦 Complete Message Data:', JSON.stringify(messageData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
     for (const message of messages) {
       try {
+        console.log(`📨 DEBUG: Processing message ID: ${message.id}, Type: ${message.type}, From: ${message.from}`);
+        
         // Find partner by phone number ID
         const partner = await prisma.partner.findFirst({
           where: {
@@ -396,9 +466,25 @@ class WhatsAppService {
         });
 
         if (!partner) {
-          console.warn(`No partner found for phone number ID: ${metadata.phone_number_id}`);
+          console.error('❌ WEBHOOK DEBUG - Partner Lookup Failed:');
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.error(`📞 Searched phone_number_id: ${metadata.phone_number_id}`);
+          console.error(`📱 Display phone: ${metadata.display_phone_number}`);
+          console.error(`📨 Message from: ${message.from}`);
+          console.error(`📩 Message ID: ${message.id}`);
+          
+          // Query all partners to see what phone number IDs exist
+          const allPartners = await prisma.partner.findMany({
+            where: { whatsappPhoneNumberId: { not: null } },
+            select: { id: true, name: true, whatsappPhoneNumberId: true }
+          });
+          console.error(`📋 Available partner phone IDs in database:`, allPartners);
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.error('   Will continue to next message...');
           continue;
         }
+        
+        console.log(`✅ DEBUG: Partner found: ${partner.name} (ID: ${partner.id})`)
 
         // Determine message type and content
         let messageType: WhatsAppMessageType = WhatsAppMessageType.TEXT;
@@ -434,6 +520,16 @@ class WhatsAppService {
             break;
         }
 
+        console.log(`📝 DEBUG: Preparing to log message with data:`, {
+          messageId: message.id,
+          partnerId: partner.id,
+          fromNumber: message.from,
+          toNumber: metadata.display_phone_number,
+          messageType,
+          textContent: textContent?.substring(0, 50) + '...',
+          timestamp: new Date(parseInt(message.timestamp) * 1000)
+        });
+
         // Log the incoming message
         await this.logMessage({
           messageId: message.id,
@@ -449,9 +545,15 @@ class WhatsAppService {
           timestamp: new Date(parseInt(message.timestamp) * 1000),
           status: WhatsAppMessageStatus.DELIVERED,
         });
+        
+        console.log(`✅ DEBUG: Message ${message.id} successfully processed and logged`);
 
       } catch (error) {
-        console.error(`Error processing message ${message.id}:`, error);
+        console.error(`❌ DEBUG: Error processing message ${message.id}:`, error);
+        console.error('   Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
       }
     }
   }
@@ -523,7 +625,14 @@ class WhatsAppService {
     errorMessage?: string;
   }) {
     try {
-      await prisma.whatsAppMessage.create({
+      console.log('💾 DEBUG: Attempting to save message to database:', {
+        messageId: data.messageId,
+        partnerId: data.partnerId,
+        direction: data.direction,
+        messageType: data.messageType
+      });
+      
+      const result = await prisma.whatsAppMessage.create({
         data: {
           messageId: data.messageId,
           partnerId: data.partnerId,
@@ -545,8 +654,22 @@ class WhatsAppService {
           errorMessage: data.errorMessage,
         },
       });
+      
+      console.log('✅ DEBUG: Message saved successfully to database:', {
+        id: result.id,
+        messageId: result.messageId,
+        createdAt: result.createdAt
+      });
     } catch (error) {
-      console.error('Error logging message to database:', error);
+      console.error('❌ DEBUG: Error logging message to database:', error);
+      console.error('   Full error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any)?.code,
+        meta: (error as any)?.meta,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      // Re-throw to let the caller handle it
+      throw error;
     }
   }
 
