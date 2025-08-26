@@ -14,8 +14,8 @@ export function StoreHero({ store }: StoreHeroProps) {
 
   return (
     <section className="relative">
-      {/* Banner */}
-      <div className="relative h-64 md:h-80 lg:h-96 w-full overflow-hidden bg-gray-100">
+      {/* Banner - Much smaller on mobile */}
+      <div className="relative h-20 sm:h-32 md:h-48 lg:h-64 xl:h-80 w-full overflow-hidden bg-gray-100">
         {store.publicBanner && !bannerError ? (
           <Image
             src={store.publicBanner}
@@ -34,11 +34,11 @@ export function StoreHero({ store }: StoreHeroProps) {
       </div>
 
       {/* Store info overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 lg:p-12">
+      <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 md:p-4 lg:p-6">
         <div className="container mx-auto">
-          <div className="flex items-end gap-4 md:gap-6">
-            {/* Logo */}
-            <div className="relative h-20 w-20 md:h-24 md:w-24 lg:h-32 lg:w-32 overflow-hidden rounded-lg border-4 border-white shadow-lg bg-white">
+          <div className="flex items-end gap-2 sm:gap-3 md:gap-4">
+            {/* Logo - Much smaller on mobile */}
+            <div className="relative h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 lg:h-20 lg:w-20 overflow-hidden rounded-lg border-2 border-white shadow-lg bg-white">
               {store.publicLogo && !logoError ? (
                 <Image
                   src={store.publicLogo}
@@ -54,14 +54,14 @@ export function StoreHero({ store }: StoreHeroProps) {
               )}
             </div>
 
-            {/* Store name and description */}
-            <div className="flex-1 text-white mb-2">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 drop-shadow-lg">
+            {/* Store name and description - Much smaller text on mobile */}
+            <div className="flex-1 text-white mb-0.5 sm:mb-1">
+              <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold mb-0.5 sm:mb-1 drop-shadow-lg">
                 {store.name}
               </h1>
-              {store.publicDescription && (
-                <p className="text-sm md:text-base lg:text-lg drop-shadow-lg line-clamp-2 max-w-3xl">
-                  {store.publicDescription}
+              {store.description && (
+                <p className="text-xs sm:text-sm md:text-base drop-shadow-lg line-clamp-1 max-w-3xl">
+                  {store.description}
                 </p>
               )}
             </div>
