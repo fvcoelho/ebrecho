@@ -63,69 +63,60 @@ class AutoResponseService {
         timestamp: event.timestamp
       });
 
-      // Message ID Duplicate Prevention (10 minute window)
-      console.log(`🔍 DUPLICATE CHECK: Starting duplicate prevention check...`);
-      console.log(`   Redis enabled: ${RedisService.enabled}`);
-      console.log(`   Message ID: ${event.messageId}`);
-      console.log(`   Checking 10-minute window for duplicates`);
+      // Phone Number Response Lock (5 minute window)
+      console.log(`🔒 PHONE LOCK CHECK: Attempting to acquire response lock...`);
+      console.log(`   From number: ${event.fromNumber}`);
+      console.log(`   Partner ID: ${event.partnerId}`);
+      console.log(`   Window: 5 minutes`);
       
-      const messageAlreadyProcessed = await RedisService.wasMessageAlreadyProcessed(
-        event.messageId,
-        10 // 10 minute window for message deduplication
+      const lockAcquired = await RedisService.createResponseLock(
+        event.fromNumber,
+        event.partnerId,
+        5 // 5 minute window for phone number lock
       );
       
-      console.log(`🎯 DUPLICATE CHECK RESULT: ${messageAlreadyProcessed ? 'DUPLICATE FOUND' : 'NO DUPLICATE'}`);
-      
-      if (messageAlreadyProcessed) {
-        console.log(`⏭️ DUPLICATE DETECTED: Message ${event.messageId} was already processed`);
-        console.log(`   Action: Skipping auto-response to prevent duplicate sends`);
-        console.log(`   Window: Message was processed within the last 10 minutes`);
-        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO DUPLICATE`);
+      if (!lockAcquired) {
+        console.log(`🚫 LOCK FAILED: Response lock already exists for ${event.fromNumber}`);
+        console.log(`   This means a recent auto-response was already sent/is being processed`);
+        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO EXISTING RESPONSE LOCK`);
         return;
       }
       
-      console.log(`✅ Message ID duplicate check passed - proceeding with auto-response`);
-      console.log(`📌 Message ${event.messageId} is now marked as processed in Redis`);
+      console.log(`✅ LOCK ACQUIRED: Phone number response lock created successfully`);
+      console.log(`   Lock expires in 5 minutes - no other responses will be sent to this number until then`);
 
-      // Additional database-level duplicate check as fallback
-      console.log(`🔍 DATABASE FALLBACK: Checking if auto-response already sent via database...`);
-      const existingResponse = await prisma.whatsAppMessage.findFirst({
-        where: {
-          messageId: event.messageId,
-          partnerId: event.partnerId,
-          autoResponseSent: true
-        },
-        select: {
-          id: true,
-          autoResponseAt: true,
-          autoResponseMessageId: true
-        }
-      });
+      // Define time window for collecting recent messages
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-      if (existingResponse) {
-        console.log(`🚫 DATABASE DUPLICATE: Auto-response already sent for this message`);
-        console.log(`   Original response sent at: ${existingResponse.autoResponseAt}`);
-        console.log(`   Response message ID: ${existingResponse.autoResponseMessageId}`);
-        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO DATABASE DUPLICATE`);
-        return;
-      }
-      
-      console.log(`✅ Database fallback check passed - no previous auto-response found`);
-
-      // Get original inbound message details
-      console.log(`🔍 Looking up original inbound message: ${event.messageId}`);
-      const originalMessage = await prisma.whatsAppMessage.findFirst({
+      // Get recent inbound messages from the same number (last 5 minutes)
+      console.log(`🔍 Looking up recent messages from ${event.fromNumber}...`);
+      const recentMessages = await prisma.whatsAppMessage.findMany({
         where: { 
-          messageId: event.messageId,
-          partnerId: event.partnerId
+          partnerId: event.partnerId,
+          fromNumber: event.fromNumber,
+          direction: 'inbound',
+          createdAt: {
+            gte: fiveMinutesAgo
+          },
+          // Only get messages that haven't been responded to yet
+          autoResponseSent: null
         },
         select: {
           messageId: true,
           textContent: true,
           messageType: true,
-          fromNumber: true
+          fromNumber: true,
+          createdAt: true
+        },
+        orderBy: {
+          createdAt: 'asc'
         }
       });
+
+      console.log(`📊 Found ${recentMessages.length} recent unresponded messages from ${event.fromNumber}`);
+      
+      // Find the current message in the batch
+      const originalMessage = recentMessages.find(msg => msg.messageId === event.messageId);
 
       // Get partner configuration
       console.log(`🔍 Looking up partner configuration for ID: ${event.partnerId}`);
@@ -157,22 +148,38 @@ class AutoResponseService {
         return;
       }
 
-      // Generate greeting message with inbound reference
+      // Generate greeting message with combined inbound references
       const partnerName = partner.whatsappName || partner.name;
-      console.log(`📝 Generating greeting message...`);
+      console.log(`📝 Generating combined greeting message...`);
       console.log(`   Partner display name: ${partnerName}`);
-      console.log(`   Original message: ${originalMessage?.textContent || 'Not found'}`);
+      console.log(`   Processing ${recentMessages.length} recent messages`);
       
       const baseGreeting = this.generateTimeBasedGreeting(
         partnerName, 
         partner.customGreetingTemplate || undefined
       );
       
-      // Add reference to inbound message
-      const inboundContent = originalMessage?.textContent || 'sua mensagem';
-      const shortMessageId = event.messageId.substring(event.messageId.length - 8); // Last 8 chars for readability
+      let greeting: string;
       
-      const greeting = `Respondendo "${inboundContent}" referente (inbound Id ${shortMessageId})\n\n${baseGreeting}`;
+      if (recentMessages.length === 1) {
+        // Single message - use original format
+        const inboundContent = originalMessage?.textContent || 'sua mensagem';
+        const shortMessageId = event.messageId.substring(event.messageId.length - 8);
+        greeting = `Respondendo "${inboundContent}" referente (inbound Id ${shortMessageId})\n\n${baseGreeting}`;
+      } else {
+        // Multiple messages - combine them
+        const messageRefs = recentMessages
+          .filter(msg => msg.textContent) // Only include text messages
+          .map((msg, index) => {
+            const shortId = msg.messageId.substring(msg.messageId.length - 8);
+            return `${index + 1}. "${msg.textContent}" (Id ${shortId})`;
+          })
+          .join('\n');
+        
+        greeting = `Respondendo suas ${recentMessages.length} mensagens recentes:\n\n${messageRefs}\n\n${baseGreeting}`;
+        
+        console.log(`📝 Combined ${recentMessages.length} messages into single response`);
+      }
       
       console.log(`💬 Generated message: "${greeting}"`);
       console.log(`📤 Attempting to send WhatsApp message...`);
@@ -196,11 +203,15 @@ class AutoResponseService {
         throw sendError;
       }
 
-      // Update the original message to track auto-response
-      console.log(`📝 Updating database to track auto-response...`);
+      // Update ALL recent messages to track auto-response
+      console.log(`📝 Updating database to track auto-response for ${recentMessages.length} messages...`);
+      const messageIds = recentMessages.map(msg => msg.messageId);
+      
       const updateResult = await prisma.whatsAppMessage.updateMany({
         where: { 
-          messageId: event.messageId,
+          messageId: {
+            in: messageIds
+          },
           partnerId: event.partnerId
         },
         data: {
@@ -210,7 +221,7 @@ class AutoResponseService {
         }
       });
 
-      console.log(`✅ Database updated: ${updateResult.count} records modified`);
+      console.log(`✅ Database updated: ${updateResult.count} records modified (covered ${recentMessages.length} recent messages)`);
 
       console.log(`🎉 AUTO-RESPONSE COMPLETED SUCCESSFULLY:`, {
         originalMessageId: event.messageId,

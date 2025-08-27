@@ -588,9 +588,10 @@ class WhatsAppService {
                 timestamp: new Date().toISOString()
               };
 
-              // Process immediately for real-time response
-              await AutoResponseService.processAutoResponseEvent(event);
-              console.log(`✅ DEBUG: Auto-response processed immediately for message ${message.id}`);
+              // DISABLED: Process immediately for real-time response
+              // await AutoResponseService.processAutoResponseEvent(event);
+              // console.log(`✅ DEBUG: Auto-response processed immediately for message ${message.id}`);
+              console.log(`🚫 DISABLED: Immediate auto-response processing disabled for message ${message.id}`);
             } else {
               console.log(`⏭️ DEBUG: Auto-response disabled for partner ${partner.name}, but event queued for potential processing`);
             }

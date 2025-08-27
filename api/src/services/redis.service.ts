@@ -357,6 +357,77 @@ class RedisService {
   }
 
   /**
+   * Create response lock for phone number (prevents multiple auto-responses)
+   * Uses atomic SET with NX (only set if not exists) and EX (expiration)
+   */
+  async createResponseLock(fromNumber: string, partnerId: string, windowMinutes: number = 5): Promise<boolean> {
+    console.log(`🔒 RESPONSE LOCK: Attempting to create lock for ${fromNumber}`);
+    
+    if (!this.isEnabled) {
+      console.log(`🔕 Redis disabled - cannot create response lock`);
+      console.log(`   WARNING: Without Redis, multiple responses may be sent!`);
+      return true; // Allow processing when Redis is disabled
+    }
+
+    try {
+      const lockKey = `whatsapp:response-lock:${fromNumber}:${partnerId}`;
+      const ttlSeconds = windowMinutes * 60;
+      const lockValue = new Date().toISOString();
+      
+      console.log(`🔍 LOCK CHECK: Key: ${lockKey}`);
+      console.log(`   TTL: ${ttlSeconds} seconds (${windowMinutes} minutes)`);
+      
+      // Atomic operation: SET key value NX EX ttl
+      // Returns "OK" if key was set (didn't exist), null if key already exists
+      const result = await this.redis.set(lockKey, lockValue, { nx: true, ex: ttlSeconds });
+      
+      if (result === 'OK') {
+        console.log(`✅ LOCK CREATED: Response lock acquired for ${fromNumber}`);
+        console.log(`   Lock value: ${lockValue}`);
+        console.log(`   Expires in: ${windowMinutes} minutes`);
+        return true; // Lock created successfully
+      } else {
+        console.log(`🚫 LOCK EXISTS: Response lock already exists for ${fromNumber}`);
+        
+        // Get existing lock info for debugging
+        const existingValue = await this.redis.get(lockKey);
+        const ttl = await this.redis.ttl(lockKey);
+        
+        console.log(`   Existing lock created: ${existingValue}`);
+        console.log(`   Lock expires in: ${ttl} seconds`);
+        console.log(`🚫 AUTO-RESPONSE BLOCKED: Recent response already sent/processing`);
+        return false; // Lock already exists
+      }
+    } catch (error) {
+      console.error('❌ LOCK ERROR: Failed to create response lock');
+      console.error(`   Error type: ${error instanceof Error ? error.name : typeof error}`);
+      console.error(`   Error message: ${error instanceof Error ? error.message : error}`);
+      console.error(`   Failing safely - allowing processing to continue`);
+      return true; // On error, allow processing (fail-safe)
+    }
+  }
+
+  /**
+   * Check if response lock exists for phone number
+   */
+  async hasResponseLock(fromNumber: string, partnerId: string): Promise<boolean> {
+    if (!this.isEnabled) {
+      return false;
+    }
+
+    try {
+      const lockKey = `whatsapp:response-lock:${fromNumber}:${partnerId}`;
+      const exists = await this.redis.exists(lockKey);
+      
+      console.log(`🔍 LOCK CHECK: ${lockKey} exists = ${exists}`);
+      return exists === 1;
+    } catch (error) {
+      console.error('❌ Failed to check response lock:', error);
+      return false; // On error, assume no lock (fail-safe)
+    }
+  }
+
+  /**
    * Health check for Redis connection
    */
   async healthCheck(): Promise<boolean> {
