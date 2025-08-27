@@ -214,6 +214,7 @@ export const testMessageSchema = z.object({
   languageCode: z.string()
     .regex(/^[a-z]{2}(_[A-Z]{2})?$/, 'Invalid language code format')
     .optional(),
+  debug: z.boolean().default(false).optional(),
 }).refine(data => {
   if (data.messageType === 'text') {
     return !!data.message;

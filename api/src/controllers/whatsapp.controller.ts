@@ -589,45 +589,86 @@ export class WhatsAppController {
    * Test message sending (development only)
    */
   async testMessage(req: Request, res: Response) {
-    try {
-      // Only allow in development environment
-      if (process.env.NODE_ENV === 'production') {
-        return res.status(403).json({ error: 'Test endpoint not available in production' });
-      }
+    const startTime = Date.now();
+    const debugInfo: any = {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'unknown',
+      requestId: Math.random().toString(36).substring(7),
+    };
 
+    try {
       const validation = testMessageSchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({
           error: 'Invalid request data',
           details: validation.error.format(),
+          debug: debugInfo
         });
       }
 
-      const { phoneNumber, messageType, message, templateName, languageCode } = validation.data;
+      const { phoneNumber, messageType, message, templateName, languageCode, debug } = validation.data;
+      
+      if (debug) {
+        debugInfo.request = {
+          phoneNumber,
+          messageType,
+          message: message ? message.substring(0, 100) + '...' : null,
+          templateName,
+          languageCode
+        };
+        console.log('🔍 WhatsApp Test Debug - Request:', JSON.stringify(debugInfo, null, 2));
+      }
+
       let partnerId = req.user?.partnerId;
       
       // If no authenticated user, try to find any existing partner for testing
       if (!partnerId) {
-        const firstPartner = await prisma.partner.findFirst();
+        const firstPartner = await prisma.partner.findFirst({
+          select: { 
+            id: true, 
+            name: true,
+            whatsappApiEnabled: true,
+            whatsappPhoneNumberId: true 
+          }
+        });
+        
         if (firstPartner) {
           partnerId = firstPartner.id;
+          if (debug) {
+            debugInfo.partner = {
+              id: firstPartner.id,
+              name: firstPartner.name,
+              whatsappEnabled: firstPartner.whatsappApiEnabled,
+              hasPhoneNumberId: !!firstPartner.whatsappPhoneNumberId
+            };
+            console.log('🔍 WhatsApp Test Debug - Using Partner:', debugInfo.partner);
+          }
         } else {
           return res.status(400).json({ 
-            error: 'No partner available for testing. Please create a partner first or authenticate with a partner account.' 
+            error: 'No partner available for testing',
+            message: 'Please create a partner first or authenticate with a partner account.',
+            debug: debug ? debugInfo : undefined
           });
         }
       }
 
       let result;
+      const apiStartTime = Date.now();
 
       if (messageType === 'text') {
+        if (debug) {
+          console.log('🔍 WhatsApp Test Debug - Sending text message...');
+        }
         result = await whatsappService.sendTextMessage({ 
           to: phoneNumber, 
           message: message!, 
           partnerId 
         });
       } else if (messageType === 'template') {
+        if (debug) {
+          console.log('🔍 WhatsApp Test Debug - Sending template message...');
+        }
         result = await whatsappService.sendTemplateMessage({ 
           to: phoneNumber, 
           templateName: templateName!, 
@@ -635,13 +676,44 @@ export class WhatsAppController {
           partnerId 
         });
       }
+
+      const apiDuration = Date.now() - apiStartTime;
+      const totalDuration = Date.now() - startTime;
+
+      if (debug) {
+        debugInfo.response = {
+          success: result?.success || false,
+          messageId: result?.messageId,
+          apiDuration: `${apiDuration}ms`,
+          totalDuration: `${totalDuration}ms`
+        };
+        console.log('🔍 WhatsApp Test Debug - Response:', JSON.stringify(debugInfo.response, null, 2));
+      }
       
-      res.status(200).json(result);
+      res.status(200).json({
+        ...result,
+        debug: debug ? {
+          ...debugInfo,
+          timings: {
+            apiCall: `${apiDuration}ms`,
+            total: `${totalDuration}ms`
+          }
+        } : undefined
+      });
     } catch (error) {
-      console.error('Test message error:', error);
+      const totalDuration = Date.now() - startTime;
+      console.error('❌ WhatsApp Test Error:', error);
+      
+      debugInfo.error = {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error && process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+        duration: `${totalDuration}ms`
+      };
+
       res.status(500).json({ 
         error: 'Failed to send test message',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        debug: req.body.debug ? debugInfo : undefined
       });
     }
   }

@@ -603,57 +603,59 @@ router.get('/search',
   whatsappController.searchMessages.bind(whatsappController)
 );
 
-// Development/Testing routes (not available in production)
-if (process.env.NODE_ENV !== 'production') {
-  /**
-   * @swagger
-   * /api/whatsapp/test:
-   *   post:
-   *     summary: Test message sending (Development only)
-   *     description: Send a test message via WhatsApp (development environment only)
-   *     tags: [WhatsApp Testing]
-   *     security:
-   *       - bearerAuth: []
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             required:
-   *               - phoneNumber
-   *             properties:
-   *               phoneNumber:
-   *                 type: string
-   *                 description: Test recipient phone number
-   *                 example: "5511963166165"
-   *               messageType:
-   *                 type: string
-   *                 enum: [text, template]
-   *                 default: text
-   *               message:
-   *                 type: string
-   *                 description: Test message (for text type)
-   *                 example: "This is a test message"
-   *               templateName:
-   *                 type: string
-   *                 description: Template name (for template type)
-   *                 example: "hello_world"
-   *               languageCode:
-   *                 type: string
-   *                 description: Language code (for template type)
-   *                 example: "en_US"
-   *     responses:
-   *       200:
-   *         description: Test message sent successfully
-   *       403:
-   *         description: Not available in production
-   */
-  router.post('/test', 
-    validate(z.object({ body: testMessageSchema })),
-    whatsappController.testMessage.bind(whatsappController)
-  );
-
-}
+/**
+ * @swagger
+ * /api/whatsapp/test:
+ *   post:
+ *     summary: Test message sending
+ *     description: Send a test message via WhatsApp for debugging and testing purposes
+ *     tags: [WhatsApp Testing]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phoneNumber
+ *             properties:
+ *               phoneNumber:
+ *                 type: string
+ *                 description: Test recipient phone number
+ *                 example: "5511963166165"
+ *               messageType:
+ *                 type: string
+ *                 enum: [text, template]
+ *                 default: text
+ *               message:
+ *                 type: string
+ *                 description: Test message (for text type)
+ *                 example: "This is a test message"
+ *               templateName:
+ *                 type: string
+ *                 description: Template name (for template type)
+ *                 example: "hello_world"
+ *               languageCode:
+ *                 type: string
+ *                 description: Language code (for template type)
+ *                 example: "en_US"
+ *               debug:
+ *                 type: boolean
+ *                 description: Enable verbose debug output
+ *                 default: false
+ *     responses:
+ *       200:
+ *         description: Test message sent successfully
+ *       400:
+ *         description: Invalid request data
+ *       500:
+ *         description: Failed to send test message
+ */
+router.post('/test', 
+  validate(z.object({ body: testMessageSchema })),
+  whatsappController.testMessage.bind(whatsappController)
+);
 
 export default router;

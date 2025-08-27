@@ -63,34 +63,69 @@ class AutoResponseService {
         timestamp: event.timestamp
       });
 
-      // First check: Prevent duplicate processing of the same message ID
-      console.log(`🔍 Checking if message was already processed...`);
+      // Message ID Duplicate Prevention (10 minute window)
+      console.log(`🔍 DUPLICATE CHECK: Starting duplicate prevention check...`);
+      console.log(`   Redis enabled: ${RedisService.enabled}`);
+      console.log(`   Message ID: ${event.messageId}`);
+      console.log(`   Checking 10-minute window for duplicates`);
+      
       const messageAlreadyProcessed = await RedisService.wasMessageAlreadyProcessed(
         event.messageId,
         10 // 10 minute window for message deduplication
       );
-
+      
+      console.log(`🎯 DUPLICATE CHECK RESULT: ${messageAlreadyProcessed ? 'DUPLICATE FOUND' : 'NO DUPLICATE'}`);
+      
       if (messageAlreadyProcessed) {
-        console.log(`⏭️ DUPLICATE DETECTED: Message ${event.messageId} was already processed within last 10 minutes`);
-        console.log(`   Action: Skipping to prevent duplicate auto-response`);
+        console.log(`⏭️ DUPLICATE DETECTED: Message ${event.messageId} was already processed`);
+        console.log(`   Action: Skipping auto-response to prevent duplicate sends`);
+        console.log(`   Window: Message was processed within the last 10 minutes`);
+        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO DUPLICATE`);
         return;
       }
-      console.log(`✅ Message not processed yet, continuing...`);
+      
+      console.log(`✅ Message ID duplicate check passed - proceeding with auto-response`);
+      console.log(`📌 Message ${event.messageId} is now marked as processed in Redis`);
 
-      // Second check: Prevent spam by checking recent responses to the same number
-      console.log(`🔍 Checking if phone number recently received response...`);
-      const wasRecentlyProcessed = await RedisService.wasRecentlyProcessed(
-        event.fromNumber, 
-        event.partnerId, 
-        5 // 5 minute window for phone number deduplication
-      );
+      // Additional database-level duplicate check as fallback
+      console.log(`🔍 DATABASE FALLBACK: Checking if auto-response already sent via database...`);
+      const existingResponse = await prisma.whatsAppMessage.findFirst({
+        where: {
+          messageId: event.messageId,
+          partnerId: event.partnerId,
+          autoResponseSent: true
+        },
+        select: {
+          id: true,
+          autoResponseAt: true,
+          autoResponseMessageId: true
+        }
+      });
 
-      if (wasRecentlyProcessed) {
-        console.log(`⏭️ SPAM PREVENTION: ${event.fromNumber} already received response within 5 minutes`);
-        console.log(`   Action: Skipping to prevent spam`);
+      if (existingResponse) {
+        console.log(`🚫 DATABASE DUPLICATE: Auto-response already sent for this message`);
+        console.log(`   Original response sent at: ${existingResponse.autoResponseAt}`);
+        console.log(`   Response message ID: ${existingResponse.autoResponseMessageId}`);
+        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO DATABASE DUPLICATE`);
         return;
       }
-      console.log(`✅ No recent response to this number, continuing...`);
+      
+      console.log(`✅ Database fallback check passed - no previous auto-response found`);
+
+      // Get original inbound message details
+      console.log(`🔍 Looking up original inbound message: ${event.messageId}`);
+      const originalMessage = await prisma.whatsAppMessage.findFirst({
+        where: { 
+          messageId: event.messageId,
+          partnerId: event.partnerId
+        },
+        select: {
+          messageId: true,
+          textContent: true,
+          messageType: true,
+          fromNumber: true
+        }
+      });
 
       // Get partner configuration
       console.log(`🔍 Looking up partner configuration for ID: ${event.partnerId}`);
@@ -122,15 +157,22 @@ class AutoResponseService {
         return;
       }
 
-      // Generate greeting message
+      // Generate greeting message with inbound reference
       const partnerName = partner.whatsappName || partner.name;
       console.log(`📝 Generating greeting message...`);
       console.log(`   Partner display name: ${partnerName}`);
+      console.log(`   Original message: ${originalMessage?.textContent || 'Not found'}`);
       
-      const greeting = this.generateTimeBasedGreeting(
+      const baseGreeting = this.generateTimeBasedGreeting(
         partnerName, 
         partner.customGreetingTemplate || undefined
       );
+      
+      // Add reference to inbound message
+      const inboundContent = originalMessage?.textContent || 'sua mensagem';
+      const shortMessageId = event.messageId.substring(event.messageId.length - 8); // Last 8 chars for readability
+      
+      const greeting = `Respondendo "${inboundContent}" referente (inbound Id ${shortMessageId})\n\n${baseGreeting}`;
       
       console.log(`💬 Generated message: "${greeting}"`);
       console.log(`📤 Attempting to send WhatsApp message...`);

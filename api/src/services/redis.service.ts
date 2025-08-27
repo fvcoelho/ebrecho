@@ -259,65 +259,61 @@ class RedisService {
   }
 
   /**
-   * Check if message was recently processed (deduplication)
+   * Check if message was recently processed (deduplication) - DISABLED
+   * @deprecated Spam prevention has been disabled
    */
   async wasRecentlyProcessed(fromNumber: string, partnerId: string, windowMinutes: number = 5): Promise<boolean> {
-    if (!this.isEnabled) {
-      console.log(`🔕 Redis disabled - cannot check recent processing`);
-      return false;
-    }
-
-    try {
-      const dedupeKey = `whatsapp:autoresponse:recent:${partnerId}:${fromNumber}`;
-      console.log(`🔍 Checking Redis for recent response key: ${dedupeKey}`);
-      
-      const exists = await this.redis.exists(dedupeKey);
-      
-      if (!exists) {
-        // Set the key with expiration
-        console.log(`✅ No recent response to ${fromNumber} - setting ${windowMinutes} minute cooldown`);
-        await this.redis.setex(dedupeKey, windowMinutes * 60, '1');
-        return false;
-      }
-      
-      console.log(`⚠️ Recent response FOUND for ${fromNumber} within ${windowMinutes} minutes`);
-      console.log(`   Preventing spam - skipping auto-response`);
-      return true;
-    } catch (error) {
-      console.error('❌ Redis error checking recent processing:', error);
-      console.error(`   Failing safely - allowing processing to continue`);
-      // On error, allow processing to continue
-      return false;
-    }
+    // SPAM PREVENTION DISABLED - Always return false to allow all messages
+    console.log(`✅ Spam prevention disabled - allowing all messages`);
+    return false;
   }
 
   /**
    * Check if specific message ID was already processed (prevents duplicate processing)
    */
   async wasMessageAlreadyProcessed(messageId: string, windowMinutes: number = 10): Promise<boolean> {
+    console.log(`🔧 REDIS DEBUG: wasMessageAlreadyProcessed called`);
+    console.log(`   Message ID: ${messageId}`);
+    console.log(`   Window: ${windowMinutes} minutes`);
+    console.log(`   Redis enabled: ${this.isEnabled}`);
+    
     if (!this.isEnabled) {
-      console.log(`🔕 Redis disabled - cannot check if message was processed`);
+      console.log(`🔕 REDIS DISABLED - cannot check if message was processed`);
+      console.log(`   This means NO duplicate prevention is working!`);
       return false;
     }
 
     try {
       const processedKey = `whatsapp:processed:${messageId}`;
-      console.log(`🔍 Checking Redis for processed message key: ${processedKey}`);
+      console.log(`🔍 REDIS QUERY: Checking for key: ${processedKey}`);
       
       const exists = await this.redis.exists(processedKey);
+      console.log(`📊 REDIS RESPONSE: Key exists = ${exists}`);
       
       if (!exists) {
         // Mark message as processed with expiration
-        console.log(`✅ Message NOT in Redis - marking as processed with ${windowMinutes} minute TTL`);
-        await this.redis.setex(processedKey, windowMinutes * 60, '1');
+        const ttlSeconds = windowMinutes * 60;
+        console.log(`✅ NEW MESSAGE: Not in Redis - marking as processed`);
+        console.log(`   Setting TTL: ${ttlSeconds} seconds (${windowMinutes} minutes)`);
+        
+        await this.redis.setex(processedKey, ttlSeconds, new Date().toISOString());
+        
+        console.log(`📝 REDIS STORED: Message marked as processed with expiration`);
         return false;
       }
       
-      console.log(`⚠️ Message ${messageId.substring(0, 20)}... FOUND in Redis - already processed`);
-      console.log(`   This message was processed within the last ${windowMinutes} minutes`);
+      // Get the stored timestamp for debugging
+      const storedValue = await this.redis.get(processedKey);
+      console.log(`⚠️ DUPLICATE FOUND: Message already in Redis`);
+      console.log(`   Key: ${processedKey}`);
+      console.log(`   Stored at: ${storedValue}`);
+      console.log(`   Window: Last ${windowMinutes} minutes`);
+      console.log(`🚫 BLOCKING: This auto-response will be prevented`);
       return true;
     } catch (error) {
-      console.error('❌ Redis error checking message processing status:', error);
+      console.error('❌ REDIS ERROR: Failed to check message processing status');
+      console.error(`   Error type: ${error instanceof Error ? error.name : typeof error}`);
+      console.error(`   Error message: ${error instanceof Error ? error.message : error}`);
       console.error(`   Failing safely - allowing processing to continue`);
       // On error, allow processing to continue (fail-safe)
       return false;

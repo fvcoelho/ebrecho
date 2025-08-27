@@ -2,11 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Get __dirname equivalent for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 import swaggerUi from 'swagger-ui-express';
 import { prisma } from './prisma';
 import { swaggerSpec } from './config/swagger.config';
@@ -198,26 +193,16 @@ app.get('/api-docs/', (req, res) => {
   res.redirect('/api-docs');
 });
 
-// Serve favicon
+// Serve favicon - return 404 for now in serverless environments
 app.get('/favicon.ico', (req, res) => {
-  const faviconPath = path.join(__dirname, 'public', 'favicon.png');
-  res.sendFile(faviconPath, (err) => {
-    if (err) {
-      console.error('Error serving favicon:', err);
-      res.status(404).send();
-    }
-  });
+  // In serverless environments, serving static files is handled differently
+  // Return 404 to avoid file system issues
+  res.status(404).send();
 });
 
-// Also serve favicon.png directly
+// Also serve favicon.png directly - return 404 in serverless
 app.get('/favicon.png', (req, res) => {
-  const faviconPath = path.join(__dirname, 'public', 'favicon.png');
-  res.sendFile(faviconPath, (err) => {
-    if (err) {
-      console.error('Error serving favicon:', err);
-      res.status(404).send();
-    }
-  });
+  res.status(404).send();
 });
 
 // Serve Swagger JSON
