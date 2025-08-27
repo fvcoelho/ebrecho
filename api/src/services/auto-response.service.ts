@@ -55,19 +55,30 @@ class AutoResponseService {
   async processAutoResponseEvent(event: WhatsAppAutoResponseEvent): Promise<void> {
     try {
       console.log(`🤖 Processing auto-response for message ${event.messageId}`);
+      console.log(`📋 Event Details:`, {
+        messageId: event.messageId,
+        partnerId: event.partnerId,
+        fromNumber: event.fromNumber,
+        partnerName: event.partnerName,
+        timestamp: event.timestamp
+      });
 
       // First check: Prevent duplicate processing of the same message ID
+      console.log(`🔍 Checking if message was already processed...`);
       const messageAlreadyProcessed = await RedisService.wasMessageAlreadyProcessed(
         event.messageId,
         10 // 10 minute window for message deduplication
       );
 
       if (messageAlreadyProcessed) {
-        console.log(`⏭️ Skipping auto-response - message ${event.messageId} already processed`);
+        console.log(`⏭️ DUPLICATE DETECTED: Message ${event.messageId} was already processed within last 10 minutes`);
+        console.log(`   Action: Skipping to prevent duplicate auto-response`);
         return;
       }
+      console.log(`✅ Message not processed yet, continuing...`);
 
       // Second check: Prevent spam by checking recent responses to the same number
+      console.log(`🔍 Checking if phone number recently received response...`);
       const wasRecentlyProcessed = await RedisService.wasRecentlyProcessed(
         event.fromNumber, 
         event.partnerId, 
@@ -75,11 +86,14 @@ class AutoResponseService {
       );
 
       if (wasRecentlyProcessed) {
-        console.log(`⏭️ Skipping auto-response - recent response already sent to ${event.fromNumber}`);
+        console.log(`⏭️ SPAM PREVENTION: ${event.fromNumber} already received response within 5 minutes`);
+        console.log(`   Action: Skipping to prevent spam`);
         return;
       }
+      console.log(`✅ No recent response to this number, continuing...`);
 
       // Get partner configuration
+      console.log(`🔍 Looking up partner configuration for ID: ${event.partnerId}`);
       const partner = await prisma.partner.findUnique({
         where: { id: event.partnerId },
         select: {
@@ -92,33 +106,57 @@ class AutoResponseService {
       });
 
       if (!partner) {
-        console.error(`❌ Partner not found for auto-response: ${event.partnerId}`);
+        console.error(`❌ PARTNER NOT FOUND: ${event.partnerId}`);
+        console.error(`   Action: Cannot send auto-response without partner configuration`);
         return;
       }
 
+      console.log(`✅ Partner found: ${partner.name} (${partner.id})`);
+      console.log(`   Auto-response enabled: ${partner.autoResponseEnabled}`);
+      console.log(`   WhatsApp name: ${partner.whatsappName || 'Not set'}`);
+      console.log(`   Custom template: ${partner.customGreetingTemplate ? 'Yes' : 'No'}`);
+
       if (!partner.autoResponseEnabled) {
-        console.log(`🔕 Auto-response disabled for partner: ${partner.name}`);
+        console.log(`🔕 AUTO-RESPONSE DISABLED for partner: ${partner.name}`);
+        console.log(`   Action: Skipping auto-response as per partner settings`);
         return;
       }
 
       // Generate greeting message
       const partnerName = partner.whatsappName || partner.name;
+      console.log(`📝 Generating greeting message...`);
+      console.log(`   Partner display name: ${partnerName}`);
+      
       const greeting = this.generateTimeBasedGreeting(
         partnerName, 
         partner.customGreetingTemplate || undefined
       );
-
-      console.log(`💬 Sending auto-response: "${greeting.substring(0, 50)}..."`);
+      
+      console.log(`💬 Generated message: "${greeting}"`);
+      console.log(`📤 Attempting to send WhatsApp message...`);
+      console.log(`   To: ${event.fromNumber}`);
+      console.log(`   Partner ID: ${event.partnerId}`);
 
       // Send greeting message
-      const response = await WhatsAppService.sendTextMessage({
-        to: event.fromNumber,
-        message: greeting,
-        partnerId: event.partnerId
-      });
+      let response;
+      try {
+        response = await WhatsAppService.sendTextMessage({
+          to: event.fromNumber,
+          message: greeting,
+          partnerId: event.partnerId
+        });
+        console.log(`✅ WhatsApp API responded successfully`);
+        console.log(`   Response Message ID: ${response.messageId}`);
+      } catch (sendError) {
+        console.error(`❌ WHATSAPP SEND FAILED:`, sendError);
+        console.error(`   Error type: ${sendError instanceof Error ? sendError.name : 'Unknown'}`);
+        console.error(`   Error message: ${sendError instanceof Error ? sendError.message : sendError}`);
+        throw sendError;
+      }
 
       // Update the original message to track auto-response
-      await prisma.whatsAppMessage.updateMany({
+      console.log(`📝 Updating database to track auto-response...`);
+      const updateResult = await prisma.whatsAppMessage.updateMany({
         where: { 
           messageId: event.messageId,
           partnerId: event.partnerId
@@ -130,16 +168,31 @@ class AutoResponseService {
         }
       });
 
-      console.log(`✅ Auto-response sent successfully:`, {
+      console.log(`✅ Database updated: ${updateResult.count} records modified`);
+
+      console.log(`🎉 AUTO-RESPONSE COMPLETED SUCCESSFULLY:`, {
         originalMessageId: event.messageId,
         responseMessageId: response.messageId,
         fromNumber: event.fromNumber,
-        partnerName
+        partnerName,
+        greeting: greeting.substring(0, 100) + '...'
       });
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Failed to process auto-response for message ${event.messageId}:`, error);
+      console.error(`❌ AUTO-RESPONSE PROCESSING FAILED for message ${event.messageId}`);
+      console.error(`   Error Type: ${error instanceof Error ? error.name : typeof error}`);
+      console.error(`   Error Message: ${errorMessage}`);
+      console.error(`   Event Details:`, {
+        messageId: event.messageId,
+        partnerId: event.partnerId,
+        fromNumber: event.fromNumber,
+        partnerName: event.partnerName
+      });
+      
+      if (error instanceof Error && error.stack) {
+        console.error(`   Stack Trace:`, error.stack.split('\n').slice(0, 3).join('\n'));
+      }
       
       // Check if it's a token expiration error
       if (errorMessage.includes('access token') && (
