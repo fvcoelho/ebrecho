@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import { prisma } from './prisma';
 import { swaggerSpec } from './config/swagger.config';
@@ -38,9 +37,7 @@ import { errorHandler } from './middlewares/error.middleware';
 // Load environment variables
 dotenv.config();
 
-// Get current directory in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// __dirname is available in CommonJS mode (no need for import.meta.url)
 
 // Initialize Express app
 export const app = express();
