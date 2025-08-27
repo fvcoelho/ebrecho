@@ -63,43 +63,31 @@ class AutoResponseService {
         timestamp: event.timestamp
       });
 
-      // Phone Number Response Lock (5 minute window)
-      console.log(`🔒 PHONE LOCK CHECK: Attempting to acquire response lock...`);
+      // Message Group Cache Check (prevents reprocessing same messages)
+      console.log(`💾 MESSAGE CACHE CHECK: Getting processed message IDs...`);
       console.log(`   From number: ${event.fromNumber}`);
       console.log(`   Partner ID: ${event.partnerId}`);
-      console.log(`   Window: 5 minutes`);
       
-      const lockAcquired = await RedisService.createResponseLock(
+      const processedMessageIds = await RedisService.getProcessedMessages(
         event.fromNumber,
-        event.partnerId,
-        5 // 5 minute window for phone number lock
+        event.partnerId
       );
       
-      if (!lockAcquired) {
-        console.log(`🚫 LOCK FAILED: Response lock already exists for ${event.fromNumber}`);
-        console.log(`   This means a recent auto-response was already sent/is being processed`);
-        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO EXISTING RESPONSE LOCK`);
-        return;
-      }
-      
-      console.log(`✅ LOCK ACQUIRED: Phone number response lock created successfully`);
-      console.log(`   Lock expires in 5 minutes - no other responses will be sent to this number until then`);
+      console.log(`📋 Found ${processedMessageIds.length} already processed message IDs`);
 
-      // Define time window for collecting recent messages
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      // Define time window for collecting recent messages (30 seconds for real-time grouping)
+      const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
 
-      // Get recent inbound messages from the same number (last 5 minutes)
-      console.log(`🔍 Looking up recent messages from ${event.fromNumber}...`);
-      const recentMessages = await prisma.whatsAppMessage.findMany({
+      // Get recent inbound messages from the same number (last 30 seconds)
+      console.log(`🔍 Looking up recent messages from ${event.fromNumber} (last 30 seconds)...`);
+      const allRecentMessages = await prisma.whatsAppMessage.findMany({
         where: { 
           partnerId: event.partnerId,
           fromNumber: event.fromNumber,
           direction: 'inbound',
           createdAt: {
-            gte: fiveMinutesAgo
-          },
-          // Only get messages that haven't been responded to yet
-          autoResponseSent: null
+            gte: thirtySecondsAgo
+          }
         },
         select: {
           messageId: true,
@@ -113,10 +101,25 @@ class AutoResponseService {
         }
       });
 
-      console.log(`📊 Found ${recentMessages.length} recent unresponded messages from ${event.fromNumber}`);
+      // Filter out already processed messages
+      const unprocessedMessages = allRecentMessages.filter(msg => 
+        !processedMessageIds.includes(msg.messageId)
+      );
+
+      console.log(`📊 Found ${allRecentMessages.length} recent messages, ${unprocessedMessages.length} unprocessed`);
       
-      // Find the current message in the batch
-      const originalMessage = recentMessages.find(msg => msg.messageId === event.messageId);
+      if (unprocessedMessages.length === 0) {
+        console.log(`⏭️ NO NEW MESSAGES: All recent messages already processed`);
+        console.log(`   Current message ${event.messageId} was already handled`);
+        console.log(`🚫 AUTO-RESPONSE SKIPPED - NO NEW MESSAGES TO PROCESS`);
+        return;
+      }
+      
+      console.log(`✅ PROCESSING: ${unprocessedMessages.length} new messages in this group`);
+      
+      // Find the current message in the unprocessed batch
+      const originalMessage = unprocessedMessages.find(msg => msg.messageId === event.messageId);
+      const recentMessages = unprocessedMessages; // Use unprocessed messages for response
 
       // Get partner configuration
       console.log(`🔍 Looking up partner configuration for ID: ${event.partnerId}`);
@@ -223,11 +226,21 @@ class AutoResponseService {
 
       console.log(`✅ Database updated: ${updateResult.count} records modified (covered ${recentMessages.length} recent messages)`);
 
+      // Cache processed message IDs to prevent reprocessing
+      const processedIds = recentMessages.map(msg => msg.messageId);
+      await RedisService.addProcessedMessages(
+        event.fromNumber,
+        event.partnerId,
+        processedIds,
+        10 // 10 minute cache for deduplication
+      );
+
       console.log(`🎉 AUTO-RESPONSE COMPLETED SUCCESSFULLY:`, {
         originalMessageId: event.messageId,
         responseMessageId: response.messageId,
         fromNumber: event.fromNumber,
         partnerName,
+        processedMessageCount: recentMessages.length,
         greeting: greeting.substring(0, 100) + '...'
       });
 

@@ -357,73 +357,58 @@ class RedisService {
   }
 
   /**
-   * Create response lock for phone number (prevents multiple auto-responses)
-   * Uses atomic SET with NX (only set if not exists) and EX (expiration)
+   * Add processed message IDs to cache (prevents reprocessing same messages)
    */
-  async createResponseLock(fromNumber: string, partnerId: string, windowMinutes: number = 5): Promise<boolean> {
-    console.log(`🔒 RESPONSE LOCK: Attempting to create lock for ${fromNumber}`);
+  async addProcessedMessages(fromNumber: string, partnerId: string, messageIds: string[], ttlMinutes: number = 10): Promise<void> {
+    console.log(`💾 MESSAGE CACHE: Adding ${messageIds.length} processed message IDs`);
+    console.log(`   From number: ${fromNumber}`);
+    console.log(`   Message IDs: ${messageIds.map(id => id.substring(id.length - 8)).join(', ')}`);
     
     if (!this.isEnabled) {
-      console.log(`🔕 Redis disabled - cannot create response lock`);
-      console.log(`   WARNING: Without Redis, multiple responses may be sent!`);
-      return true; // Allow processing when Redis is disabled
+      console.log(`🔕 Redis disabled - cannot cache processed messages`);
+      return;
     }
 
     try {
-      const lockKey = `whatsapp:response-lock:${fromNumber}:${partnerId}`;
-      const ttlSeconds = windowMinutes * 60;
-      const lockValue = new Date().toISOString();
+      const cacheKey = `whatsapp:processed-messages:${fromNumber}:${partnerId}`;
+      const ttlSeconds = ttlMinutes * 60;
       
-      console.log(`🔍 LOCK CHECK: Key: ${lockKey}`);
-      console.log(`   TTL: ${ttlSeconds} seconds (${windowMinutes} minutes)`);
-      
-      // Atomic operation: SET key value NX EX ttl
-      // Returns "OK" if key was set (didn't exist), null if key already exists
-      const result = await this.redis.set(lockKey, lockValue, { nx: true, ex: ttlSeconds });
-      
-      if (result === 'OK') {
-        console.log(`✅ LOCK CREATED: Response lock acquired for ${fromNumber}`);
-        console.log(`   Lock value: ${lockValue}`);
-        console.log(`   Expires in: ${windowMinutes} minutes`);
-        return true; // Lock created successfully
-      } else {
-        console.log(`🚫 LOCK EXISTS: Response lock already exists for ${fromNumber}`);
+      // Add message IDs to Redis SET with expiration
+      if (messageIds.length > 0) {
+        await this.redis.sadd(cacheKey, messageIds);
+        await this.redis.expire(cacheKey, ttlSeconds);
         
-        // Get existing lock info for debugging
-        const existingValue = await this.redis.get(lockKey);
-        const ttl = await this.redis.ttl(lockKey);
-        
-        console.log(`   Existing lock created: ${existingValue}`);
-        console.log(`   Lock expires in: ${ttl} seconds`);
-        console.log(`🚫 AUTO-RESPONSE BLOCKED: Recent response already sent/processing`);
-        return false; // Lock already exists
+        console.log(`✅ MESSAGE CACHE: Added ${messageIds.length} message IDs to cache`);
+        console.log(`   Cache key: ${cacheKey}`);
+        console.log(`   TTL: ${ttlMinutes} minutes`);
       }
     } catch (error) {
-      console.error('❌ LOCK ERROR: Failed to create response lock');
-      console.error(`   Error type: ${error instanceof Error ? error.name : typeof error}`);
-      console.error(`   Error message: ${error instanceof Error ? error.message : error}`);
-      console.error(`   Failing safely - allowing processing to continue`);
-      return true; // On error, allow processing (fail-safe)
+      console.error('❌ MESSAGE CACHE ERROR: Failed to add processed messages');
+      console.error(`   Error: ${error instanceof Error ? error.message : error}`);
     }
   }
 
   /**
-   * Check if response lock exists for phone number
+   * Get processed message IDs from cache
    */
-  async hasResponseLock(fromNumber: string, partnerId: string): Promise<boolean> {
+  async getProcessedMessages(fromNumber: string, partnerId: string): Promise<string[]> {
     if (!this.isEnabled) {
-      return false;
+      return [];
     }
 
     try {
-      const lockKey = `whatsapp:response-lock:${fromNumber}:${partnerId}`;
-      const exists = await this.redis.exists(lockKey);
+      const cacheKey = `whatsapp:processed-messages:${fromNumber}:${partnerId}`;
+      const processedIds = await this.redis.smembers(cacheKey);
       
-      console.log(`🔍 LOCK CHECK: ${lockKey} exists = ${exists}`);
-      return exists === 1;
+      console.log(`📋 MESSAGE CACHE: Found ${processedIds.length} processed message IDs`);
+      if (processedIds.length > 0) {
+        console.log(`   Cached IDs: ${processedIds.map(id => id.substring(id.length - 8)).join(', ')}`);
+      }
+      
+      return processedIds;
     } catch (error) {
-      console.error('❌ Failed to check response lock:', error);
-      return false; // On error, assume no lock (fail-safe)
+      console.error('❌ Failed to get processed messages from cache:', error);
+      return [];
     }
   }
 
