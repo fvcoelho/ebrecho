@@ -605,7 +605,19 @@ export class WhatsAppController {
       }
 
       const { phoneNumber, messageType, message, templateName, languageCode } = validation.data;
-      const partnerId = req.user?.partnerId || 'test-partner';
+      let partnerId = req.user?.partnerId;
+      
+      // If no authenticated user, try to find any existing partner for testing
+      if (!partnerId) {
+        const firstPartner = await prisma.partner.findFirst();
+        if (firstPartner) {
+          partnerId = firstPartner.id;
+        } else {
+          return res.status(400).json({ 
+            error: 'No partner available for testing. Please create a partner first or authenticate with a partner account.' 
+          });
+        }
+      }
 
       let result;
 

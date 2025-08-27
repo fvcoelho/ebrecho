@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { raw } from 'express';
+import { z } from 'zod';
 import whatsappController from '../controllers/whatsapp.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { validatePartnerAccess } from '../middlewares/partner.middleware';
@@ -649,7 +650,7 @@ if (process.env.NODE_ENV !== 'production') {
    *         description: Not available in production
    */
   router.post('/test', 
-    validate(testMessageSchema),
+    validate(z.object({ body: testMessageSchema })),
     whatsappController.testMessage.bind(whatsappController)
   );
 
