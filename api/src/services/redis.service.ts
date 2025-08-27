@@ -389,6 +389,49 @@ class RedisService {
   }
 
   /**
+   * Acquire atomic processing lock (prevents concurrent processing)
+   * Uses SET NX EX for atomic operation
+   */
+  async acquireProcessingLock(fromNumber: string, partnerId: string, ttlSeconds: number = 2): Promise<boolean> {
+    console.log(`🔐 PROCESSING LOCK: Attempting to acquire lock for ${fromNumber}`);
+    
+    if (!this.isEnabled) {
+      console.log(`🔕 Redis disabled - cannot create processing lock`);
+      return true; // Allow processing when Redis is disabled
+    }
+
+    try {
+      const lockKey = `whatsapp:processing:${fromNumber}:${partnerId}`;
+      const lockValue = `${Date.now()}-${Math.random()}`;
+      
+      console.log(`🔍 LOCK ATTEMPT: Key: ${lockKey}`);
+      console.log(`   TTL: ${ttlSeconds} seconds`);
+      
+      // Atomic operation: SET key value NX EX ttl
+      // Returns "OK" if lock acquired, null if already exists
+      const result = await this.redis.set(lockKey, lockValue, { nx: true, ex: ttlSeconds });
+      
+      if (result === 'OK') {
+        console.log(`✅ LOCK ACQUIRED: Processing lock obtained for ${fromNumber}`);
+        console.log(`   Lock will auto-expire in ${ttlSeconds} seconds`);
+        return true;
+      } else {
+        console.log(`⏳ LOCK EXISTS: Another process is handling ${fromNumber}`);
+        
+        // Check remaining TTL for debugging
+        const ttl = await this.redis.ttl(lockKey);
+        console.log(`   Lock expires in: ${ttl} seconds`);
+        console.log(`🔄 Should wait and check if messages were processed`);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ LOCK ERROR: Failed to acquire processing lock');
+      console.error(`   Error: ${error instanceof Error ? error.message : error}`);
+      return true; // On error, allow processing (fail-safe)
+    }
+  }
+
+  /**
    * Get processed message IDs from cache
    */
   async getProcessedMessages(fromNumber: string, partnerId: string): Promise<string[]> {

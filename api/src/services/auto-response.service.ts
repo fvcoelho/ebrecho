@@ -63,6 +63,37 @@ class AutoResponseService {
         timestamp: event.timestamp
       });
 
+      // Atomic Processing Lock (prevents concurrent processing)
+      console.log(`🔐 CONCURRENCY CONTROL: Acquiring processing lock...`);
+      const lockAcquired = await RedisService.acquireProcessingLock(
+        event.fromNumber,
+        event.partnerId,
+        2 // 2-second lock to serialize processing
+      );
+
+      if (!lockAcquired) {
+        console.log(`⏳ LOCK BUSY: Another process is handling messages from ${event.fromNumber}`);
+        console.log(`   Waiting 500ms for other process to complete...`);
+        
+        // Wait for the other process to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if our message was processed by the other instance
+        const processedAfterWait = await RedisService.getProcessedMessages(
+          event.fromNumber,
+          event.partnerId
+        );
+        
+        if (processedAfterWait.includes(event.messageId)) {
+          console.log(`✅ MESSAGE HANDLED: Message ${event.messageId} was processed by another instance`);
+          console.log(`🚫 AUTO-RESPONSE SKIPPED - HANDLED BY CONCURRENT PROCESS`);
+          return;
+        }
+        
+        console.log(`🔄 RETRYING: Message not yet processed, attempting to handle...`);
+        // Continue processing if message wasn't handled
+      }
+
       // Message Group Cache Check (prevents reprocessing same messages)
       console.log(`💾 MESSAGE CACHE CHECK: Getting processed message IDs...`);
       console.log(`   From number: ${event.fromNumber}`);
@@ -116,6 +147,17 @@ class AutoResponseService {
       }
       
       console.log(`✅ PROCESSING: ${unprocessedMessages.length} new messages in this group`);
+      
+      // Immediately cache these message IDs to prevent other processes from handling them
+      const messageIdsToProcess = unprocessedMessages.map(msg => msg.messageId);
+      console.log(`🔒 CLAIMING MESSAGES: Adding ${messageIdsToProcess.length} messages to cache immediately`);
+      await RedisService.addProcessedMessages(
+        event.fromNumber,
+        event.partnerId,
+        messageIdsToProcess,
+        10 // 10 minute cache
+      );
+      console.log(`✅ MESSAGES CLAIMED: Other processes will now skip these messages`);
       
       // Find the current message in the unprocessed batch
       const originalMessage = unprocessedMessages.find(msg => msg.messageId === event.messageId);
@@ -226,14 +268,7 @@ class AutoResponseService {
 
       console.log(`✅ Database updated: ${updateResult.count} records modified (covered ${recentMessages.length} recent messages)`);
 
-      // Cache processed message IDs to prevent reprocessing
-      const processedIds = recentMessages.map(msg => msg.messageId);
-      await RedisService.addProcessedMessages(
-        event.fromNumber,
-        event.partnerId,
-        processedIds,
-        10 // 10 minute cache for deduplication
-      );
+      // Note: Message IDs were already cached at the beginning to prevent race conditions
 
       console.log(`🎉 AUTO-RESPONSE COMPLETED SUCCESSFULLY:`, {
         originalMessageId: event.messageId,
