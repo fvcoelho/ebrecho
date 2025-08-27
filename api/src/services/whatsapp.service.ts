@@ -1,4 +1,4 @@
-import { WhatsAppMessageType, WhatsAppMessageStatus } from '@prisma/client';
+import { WhatsAppMessageType, WhatsAppMessageStatus, WebhookStatus } from '@prisma/client';
 import crypto from 'crypto';
 import { prisma } from '../prisma/index.js';
 
@@ -324,21 +324,34 @@ class WhatsAppService {
       console.log('🚀 DEBUG: Starting webhook processing');
       console.log('   Entries:', payload.entry?.length || 0);
       
-      // Log webhook received status - single attempt, non-blocking
+      // Log webhook received status - with detailed error logging
       try {
+        console.log('📝 DEBUG: About to create webhook log...');
+        console.log('   Webhook type:', payload.entry[0]?.changes[0]?.field || 'unknown');
+        console.log('   Payload size:', JSON.stringify(payload).length, 'bytes');
+        
         const webhookLog = await prisma.whatsAppWebhookLog.create({
           data: {
             webhookType: payload.entry[0]?.changes[0]?.field || 'unknown',
             payload: payload as any,
             processed: false,
-            status: 'RECEIVED',
+            status: WebhookStatus.RECEIVED,
           },
         });
+        
         webhookLogId = webhookLog.id;
         console.log(`📝 DEBUG: Webhook logged with ID: ${webhookLogId} (Status: RECEIVED)`);
-      } catch (logError) {
-        // Don't fail the entire webhook processing if logging fails
-        console.error('⚠️ DEBUG: Failed to log webhook received status, but continuing processing:', logError);
+      } catch (logError: any) {
+        // Log detailed error information
+        console.error('⚠️ DEBUG: Failed to log webhook received status');
+        console.error('   Error name:', logError?.name);
+        console.error('   Error message:', logError?.message);
+        console.error('   Error code:', logError?.code);
+        console.error('   Prisma error:', logError?.meta);
+        console.error('   Full error:', logError);
+        console.error('   Stack trace:', logError?.stack);
+        // Continue processing despite logging failure
+        console.log('   Continuing webhook processing despite log failure...');
       }
 
       for (const entry of payload.entry) {
@@ -400,7 +413,7 @@ class WhatsAppService {
             webhookType: payload.entry[0]?.changes[0]?.field || 'unknown',
             payload: { webhookId: webhookLogId, status: 'completed' } as any,
             processed: true,
-            status: 'COMPLETED',
+            status: WebhookStatus.COMPLETED,
           },
         });
         console.log(`✅ DEBUG: Webhook completion logged (Original ID: ${webhookLogId})`);
@@ -424,7 +437,7 @@ class WhatsAppService {
             webhookType: payload.entry[0]?.changes[0]?.field || 'unknown',
             payload: { webhookId: webhookLogId, error: error instanceof Error ? error.message : 'Unknown error' } as any,
             processed: false,
-            status: 'FAILED',
+            status: WebhookStatus.FAILED,
             processingError: error instanceof Error ? error.message : 'Unknown error',
           },
         });
@@ -933,7 +946,7 @@ class WhatsAppService {
             messageType: message.type?.toUpperCase() as any || 'TEXT',
             textContent: message.text?.body,
             timestamp: new Date(parseInt(message.timestamp) * 1000),
-            status: 'DELIVERED' as any,
+            status: WhatsAppMessageStatus.DELIVERED,
           });
         }
       }

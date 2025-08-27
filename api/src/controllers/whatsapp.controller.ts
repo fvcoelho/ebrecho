@@ -73,13 +73,18 @@ export class WhatsAppController {
 
       console.log('✅ WEBHOOK DEBUG - Validation Success, starting processing...');
 
-      // Process the webhook asynchronously
-      whatsappService.processWebhook(validation.data as any).catch(error => {
-        console.error('❌ WEBHOOK DEBUG - Processing Error:', error);
+      // Process the webhook SYNCHRONOUSLY to ensure proper error handling
+      try {
+        await whatsappService.processWebhook(validation.data as any);
+        console.log('✅ WEBHOOK DEBUG - Processing completed successfully');
+      } catch (processingError) {
+        // Log the error but still return 200 to Meta to avoid retries
+        console.error('❌ WEBHOOK DEBUG - Processing Error:', processingError);
         console.error('📦 Failed payload:', JSON.stringify(req.body, null, 2));
-      });
+        console.error('Stack trace:', processingError instanceof Error ? processingError.stack : 'No stack trace');
+      }
 
-      // Always respond with 200 OK to acknowledge receipt
+      // Always respond with 200 OK to acknowledge receipt (Meta requirement)
       res.status(200).json({ success: true });
     } catch (error) {
       console.error('❌ WEBHOOK DEBUG - Handler Error:', error);
