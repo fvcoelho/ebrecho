@@ -208,6 +208,10 @@ model Partner {
   whatsappBusinessVerified Boolean @default(false)
   whatsappApiEnabled     Boolean @default(false)
   whatsappPhoneNumberId  String?
+  
+  // Auto-response configuration
+  autoResponseEnabled    Boolean @default(true)
+  customGreetingTemplate String? // Custom greeting template, uses default if null
   publicEmail            String?
   businessHours          Json?
   socialLinks            Json?
@@ -876,6 +880,11 @@ model WhatsAppMessage {
   errorCode       String?
   errorMessage    String?
   
+  // Auto-response tracking
+  autoResponseSent      Boolean?  // Whether auto-response was sent for this message
+  autoResponseAt        DateTime? // When auto-response was sent
+  autoResponseMessageId String?   // WhatsApp message ID of the auto-response
+  
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   
@@ -886,6 +895,8 @@ model WhatsAppMessage {
   @@index([conversationId])
   @@index([timestamp])
   @@index([status])
+  @@index([autoResponseSent])
+  @@index([direction, autoResponseSent]) // For querying inbound messages without auto-response
 }
 
 model WhatsAppTemplate {

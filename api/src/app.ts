@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import { prisma } from './prisma';
 import { swaggerSpec } from './config/swagger.config';
@@ -29,10 +30,17 @@ import pixTransactionRoutes from './routes/pix-transaction.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import placesRoutes from './routes/places.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
+import cronRoutes from './routes/cron.routes';
+import jobsRoutes from './routes/jobs.routes';
+import devRoutes from './routes/dev.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
 dotenv.config();
+
+// Get current directory in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Express app
 export const app = express();
@@ -188,9 +196,26 @@ app.get('/api-docs/', (req, res) => {
   res.redirect('/api-docs');
 });
 
-// Handle favicon requests to avoid 500 errors
+// Serve favicon
 app.get('/favicon.ico', (req, res) => {
-  res.status(204).send(); // No content
+  const faviconPath = path.join(__dirname, 'public', 'favicon.png');
+  res.sendFile(faviconPath, (err) => {
+    if (err) {
+      console.error('Error serving favicon:', err);
+      res.status(404).send();
+    }
+  });
+});
+
+// Also serve favicon.png directly
+app.get('/favicon.png', (req, res) => {
+  const faviconPath = path.join(__dirname, 'public', 'favicon.png');
+  res.sendFile(faviconPath, (err) => {
+    if (err) {
+      console.error('Error serving favicon:', err);
+      res.status(404).send();
+    }
+  });
 });
 
 // Serve Swagger JSON
@@ -499,6 +524,17 @@ app.use('/api/places', placesRoutes);
 
 // WhatsApp Cloud API routes
 app.use('/api/whatsapp', whatsappRoutes);
+
+// Cron job routes
+app.use('/api/cron', cronRoutes);
+
+// Background job routes
+app.use('/api/jobs', jobsRoutes);
+
+// Development routes (only in development mode)
+if (process.env.NODE_ENV === 'development') {
+  app.use('/api/dev', devRoutes);
+}
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

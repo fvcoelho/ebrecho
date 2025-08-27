@@ -32,6 +32,7 @@
     "@modelcontextprotocol/server-postgres": "^0.6.2",
     "@prisma/client": "^6.9.0",
     "@types/bcrypt": "^6.0.0",
+    "@upstash/redis": "^1.35.3",
     "@vercel/blob": "^1.1.1",
     "@vercel/node": "^5.3.11",
     "axios": "^1.10.0",

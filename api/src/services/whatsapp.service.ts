@@ -1,6 +1,7 @@
 import { WhatsAppMessageType, WhatsAppMessageStatus, WebhookStatus } from '@prisma/client';
 import crypto from 'crypto';
 import { prisma } from '../prisma/index.js';
+import AutoResponseService from './auto-response.service';
 
 interface WhatsAppConfig {
   accessToken: string;
@@ -561,6 +562,58 @@ class WhatsAppService {
         
         console.log(`✅ DEBUG: Message ${message.id} successfully processed and logged`);
 
+        // Process auto-response immediately (Pattern #5: Webhook-Triggered)
+        setImmediate(async () => {
+          try {
+            const partnerName = partner.whatsappName || partner.name;
+            
+            // Always queue the event first (Pattern #5: Dual approach)
+            console.log(`📤 Queueing auto-response event for message ${message.id}`);
+            await AutoResponseService.queueAutoResponse(
+              message.id,
+              partner.id,
+              message.from,
+              partnerName
+            );
+            
+            // Check if partner has auto-response enabled for immediate processing
+            if (partner.autoResponseEnabled) {
+              console.log(`🤖 Processing immediate auto-response for message ${message.id}`);
+              
+              const event = {
+                messageId: message.id,
+                partnerId: partner.id,
+                fromNumber: message.from,
+                partnerName,
+                timestamp: new Date().toISOString()
+              };
+
+              // Process immediately for real-time response
+              await AutoResponseService.processAutoResponseEvent(event);
+              console.log(`✅ DEBUG: Auto-response processed immediately for message ${message.id}`);
+            } else {
+              console.log(`⏭️ DEBUG: Auto-response disabled for partner ${partner.name}, but event queued for potential processing`);
+            }
+          } catch (autoResponseError) {
+            console.error(`⚠️ DEBUG: Failed to process immediate auto-response for message ${message.id}:`, autoResponseError);
+            
+            // Ensure event is queued even if immediate processing fails
+            try {
+              const partnerName = partner.whatsappName || partner.name;
+              await AutoResponseService.queueAutoResponse(
+                message.id,
+                partner.id,
+                message.from,
+                partnerName
+              );
+              console.log(`🔄 DEBUG: Auto-response queued for cron processing as fallback`);
+            } catch (fallbackError) {
+              console.error(`❌ DEBUG: Both immediate and fallback auto-response failed:`, fallbackError);
+              // Don't throw - webhook processing should continue
+            }
+          }
+        });
+
       } catch (error) {
         console.error(`❌ DEBUG: Error processing message ${message.id}:`, error);
         console.error('   Error details:', {
@@ -617,7 +670,7 @@ class WhatsAppService {
   /**
    * Log message to database
    */
-  private async logMessage(data: {
+private async logMessage(data: {
     messageId: string;
     partnerId: string;
     fromNumber: string;
