@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PublicStore } from '@/lib/api/public'
-import { Clock, Mail, Phone, Instagram, Facebook, Globe, MapPin } from 'lucide-react'
+import { Clock, Mail, Phone, Instagram, Facebook, Globe, MapPin, Package, MessageCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 
 interface StoreInfoProps {
   store: PublicStore
@@ -23,46 +25,63 @@ export function StoreInfo({ store }: StoreInfoProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Informações da Loja</CardTitle>
+    <Card className="border-0 shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <Package className="h-4 w-4" />
+          Sobre a Loja
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {/* Store Description */}
         {store.publicDescription && (
-          <div className="pb-4 border-b">
-            <p className="text-sm text-gray-600 leading-relaxed">
+          <div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {store.publicDescription}
             </p>
+            <Separator className="mt-4" />
           </div>
         )}
         
+        {/* WhatsApp CTA Button */}
+        {store.whatsappNumber && (
+          <Button 
+            className="w-full" 
+            variant="default"
+            asChild
+          >
+            <a
+              href={`https://wa.me/55${store.whatsappNumber}?text=${encodeURIComponent(
+                store.whatsappName 
+                  ? `Olá ${store.whatsappName}! Vi sua loja no eBrecho e gostaria de mais informações.`
+                  : `Olá! Vi sua loja no eBrecho e gostaria de mais informações.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Falar no WhatsApp
+            </a>
+          </Button>
+        )}
+        
         {/* Contact info */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {store.whatsappNumber && (
             <div className="flex items-center gap-3 text-sm">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <a
-                href={`https://wa.me/55${store.whatsappNumber}?text=${encodeURIComponent(
-                  store.whatsappName 
-                    ? `Olá ${store.whatsappName}! Vi sua loja no eBrecho e gostaria de mais informações.`
-                    : `Olá! Vi sua loja no eBrecho e gostaria de mais informações.`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
+              <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-muted-foreground">
                 {formatPhoneNumber(store.whatsappNumber)}
-              </a>
+              </span>
             </div>
           )}
           
           {store.publicEmail && (
             <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <a
                 href={`mailto:${store.publicEmail}`}
-                className="hover:underline"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 {store.publicEmail}
               </a>
@@ -71,12 +90,12 @@ export function StoreInfo({ store }: StoreInfoProps) {
           
           {store.address && (
             <div className="flex items-start gap-3 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
               <div className="text-muted-foreground">
                 <p>{store.address.street}, {store.address.number}</p>
                 {store.address.complement && <p>{store.address.complement}</p>}
                 <p>{store.address.neighborhood}</p>
-                <p>{store.address.city} - {store.address.state}</p>
+                <p className="font-medium">{store.address.city} - {store.address.state}</p>
               </div>
             </div>
           )}
@@ -84,19 +103,21 @@ export function StoreInfo({ store }: StoreInfoProps) {
 
         {/* Business hours */}
         {store.businessHours && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
+          <div className="space-y-3">
+            <Separator />
+            <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-sm">Horário de Funcionamento</span>
             </div>
-            <div className="space-y-1 text-sm">
+            <div className="space-y-1.5 text-sm ml-6">
               {Object.entries(store.businessHours).map(([day, hours]) => {
                 const typedHours = hours as { open?: string; close?: string } | null;
+                const isOpen = typedHours && typedHours.open && typedHours.close;
                 return (
                   <div key={day} className="flex justify-between">
                     <span className="text-muted-foreground">{dayNames[day]}:</span>
-                    <span>
-                      {typedHours && typedHours.open && typedHours.close 
+                    <span className={isOpen ? 'font-medium' : 'text-muted-foreground'}>
+                      {isOpen
                         ? `${typedHours.open} - ${typedHours.close}` 
                         : 'Fechado'}
                     </span>
@@ -108,55 +129,70 @@ export function StoreInfo({ store }: StoreInfoProps) {
         )}
 
         {/* Social links */}
-        {store.socialLinks && (
-          <div>
-            <span className="font-medium text-sm mb-3 block">Redes Sociais</span>
-            <div className="flex gap-3">
-              {store.socialLinks.instagram && (
-                <a
-                  href={`https://instagram.com/${store.socialLinks.instagram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full p-2 bg-muted hover:bg-muted/80 transition-colors"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="h-4 w-4" />
-                </a>
-              )}
-              {store.socialLinks.facebook && (
-                <a
-                  href={`https://facebook.com/${store.socialLinks.facebook}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full p-2 bg-muted hover:bg-muted/80 transition-colors"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="h-4 w-4" />
-                </a>
-              )}
-              {store.socialLinks.website && (
-                <a
-                  href={store.socialLinks.website.startsWith('http') 
-                    ? store.socialLinks.website 
-                    : `https://${store.socialLinks.website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full p-2 bg-muted hover:bg-muted/80 transition-colors"
-                  aria-label="Website"
-                >
-                  <Globe className="h-4 w-4" />
-                </a>
-              )}
+        {store.socialLinks && (store.socialLinks.instagram || store.socialLinks.facebook || store.socialLinks.website) && (
+          <div className="space-y-3">
+            <Separator />
+            <div>
+              <span className="font-medium text-sm mb-3 block">Redes Sociais</span>
+              <div className="flex gap-2">
+                {store.socialLinks.instagram && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    asChild
+                  >
+                    <a
+                      href={`https://instagram.com/${store.socialLinks.instagram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                    >
+                      <Instagram className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+                {store.socialLinks.facebook && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    asChild
+                  >
+                    <a
+                      href={`https://facebook.com/${store.socialLinks.facebook}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                    >
+                      <Facebook className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+                {store.socialLinks.website && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    asChild
+                  >
+                    <a
+                      href={store.socialLinks.website.startsWith('http') 
+                        ? store.socialLinks.website 
+                        : `https://${store.socialLinks.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Website"
+                    >
+                      <Globe className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Products count */}
-        <div className="pt-4 border-t">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{store.productCount}</span> produtos disponíveis
-          </p>
-        </div>
       </CardContent>
     </Card>
   )

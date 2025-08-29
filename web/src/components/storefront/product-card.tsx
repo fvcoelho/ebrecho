@@ -103,33 +103,33 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
 
   return (
     <Card 
-      className="group h-full overflow-hidden hover:shadow-lg transition-shadow flex flex-col bg-white rounded-lg"
+      className="group h-full overflow-hidden hover:shadow-md transition-all duration-200 flex flex-col bg-white border border-border/50"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false)
         resetImageIndex()
       }}
     >
-      <Link href={`/${storeSlug}/produto/${product.slug}`} className="flex-1 flex flex-col">
-        {/* Image container */}
-        <div className="relative aspect-square overflow-hidden bg-gray-100 cursor-pointer rounded-t-lg">
+      <Link href={`/${storeSlug}/produto/${product.slug}`} className="block">
+        {/* Image container - Fixed aspect ratio and alignment */}
+        <div className="relative w-full aspect-square overflow-hidden bg-muted">
           {currentImage && !imageError ? (
             <img
               src={getImageUrl(currentImage)}
               alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-gray-400 bg-gray-200">
-              <span className="text-sm font-medium">Produto</span>
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground bg-muted">
+              <span className="text-sm font-medium">Sem imagem</span>
             </div>
           )}
 
           {/* Discount badge */}
           {hasDiscount() && (
-            <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-              {calculateDiscount()}%
+            <div className="absolute top-2 left-2 bg-green-500 text-white px-1.5 py-0.5 rounded text-xs font-bold shadow-sm">
+              -{calculateDiscount()}%
             </div>
           )}
           
@@ -145,10 +145,10 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
           {/* Condition badge - styled like in the image */}
           <div className="absolute top-2 right-2">
             <Badge 
-              className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400 text-xs px-2 py-1"
+              className="bg-yellow-400 text-yellow-900 hover:bg-yellow-400 text-xs px-2 py-0.5 shadow-sm font-medium"
               variant="secondary"
             >
-              {product.condition === 'GOOD' ? 'barateou' : getConditionLabel(product.condition)}
+              {getConditionLabel(product.condition)}
             </Badge>
           </div>
           
@@ -159,11 +159,11 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
           
           {/* Image navigation dots for multiple images */}
           {product.images.length > 1 && (
-            <div className="absolute bottom-2 left-2 flex gap-1">
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
               {product.images.map((_, index) => (
                 <div
                   key={index}
-                  className={`w-2 h-2 rounded-full transition-colors ${
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
                     index === currentImageIndex ? 'bg-white' : 'bg-white/50'
                   }`}
                 />
@@ -173,47 +173,40 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
         </div>
       </Link>
 
-      <CardContent className="p-4 flex flex-col">
-        <Link href={`/${storeSlug}/produto/${product.slug}`} className="flex-1 flex flex-col mb-3">
-          {/* Title - Made larger */}
-          <h3 className="text-base font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+      <CardContent className="p-3 flex flex-col flex-1">
+        <Link href={`/${storeSlug}/produto/${product.slug}`} className="block mb-3">
+          {/* Title */}
+          <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors leading-tight">
             {product.name}
           </h3>
 
-          {/* Description */}
-          {product.description && (
-            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-              {product.description}
-            </p>
-          )}
-
           {/* Category and Size Badges */}
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1.5 mb-2">
             {product.category && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-200 text-xs px-2 py-1 font-medium">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 font-normal">
                 {product.category}
               </Badge>
             )}
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200 text-xs px-2 py-1 font-semibold">
+            <Badge variant="outline" className="text-xs px-1.5 py-0.5 font-medium">
               {(product.size || 'P').toUpperCase()}
             </Badge>
           </div>
         </Link>
 
-        {/* Price - Positioned at bottom */}
-        <div className="mb-3">
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-gray-900">{formatPrice(product.price)}</span>
+        {/* Price - More compact */}
+        <div className="mb-3 mt-auto">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-lg font-bold text-foreground">{formatPrice(product.price)}</span>
             {hasDiscount() && (
-              <span className="text-sm text-gray-500 line-through">
+              <span className="text-xs text-muted-foreground line-through">
                 {formatPrice(getOriginalPrice())}
               </span>
             )}
           </div>
         </div>
         
-        {/* Action Buttons - PIX and WhatsApp */}
-        <div className="flex gap-3">
+        {/* Action Buttons - More compact */}
+        <div className="flex gap-2">
           {/* PIX Button */}
           {store?.pixKey && (
             <div className="flex-1">
@@ -245,12 +238,12 @@ export function ProductCard({ product, storeSlug, store }: ProductCardProps) {
                   const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`
                   window.open(whatsappUrl, '_blank')
                 }}
-                className="w-full flex items-center justify-center bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-full py-3 px-4"
-                size="default"
+                className="w-full flex items-center justify-center bg-green-600 hover:bg-green-700 text-white transition-colors rounded-md py-2 px-3 text-sm"
+                size="sm"
               >
                 <svg 
-                  width="20" 
-                  height="20" 
+                  width="16" 
+                  height="16" 
                   viewBox="0 0 24 24" 
                   fill="currentColor"
                   className="mr-1"

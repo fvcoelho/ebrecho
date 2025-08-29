@@ -3,8 +3,8 @@
 import { useState, useEffect, use } from 'react'
 import { notFound } from 'next/navigation'
 import { getPublicStore, getPublicProducts, getStoreCategories, registerStoreView } from '@/lib/api/public'
-import { StoreHero } from '@/components/storefront/store-hero'
 import { ProductGrid } from '@/components/storefront/product-grid'
+import { StoreHero } from '@/components/storefront/store-hero'
 import { StoreInfo } from '@/components/storefront/store-info'
 import { StoreMap } from '@/components/storefront/store-map'
 import WhatsAppButton from '@/components/storefront/whatsapp-button'
@@ -13,10 +13,10 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
-import { Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, X, Package } from 'lucide-react'
 import { PublicStore, PublicProduct } from '@/lib/api/public'
 
 interface StorePageProps {
@@ -40,7 +40,6 @@ export default function StorePage({ params }: StorePageProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalProducts, setTotalProducts] = useState(0)
-  const [filtersExpanded, setFiltersExpanded] = useState(false)
 
   // Load store data
   useEffect(() => {
@@ -116,19 +115,20 @@ export default function StorePage({ params }: StorePageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
-        <Skeleton className="h-64 w-full mb-8" />
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <Skeleton className="h-72 w-full" />
         <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-3">
-              <Skeleton className="h-8 w-48 mb-6" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <Skeleton key={`loading-skeleton-${i}`} className="h-64 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-9">
+              <Skeleton className="h-32 w-full mb-6" />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[...Array(12)].map((_, i) => (
+                  <Skeleton key={`loading-skeleton-${i}`} className="aspect-square" />
                 ))}
               </div>
             </div>
-            <aside className="lg:col-span-1">
+            <aside className="lg:col-span-3">
+              <Skeleton className="h-64 w-full mb-4" />
               <Skeleton className="h-48 w-full" />
             </aside>
           </div>
@@ -142,204 +142,237 @@ export default function StorePage({ params }: StorePageProps) {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <StoreHero store={store} />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           {/* Main content */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                {/* Store name and description */}
-                {/* <div className="space-y-2"> */}
-                  {/* <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {store.name}
-                  </h2> */}
-                  {/* {store?.description ? (
-                    <p className="text-sm sm:text-base text-gray-600">
-                      {store.description}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-400 italic">
-                      (Sem descrição disponível)
-                    </p>
-                  )} */}
-                  <CardDescription className="text-sm pt-1">
-                    {totalProducts} produto{totalProducts !== 1 ? 's' : ''} encontrado{totalProducts !== 1 ? 's' : ''}
-                  </CardDescription>
-                {/* </div> */}
-              </CardHeader>
-              <CardContent className="space-y-4 sm:space-y-6">
-                {/* Filters section - Collapsible on mobile */}
-                <div className="space-y-4">
-                  {/* Mobile filter toggle button */}
-                  <Button
-                    variant="outline"
-                    className="w-full sm:hidden flex items-center justify-between"
-                    onClick={() => setFiltersExpanded(!filtersExpanded)}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Filter className="h-4 w-4" />
-                      Filtros e Busca
+          <main className="lg:col-span-9 space-y-6">
+            {/* Minimalist Search and Filters Header */}
+            <div className="bg-background/95 backdrop-blur sticky top-0 z-10 border-b">
+              <div className="px-3 sm:px-4 py-3">
+                {/* Header Row */}
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {totalProducts} {totalProducts === 1 ? 'Produto' : 'Produtos'}
                     </span>
-                    {filtersExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-
-                  {/* Filters container - Hidden on mobile when collapsed */}
-                  <div className={`space-y-4 ${!filtersExpanded ? 'hidden sm:block' : ''}`}>
-                    {/* Search bar */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        type="search"
-                        placeholder="Buscar produtos..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 w-full"
-                      />
-                    </div>
-
-                    {/* Category and Sort filters */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      {/* Category filter */}
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-full">
-                          <Filter className="h-4 w-4 mr-2" />
-                          <SelectValue placeholder="Todas as categorias" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as categorias</SelectItem>
-                          {categories.map((cat, index) => {
-                            const categoryName = cat.category || cat.name || `Category ${index + 1}`
-                            const categoryCount = cat.count || 0
-                            return (
-                              <SelectItem key={categoryName} value={categoryName}>
-                                {categoryName} ({categoryCount})
-                              </SelectItem>
-                            )
-                          })}
-                        </SelectContent>
-                      </Select>
-
-                      {/* Sort */}
-                      <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Ordenar por" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="newest">Mais recentes</SelectItem>
-                          <SelectItem value="price_asc">Menor preço</SelectItem>
-                          <SelectItem value="price_desc">Maior preço</SelectItem>
-                          <SelectItem value="popular">Mais populares</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
-
-                  {/* Active filters */}
-                  {(searchTerm || selectedCategory !== 'all') && (
-                    <div className="flex flex-wrap gap-2">
-                      {searchTerm && (
-                        <Badge
-                          variant="secondary"
-                          className="cursor-pointer hover:bg-secondary/80"
-                          onClick={() => setSearchTerm('')}
-                        >
-                          Busca: {searchTerm}
-                          <X className="h-3 w-3 ml-1" />
-                        </Badge>
-                      )}
-                      {selectedCategory !== 'all' && (
-                        <Badge
-                          variant="secondary"
-                          className="cursor-pointer hover:bg-secondary/80"
-                          onClick={() => setSelectedCategory('all')}
-                        >
-                          {selectedCategory}
-                          <X className="h-3 w-3 ml-1" />
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                  
+                  {/* Sort Dropdown */}
+                  <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                    <SelectTrigger className="w-[130px] sm:w-[160px] h-8 text-sm">
+                      <SelectValue placeholder="Ordenar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Mais recentes</SelectItem>
+                      <SelectItem value="price_asc">Menor preço</SelectItem>
+                      <SelectItem value="price_desc">Maior preço</SelectItem>
+                      <SelectItem value="popular">Mais populares</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Search and Filter Bar */}
+                <div className="flex gap-2">
+                  {/* Search Input */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Buscar produtos..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-8 h-8 text-sm"
+                    />
+                  </div>
+                  
+                  {/* Category Filter */}
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-[140px] sm:w-[180px] h-8 text-sm">
+                      <SelectValue placeholder="Todas as categorias" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as categorias</SelectItem>
+                      {categories.map((cat, index) => {
+                        const categoryName = cat.category || cat.name || `Category ${index + 1}`
+                        const categoryCount = cat.count || 0
+                        return (
+                          <SelectItem key={categoryName} value={categoryName}>
+                            {categoryName} ({categoryCount})
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Products grid */}
-                {productsLoading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {[...Array(8)].map((_, i) => (
-                      <Skeleton key={`products-skeleton-${i}`} className="h-64 w-full" />
-                    ))}
+                
+                {/* Active filters */}
+                {(searchTerm || selectedCategory !== 'all') && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {searchTerm && (
+                      <Badge
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-secondary/80 h-6 text-xs px-2"
+                        onClick={() => setSearchTerm('')}
+                      >
+                        {searchTerm}
+                        <X className="h-2.5 w-2.5 ml-1" />
+                      </Badge>
+                    )}
+                    {selectedCategory !== 'all' && (
+                      <Badge
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-secondary/80 h-6 text-xs px-2"
+                        onClick={() => setSelectedCategory('all')}
+                      >
+                        {selectedCategory}
+                        <X className="h-2.5 w-2.5 ml-1" />
+                      </Badge>
+                    )}
                   </div>
-                ) : products.length > 0 ? (
-                  <div className="space-y-8">
-                    <ProductGrid products={products} storeSlug={slug} store={store} />
+                )}
+              </div>
+            </div>
+
+            {/* Products Section */}
+            {productsLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[...Array(12)].map((_, i) => (
+                  <Skeleton key={`products-skeleton-${i}`} className="aspect-square" />
+                ))}
+              </div>
+            ) : products.length > 0 ? (
+              <>
+                <ProductGrid products={products} storeSlug={slug} store={store} />
                     
-                    {/* Pagination */}
-                    {totalPages > 1 && (
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="py-4">
                       <Pagination>
                         <PaginationContent>
                           <PaginationItem>
                             <PaginationPrevious
                               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                               className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                            >
-                              Anterior
-                            </PaginationPrevious>
+                            />
                           </PaginationItem>
                           
-                          {/* Page numbers */}
-                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            const pageNum = i + 1;
-                            return (
-                              <PaginationItem key={`page-${pageNum}`}>
+                          {/* Smart pagination with ellipsis */}
+                          {(() => {
+                            const pages = [];
+                            const showEllipsisStart = currentPage > 3;
+                            const showEllipsisEnd = currentPage < totalPages - 2;
+                            
+                            // Always show first page
+                            pages.push(
+                              <PaginationItem key="page-1">
                                 <PaginationLink
-                                  onClick={() => setCurrentPage(pageNum)}
-                                  isActive={currentPage === pageNum}
+                                  onClick={() => setCurrentPage(1)}
+                                  isActive={currentPage === 1}
                                   className="cursor-pointer"
                                 >
-                                  {pageNum}
+                                  1
                                 </PaginationLink>
                               </PaginationItem>
                             );
-                          })}
+                            
+                            // Show ellipsis if needed
+                            if (showEllipsisStart) {
+                              pages.push(
+                                <PaginationItem key="ellipsis-start">
+                                  <span className="px-2">...</span>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            // Show current page and neighbors
+                            for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                              pages.push(
+                                <PaginationItem key={`page-${i}`}>
+                                  <PaginationLink
+                                    onClick={() => setCurrentPage(i)}
+                                    isActive={currentPage === i}
+                                    className="cursor-pointer"
+                                  >
+                                    {i}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            // Show ellipsis if needed
+                            if (showEllipsisEnd) {
+                              pages.push(
+                                <PaginationItem key="ellipsis-end">
+                                  <span className="px-2">...</span>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            // Always show last page if more than 1 page
+                            if (totalPages > 1) {
+                              pages.push(
+                                <PaginationItem key={`page-${totalPages}`}>
+                                  <PaginationLink
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    isActive={currentPage === totalPages}
+                                    className="cursor-pointer"
+                                  >
+                                    {totalPages}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            return pages;
+                          })()}
                           
                           <PaginationItem>
                             <PaginationNext
                               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                               className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                            >
-                              Próxima
-                            </PaginationNext>
+                            />
                           </PaginationItem>
                         </PaginationContent>
                       </Pagination>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">Nenhum produto encontrado.</p>
-                    {(searchTerm || selectedCategory !== 'all') && (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSearchTerm('');
-                          setSelectedCategory('all');
-                        }}
-                        className="mt-4"
-                      >
-                        Limpar filtros
-                      </Button>
-                    )}
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </>
+            ) : (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="py-16 text-center">
+                  <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-lg font-medium mb-2">Nenhum produto encontrado</p>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    {searchTerm || selectedCategory !== 'all' 
+                      ? 'Tente ajustar seus filtros de busca' 
+                      : 'Esta loja ainda não possui produtos disponíveis'}
+                  </p>
+                  {(searchTerm || selectedCategory !== 'all') && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setSelectedCategory('all');
+                      }}
+                    >
+                      Limpar filtros
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </main>
 
           {/* Sidebar */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-4 space-y-6">
+          <aside className="lg:col-span-3">
+            <div className="sticky top-6 space-y-4">
               <StoreInfo store={store} />
               {store.address && <StoreMap store={store} />}
             </div>
@@ -356,6 +389,6 @@ export default function StorePage({ params }: StorePageProps) {
       )}
       
       <Footer />
-    </>
+    </div>
   )
 }
