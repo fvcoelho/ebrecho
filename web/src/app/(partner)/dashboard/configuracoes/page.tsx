@@ -848,7 +848,7 @@ function StoreConfigForm() {
                 )}
               </div>
 
-              <div>
+              {/* <div>
                 <Label htmlFor="publicDescription">Descrição da loja</Label>
                 <textarea
                   id="publicDescription"
@@ -861,7 +861,7 @@ function StoreConfigForm() {
                 <p className="text-xs text-gray-500 mt-1">
                   Esta descrição aparecerá na sua vitrine para os visitantes
                 </p>
-              </div>
+              </div> */}
 
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
