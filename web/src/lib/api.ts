@@ -470,7 +470,6 @@ export interface Partner {
   hasPhysicalStore: boolean;
   // Fields for public storefront (will be added via migration)
   slug?: string;
-  publicDescription?: string;
   isPublicActive?: boolean;
   publicBanner?: string;
   publicLogo?: string;
@@ -503,7 +502,6 @@ export interface UpdatePartnerData {
   documentType?: 'CPF' | 'CNPJ';
   description?: string;
   slug?: string;
-  publicDescription?: string;
   isPublicActive?: boolean;
   hasPhysicalStore?: boolean;
   whatsappNumber?: string;

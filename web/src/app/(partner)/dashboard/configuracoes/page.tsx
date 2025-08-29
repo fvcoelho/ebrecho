@@ -44,7 +44,6 @@ interface StoreConfigData {
   slug: string;
   whatsappNumber: string;
   whatsappName: string;
-  publicDescription: string;
   isPublicActive: boolean;
   hasPhysicalStore: boolean;
   pixKey: string;
@@ -85,7 +84,6 @@ function StoreConfigForm() {
     slug: '',
     whatsappNumber: '',
     whatsappName: '',
-    publicDescription: '',
     isPublicActive: true,
     hasPhysicalStore: true,
     pixKey: '',
@@ -201,7 +199,6 @@ function StoreConfigForm() {
         slug: partnerData.slug || '',
         whatsappNumber: maskPhone(partnerData.whatsappNumber || ''),
         whatsappName: partnerData.whatsappName || '',
-        publicDescription: partnerData.publicDescription || '',
         isPublicActive: partnerData.isPublicActive ?? true,
         hasPhysicalStore: partnerData.hasPhysicalStore ?? true,
         pixKey: partnerData.pixKey || '',
@@ -373,7 +370,6 @@ function StoreConfigForm() {
         slug: formData.slug,
         whatsappNumber: removeMask(formData.whatsappNumber),
         whatsappName: formData.whatsappName || undefined,
-        publicDescription: formData.publicDescription,
         isPublicActive: Boolean(formData.isPublicActive),
         hasPhysicalStore: Boolean(formData.hasPhysicalStore),
         pixKey: formData.pixKey || undefined,
@@ -847,21 +843,6 @@ function StoreConfigForm() {
                   </p>
                 )}
               </div>
-
-              {/* <div>
-                <Label htmlFor="publicDescription">Descrição da loja</Label>
-                <textarea
-                  id="publicDescription"
-                  value={formData.publicDescription}
-                  onChange={(e) => handleInputChange('publicDescription', e.target.value)}
-                  placeholder="Descrição que aparecerá na sua vitrine para os visitantes..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Esta descrição aparecerá na sua vitrine para os visitantes
-                </p>
-              </div> */}
 
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">

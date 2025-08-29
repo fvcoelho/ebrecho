@@ -34,10 +34,10 @@ export function StoreInfo({ store }: StoreInfoProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Store Description */}
-        {store.publicDescription && (
+        {store.description && (
           <div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {store.publicDescription}
+              {store.description}
             </p>
             <Separator className="mt-4" />
           </div>

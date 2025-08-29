@@ -87,7 +87,6 @@ declare global {
         isActive: boolean;
         hasPhysicalStore: boolean;
         slug: string | null;
-        publicDescription: string | null;
         isPublicActive: boolean;
         publicBanner: string | null;
         publicLogo: string | null;
