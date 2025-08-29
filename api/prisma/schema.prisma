@@ -158,6 +158,12 @@ enum WhatsAppTemplateStatus {
   DISABLED
 }
 
+enum WhatsAppConversationState {
+  WAITING_FIRST_MESSAGE
+  AUTO_RESPONDED
+  HUMAN_RESPONDED
+}
+
 // Models
 model User {
   id         String   @id @default(cuid())
@@ -239,8 +245,9 @@ model Partner {
   userActivities     UserActivity[]
   
   // WhatsApp relations
-  whatsappMessages   WhatsAppMessage[]
-  whatsappTemplates  WhatsAppTemplate[]
+  whatsappMessages      WhatsAppMessage[]
+  whatsappTemplates     WhatsAppTemplate[]
+  whatsappConversations WhatsAppConversation[]
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -957,6 +964,37 @@ model WhatsAppWebhookLog {
   @@index([processed])
   @@index([status])
   @@index([createdAt])
+}
+
+model WhatsAppConversation {
+  id                          String                    @id @default(cuid())
+  partnerId                   String
+  partner                     Partner                   @relation(fields: [partnerId], references: [id])
+  phoneNumber                 String                    // Customer's phone number
+  
+  // Conversation state tracking
+  state                       WhatsAppConversationState @default(WAITING_FIRST_MESSAGE)
+  lastAutoResponseId          String?                   // Last auto-response message ID sent
+  lastAutoResponseAt          DateTime?                 // When last auto-response was sent
+  lastHumanResponseId         String?                   // Last human response message ID
+  lastHumanResponseAt         DateTime?                 // When partner last responded
+  lastInboundMessageId        String?                   // Last message received from customer
+  lastInboundMessageAt        DateTime?                 // When last message was received
+  
+  // Statistics
+  totalMessages               Int                       @default(0)
+  totalAutoResponses          Int                       @default(0)
+  totalHumanResponses         Int                       @default(0)
+  
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+  
+  @@unique([partnerId, phoneNumber])
+  @@index([partnerId])
+  @@index([phoneNumber])
+  @@index([state])
+  @@index([lastAutoResponseAt])
+  @@index([lastHumanResponseAt])
 }
 
 // Analytics Models

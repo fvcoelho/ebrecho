@@ -726,6 +726,56 @@ private async logMessage(data: {
         messageId: result.messageId,
         createdAt: result.createdAt
       });
+
+      // Track human responses to release conversation locks
+      if (data.direction === 'outbound' && data.partnerId !== 'system') {
+        console.log('👤 HUMAN RESPONSE: Detected outbound message from partner');
+        console.log(`   Partner ID: ${data.partnerId}`);
+        console.log(`   To Number: ${data.toNumber}`);
+        console.log(`   Message ID: ${data.messageId}`);
+        
+        // Import RedisService dynamically to avoid circular dependency
+        const { default: RedisService } = await import('./redis.service');
+        
+        // Release response lock to allow new auto-responses
+        console.log(`🔓 Releasing response lock for conversation with ${data.toNumber}`);
+        const lockReleased = await RedisService.releaseResponseLock(data.partnerId, data.toNumber);
+        console.log(`✅ Response lock release result: ${lockReleased ? 'SUCCESS' : 'FAILED'}`);
+        
+        // Update conversation state in database
+        try {
+          console.log(`📝 Updating conversation state: HUMAN_RESPONDED`);
+          await prisma.whatsAppConversation.upsert({
+            where: {
+              partnerId_phoneNumber: {
+                partnerId: data.partnerId,
+                phoneNumber: data.toNumber
+              }
+            },
+            create: {
+              partnerId: data.partnerId,
+              phoneNumber: data.toNumber,
+              state: 'HUMAN_RESPONDED' as any, // WhatsAppConversationState.HUMAN_RESPONDED
+              lastHumanResponseId: data.messageId,
+              lastHumanResponseAt: data.timestamp,
+              totalMessages: 1,
+              totalHumanResponses: 1
+            },
+            update: {
+              state: 'HUMAN_RESPONDED' as any, // WhatsAppConversationState.HUMAN_RESPONDED
+              lastHumanResponseId: data.messageId,
+              lastHumanResponseAt: data.timestamp,
+              totalMessages: { increment: 1 },
+              totalHumanResponses: { increment: 1 }
+            }
+          });
+          console.log(`✅ Conversation state updated: HUMAN_RESPONDED for ${data.toNumber}`);
+          console.log(`🔄 New auto-responses are now allowed for this conversation`);
+        } catch (dbError) {
+          console.error('❌ Failed to update conversation state:', dbError);
+          // Don't throw - this is not critical for message sending
+        }
+      }
     } catch (error) {
       console.error('❌ DEBUG: Error logging message to database:', error);
       console.error('   Full error details:', {

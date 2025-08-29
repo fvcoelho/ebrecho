@@ -658,4 +658,129 @@ router.post('/test',
   whatsappController.testMessage.bind(whatsappController)
 );
 
+/**
+ * @swagger
+ * /api/whatsapp/conversation/{phoneNumber}/reset:
+ *   post:
+ *     summary: Reset conversation state
+ *     description: Manually reset conversation state for a phone number to allow new auto-responses
+ *     tags: [WhatsApp Conversation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: phoneNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Phone number to reset conversation state for
+ *         example: "5511963166165"
+ *     responses:
+ *       200:
+ *         description: Conversation state reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     phoneNumber:
+ *                       type: string
+ *                     partnerId:
+ *                       type: string
+ *                     previousState:
+ *                       type: string
+ *                     newState:
+ *                       type: string
+ *                     lockReleased:
+ *                       type: boolean
+ *                     canReceiveAutoResponse:
+ *                       type: boolean
+ *       400:
+ *         description: Invalid phone number
+ *       403:
+ *         description: Access denied
+ */
+router.post('/conversation/:phoneNumber/reset', 
+  authenticate,
+  validatePartnerAccess,
+  whatsappController.resetConversationState.bind(whatsappController)
+);
+
+/**
+ * @swagger
+ * /api/whatsapp/conversation/{phoneNumber}/state:
+ *   get:
+ *     summary: Get conversation state
+ *     description: Get current conversation state for a phone number
+ *     tags: [WhatsApp Conversation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: phoneNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Phone number to get conversation state for
+ *         example: "5511963166165"
+ *     responses:
+ *       200:
+ *         description: Conversation state retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     phoneNumber:
+ *                       type: string
+ *                     partnerId:
+ *                       type: string
+ *                     databaseState:
+ *                       type: string
+ *                       enum: [WAITING_FIRST_MESSAGE, AUTO_RESPONDED, HUMAN_RESPONDED]
+ *                     redisLocked:
+ *                       type: boolean
+ *                     canReceiveAutoResponse:
+ *                       type: boolean
+ *                     lastAutoResponseAt:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                     lastHumanResponseAt:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                     lastInboundMessageAt:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                     totalMessages:
+ *                       type: integer
+ *                     totalAutoResponses:
+ *                       type: integer
+ *                     totalHumanResponses:
+ *                       type: integer
+ *       400:
+ *         description: Invalid phone number
+ *       403:
+ *         description: Access denied
+ */
+router.get('/conversation/:phoneNumber/state', 
+  authenticate,
+  validatePartnerAccess,
+  whatsappController.getConversationState.bind(whatsappController)
+);
+
 export default router;

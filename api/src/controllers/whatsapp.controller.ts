@@ -803,6 +803,154 @@ export class WhatsAppController {
     }
   }
 
+  /**
+   * Reset conversation state for a phone number (manual reset)
+   */
+  async resetConversationState(req: Request, res: Response) {
+    try {
+      const { phoneNumber } = req.params;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      if (!phoneNumber) {
+        return res.status(400).json({ error: 'Phone number is required' });
+      }
+
+      console.log(`🔄 Manual conversation reset requested:`, {
+        phoneNumber,
+        partnerId,
+        requestedBy: req.user?.email || 'Unknown'
+      });
+
+      // Import services
+      const RedisService = (await import('../services/redis.service')).default;
+
+      // Release response lock in Redis
+      console.log(`🔓 Releasing response lock...`);
+      const lockReleased = await RedisService.releaseResponseLock(partnerId, phoneNumber);
+      console.log(`   Lock release result: ${lockReleased ? 'SUCCESS' : 'NO LOCK FOUND'}`);
+
+      // Reset conversation state in database
+      console.log(`📝 Resetting conversation state in database...`);
+      const conversation = await prisma.whatsAppConversation.upsert({
+        where: {
+          partnerId_phoneNumber: {
+            partnerId,
+            phoneNumber
+          }
+        },
+        create: {
+          partnerId,
+          phoneNumber,
+          state: 'WAITING_FIRST_MESSAGE' as any, // WhatsAppConversationState.WAITING_FIRST_MESSAGE
+          totalMessages: 0,
+          totalAutoResponses: 0,
+          totalHumanResponses: 0
+        },
+        update: {
+          state: 'WAITING_FIRST_MESSAGE' as any, // WhatsAppConversationState.WAITING_FIRST_MESSAGE
+          lastAutoResponseId: null,
+          lastAutoResponseAt: null,
+          lastHumanResponseId: null,
+          lastHumanResponseAt: null,
+          lastInboundMessageId: null,
+          lastInboundMessageAt: null
+        }
+      });
+
+      console.log(`✅ Conversation state reset successfully for ${phoneNumber}`);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Conversation state reset successfully',
+        data: {
+          phoneNumber,
+          partnerId,
+          previousState: conversation.state,
+          newState: 'WAITING_FIRST_MESSAGE',
+          lockReleased,
+          canReceiveAutoResponse: true
+        }
+      });
+
+    } catch (error) {
+      console.error('Reset conversation state error:', error);
+      res.status(500).json({
+        error: 'Failed to reset conversation state',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Get conversation state for a phone number
+   */
+  async getConversationState(req: Request, res: Response) {
+    try {
+      const { phoneNumber } = req.params;
+      const partnerId = req.user?.partnerId;
+
+      if (!partnerId) {
+        return res.status(403).json({ error: 'Partner ID required' });
+      }
+
+      if (!phoneNumber) {
+        return res.status(400).json({ error: 'Phone number is required' });
+      }
+
+      console.log(`🔍 Getting conversation state:`, { phoneNumber, partnerId });
+
+      // Import services
+      const RedisService = (await import('../services/redis.service')).default;
+
+      // Check Redis lock state
+      const hasLock = await RedisService.hasResponseLock(partnerId, phoneNumber);
+
+      // Get database conversation state
+      const conversation = await prisma.whatsAppConversation.findUnique({
+        where: {
+          partnerId_phoneNumber: {
+            partnerId,
+            phoneNumber
+          }
+        }
+      });
+
+      const state = {
+        phoneNumber,
+        partnerId,
+        databaseState: conversation?.state || 'WAITING_FIRST_MESSAGE',
+        redisLocked: hasLock,
+        canReceiveAutoResponse: !hasLock,
+        lastAutoResponseAt: conversation?.lastAutoResponseAt,
+        lastHumanResponseAt: conversation?.lastHumanResponseAt,
+        lastInboundMessageAt: conversation?.lastInboundMessageAt,
+        totalMessages: conversation?.totalMessages || 0,
+        totalAutoResponses: conversation?.totalAutoResponses || 0,
+        totalHumanResponses: conversation?.totalHumanResponses || 0,
+        createdAt: conversation?.createdAt,
+        updatedAt: conversation?.updatedAt
+      };
+
+      console.log(`✅ Conversation state retrieved:`, state);
+      
+      res.status(200).json({
+        success: true,
+        data: state
+      });
+
+    } catch (error) {
+      console.error('Get conversation state error:', error);
+      res.status(500).json({
+        error: 'Failed to get conversation state',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
 }
 
 export default new WhatsAppController();

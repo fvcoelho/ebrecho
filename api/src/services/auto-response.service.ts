@@ -50,7 +50,7 @@ class AutoResponseService {
   }
 
   /**
-   * Process auto-response event
+   * Process auto-response event using conversation state tracking
    */
   async processAutoResponseEvent(event: WhatsAppAutoResponseEvent): Promise<void> {
     try {
@@ -63,54 +63,31 @@ class AutoResponseService {
         timestamp: event.timestamp
       });
 
-      // Message ID Duplicate Prevention (10 minute window)
-      console.log(`🔍 DUPLICATE CHECK: Starting duplicate prevention check...`);
+      // Conversation State Prevention (No Time Windows)
+      console.log(`🔍 CONVERSATION CHECK: Starting conversation state check...`);
       console.log(`   Redis enabled: ${RedisService.enabled}`);
-      console.log(`   Message ID: ${event.messageId}`);
-      console.log(`   Checking 10-minute window for duplicates`);
+      console.log(`   From Number: ${event.fromNumber}`);
+      console.log(`   Partner ID: ${event.partnerId}`);
       
-      const messageAlreadyProcessed = await RedisService.wasMessageAlreadyProcessed(
-        event.messageId,
-        10 // 10 minute window for message deduplication
+      // Try to acquire response lock atomically
+      const lockAcquired = await RedisService.acquireResponseLock(
+        event.partnerId, 
+        event.fromNumber
       );
       
-      console.log(`🎯 DUPLICATE CHECK RESULT: ${messageAlreadyProcessed ? 'DUPLICATE FOUND' : 'NO DUPLICATE'}`);
+      console.log(`🎯 RESPONSE LOCK RESULT: ${lockAcquired ? 'LOCK ACQUIRED' : 'ALREADY LOCKED'}`);
       
-      if (messageAlreadyProcessed) {
-        console.log(`⏭️ DUPLICATE DETECTED: Message ${event.messageId} was already processed`);
+      if (!lockAcquired) {
+        console.log(`⏭️ RESPONSE LOCK EXISTS: Auto-response already sent for this conversation`);
+        console.log(`   From: ${event.fromNumber}`);
         console.log(`   Action: Skipping auto-response to prevent duplicate sends`);
-        console.log(`   Window: Message was processed within the last 10 minutes`);
-        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO DUPLICATE`);
+        console.log(`   Note: Lock will be released when human responds`);
+        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO EXISTING RESPONSE LOCK`);
         return;
       }
       
-      console.log(`✅ Message ID duplicate check passed - proceeding with auto-response`);
-      console.log(`📌 Message ${event.messageId} is now marked as processed in Redis`);
-
-      // Additional database-level duplicate check as fallback
-      console.log(`🔍 DATABASE FALLBACK: Checking if auto-response already sent via database...`);
-      const existingResponse = await prisma.whatsAppMessage.findFirst({
-        where: {
-          messageId: event.messageId,
-          partnerId: event.partnerId,
-          autoResponseSent: true
-        },
-        select: {
-          id: true,
-          autoResponseAt: true,
-          autoResponseMessageId: true
-        }
-      });
-
-      if (existingResponse) {
-        console.log(`🚫 DATABASE DUPLICATE: Auto-response already sent for this message`);
-        console.log(`   Original response sent at: ${existingResponse.autoResponseAt}`);
-        console.log(`   Response message ID: ${existingResponse.autoResponseMessageId}`);
-        console.log(`🚫 AUTO-RESPONSE ABORTED DUE TO DATABASE DUPLICATE`);
-        return;
-      }
-      
-      console.log(`✅ Database fallback check passed - no previous auto-response found`);
+      console.log(`✅ Response lock acquired - proceeding with auto-response`);
+      console.log(`🔒 Conversation locked until human response`);
 
       // Get original inbound message details
       console.log(`🔍 Looking up original inbound message: ${event.messageId}`);
@@ -212,12 +189,47 @@ class AutoResponseService {
 
       console.log(`✅ Database updated: ${updateResult.count} records modified`);
 
+      // Update or create conversation state in database
+      console.log(`📝 Updating conversation state in database...`);
+      
+      await prisma.whatsAppConversation.upsert({
+        where: {
+          partnerId_phoneNumber: {
+            partnerId: event.partnerId,
+            phoneNumber: event.fromNumber
+          }
+        },
+        create: {
+          partnerId: event.partnerId,
+          phoneNumber: event.fromNumber,
+          state: 'AUTO_RESPONDED' as any, // WhatsAppConversationState.AUTO_RESPONDED
+          lastAutoResponseId: response.messageId,
+          lastAutoResponseAt: new Date(),
+          lastInboundMessageId: event.messageId,
+          lastInboundMessageAt: new Date(event.timestamp),
+          totalMessages: 1,
+          totalAutoResponses: 1
+        },
+        update: {
+          state: 'AUTO_RESPONDED' as any, // WhatsAppConversationState.AUTO_RESPONDED
+          lastAutoResponseId: response.messageId,
+          lastAutoResponseAt: new Date(),
+          lastInboundMessageId: event.messageId,
+          lastInboundMessageAt: new Date(event.timestamp),
+          totalMessages: { increment: 1 },
+          totalAutoResponses: { increment: 1 }
+        }
+      });
+
+      console.log(`✅ Conversation state updated: AUTO_RESPONDED for ${event.fromNumber}`);
+
       console.log(`🎉 AUTO-RESPONSE COMPLETED SUCCESSFULLY:`, {
         originalMessageId: event.messageId,
         responseMessageId: response.messageId,
         fromNumber: event.fromNumber,
         partnerName,
-        greeting: greeting.substring(0, 100) + '...'
+        greeting: greeting.substring(0, 100) + '...',
+        conversationLocked: true
       });
 
     } catch (error) {
@@ -235,6 +247,11 @@ class AutoResponseService {
       if (error instanceof Error && error.stack) {
         console.error(`   Stack Trace:`, error.stack.split('\n').slice(0, 3).join('\n'));
       }
+
+      // Release response lock on error to allow retry
+      console.log(`🔓 Releasing response lock due to error...`);
+      await RedisService.releaseResponseLock(event.partnerId, event.fromNumber);
+      console.log(`✅ Response lock released for retry`);
       
       // Check if it's a token expiration error
       if (errorMessage.includes('access token') && (

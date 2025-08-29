@@ -370,6 +370,129 @@ class RedisService {
       return false;
     }
   }
+
+  /**
+   * Set conversation state for a phone number
+   * Uses atomic operations to prevent race conditions
+   */
+  async setConversationState(partnerId: string, phoneNumber: string, state: string): Promise<boolean> {
+    if (!this.isEnabled) {
+      console.log('🔕 Redis disabled - cannot set conversation state');
+      return false;
+    }
+
+    try {
+      const stateKey = `whatsapp:conversation:${partnerId}:${phoneNumber}:state`;
+      console.log(`📝 Setting conversation state: ${stateKey} = ${state}`);
+      
+      await this.redis.set(stateKey, state);
+      
+      console.log(`✅ Conversation state set: ${state} for ${phoneNumber}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to set conversation state:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get conversation state for a phone number
+   */
+  async getConversationState(partnerId: string, phoneNumber: string): Promise<string | null> {
+    if (!this.isEnabled) {
+      console.log('🔕 Redis disabled - cannot get conversation state');
+      return null;
+    }
+
+    try {
+      const stateKey = `whatsapp:conversation:${partnerId}:${phoneNumber}:state`;
+      console.log(`🔍 Getting conversation state: ${stateKey}`);
+      
+      const state = await this.redis.get(stateKey);
+      
+      console.log(`📊 Conversation state retrieved: ${state || 'NOT_SET'} for ${phoneNumber}`);
+      return state as string | null;
+    } catch (error) {
+      console.error('❌ Failed to get conversation state:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Acquire response lock for a phone number (atomic operation)
+   * Returns true if lock acquired, false if already locked
+   */
+  async acquireResponseLock(partnerId: string, phoneNumber: string): Promise<boolean> {
+    if (!this.isEnabled) {
+      console.log('🔕 Redis disabled - cannot acquire response lock');
+      return true; // Allow processing if Redis is disabled
+    }
+
+    try {
+      const lockKey = `whatsapp:response:lock:${partnerId}:${phoneNumber}`;
+      console.log(`🔒 Attempting to acquire response lock: ${lockKey}`);
+      
+      // Use SET NX (set if not exists) - atomic operation
+      // No expiration - lock persists until explicitly released
+      const result = await this.redis.setnx(lockKey, new Date().toISOString());
+      
+      if (result === 1) {
+        console.log(`✅ Response lock acquired for ${phoneNumber}`);
+        return true;
+      } else {
+        console.log(`🚫 Response lock already exists for ${phoneNumber} - preventing duplicate response`);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Failed to acquire response lock:', error);
+      return true; // On error, allow processing to continue
+    }
+  }
+
+  /**
+   * Release response lock for a phone number
+   * Should be called when human responds or conversation is manually reset
+   */
+  async releaseResponseLock(partnerId: string, phoneNumber: string): Promise<boolean> {
+    if (!this.isEnabled) {
+      console.log('🔕 Redis disabled - cannot release response lock');
+      return false;
+    }
+
+    try {
+      const lockKey = `whatsapp:response:lock:${partnerId}:${phoneNumber}`;
+      console.log(`🔓 Releasing response lock: ${lockKey}`);
+      
+      const result = await this.redis.del(lockKey);
+      
+      console.log(`✅ Response lock released for ${phoneNumber} (deleted: ${result} keys)`);
+      return result > 0;
+    } catch (error) {
+      console.error('❌ Failed to release response lock:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if response lock exists for a phone number
+   */
+  async hasResponseLock(partnerId: string, phoneNumber: string): Promise<boolean> {
+    if (!this.isEnabled) {
+      console.log('🔕 Redis disabled - cannot check response lock');
+      return false;
+    }
+
+    try {
+      const lockKey = `whatsapp:response:lock:${partnerId}:${phoneNumber}`;
+      const exists = await this.redis.exists(lockKey);
+      
+      console.log(`🔍 Response lock check for ${phoneNumber}: ${exists ? 'LOCKED' : 'UNLOCKED'}`);
+      return exists === 1;
+    } catch (error) {
+      console.error('❌ Failed to check response lock:', error);
+      return false;
+    }
+  }
 }
 
 export default new RedisService();
