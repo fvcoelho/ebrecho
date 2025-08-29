@@ -174,7 +174,6 @@ model Partner {
   
   // Public storefront fields
   slug              String?  @unique
-  publicDescription String?
   isPublicActive    Boolean  @default(true)
   publicBanner      String?
   publicLogo        String?

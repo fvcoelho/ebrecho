@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
-import { Search, Filter, X } from 'lucide-react'
+import { Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { PublicStore, PublicProduct } from '@/lib/api/public'
 
 interface StorePageProps {
@@ -40,6 +40,7 @@ export default function StorePage({ params }: StorePageProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalProducts, setTotalProducts] = useState(0)
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
 
   // Load store data
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function StorePage({ params }: StorePageProps) {
         ])
         
         console.log('[DEBUG] StorePage - Store data fetched successfully:', storeData.name)
+        console.log('[DEBUG] StorePage - Store description:', storeData.description)
         console.log('[DEBUG] StorePage - Categories data:', categoriesData)
         setStore(storeData)
         setCategories(categoriesData || [])
@@ -148,60 +150,91 @@ export default function StorePage({ params }: StorePageProps) {
           {/* Main content */}
           <div className="lg:col-span-3">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-3xl">Todos os Produtos</CardTitle>
-                <CardDescription>
-                  {totalProducts} produto{totalProducts !== 1 ? 's' : ''} encontrado{totalProducts !== 1 ? 's' : ''}
-                </CardDescription>
+              <CardHeader className="pb-3 sm:pb-6">
+                {/* Store name and description */}
+                {/* <div className="space-y-2"> */}
+                  {/* <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {store.name}
+                  </h2> */}
+                  {/* {store?.description ? (
+                    <p className="text-sm sm:text-base text-gray-600">
+                      {store.description}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">
+                      (Sem descrição disponível)
+                    </p>
+                  )} */}
+                  <CardDescription className="text-sm pt-1">
+                    {totalProducts} produto{totalProducts !== 1 ? 's' : ''} encontrado{totalProducts !== 1 ? 's' : ''}
+                  </CardDescription>
+                {/* </div> */}
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Filters and search */}
+              <CardContent className="space-y-4 sm:space-y-6">
+                {/* Filters section - Collapsible on mobile */}
                 <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Search */}
-                    <div className="relative flex-1">
+                  {/* Mobile filter toggle button */}
+                  <Button
+                    variant="outline"
+                    className="w-full sm:hidden flex items-center justify-between"
+                    onClick={() => setFiltersExpanded(!filtersExpanded)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      Filtros e Busca
+                    </span>
+                    {filtersExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+
+                  {/* Filters container - Hidden on mobile when collapsed */}
+                  <div className={`space-y-4 ${!filtersExpanded ? 'hidden sm:block' : ''}`}>
+                    {/* Search bar */}
+                    <div className="relative">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="search"
                         placeholder="Buscar produtos..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 w-full"
                       />
                     </div>
 
-                    {/* Category filter */}
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="w-full sm:w-[200px]">
-                        <Filter className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Todas as categorias" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as categorias</SelectItem>
-                        {categories.map((cat, index) => {
-                          const categoryName = cat.category || cat.name || `Category ${index + 1}`
-                          const categoryCount = cat.count || 0
-                          return (
-                            <SelectItem key={categoryName} value={categoryName}>
-                              {categoryName} ({categoryCount})
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
+                    {/* Category and Sort filters */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {/* Category filter */}
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="w-full">
+                          <Filter className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Todas as categorias" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as categorias</SelectItem>
+                          {categories.map((cat, index) => {
+                            const categoryName = cat.category || cat.name || `Category ${index + 1}`
+                            const categoryCount = cat.count || 0
+                            return (
+                              <SelectItem key={categoryName} value={categoryName}>
+                                {categoryName} ({categoryCount})
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
 
-                    {/* Sort */}
-                    <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                      <SelectTrigger className="w-full sm:w-[200px]">
-                        <SelectValue placeholder="Ordenar por" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="newest">Mais recentes</SelectItem>
-                        <SelectItem value="price_asc">Menor preço</SelectItem>
-                        <SelectItem value="price_desc">Maior preço</SelectItem>
-                        <SelectItem value="popular">Mais populares</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      {/* Sort */}
+                      <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Ordenar por" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Mais recentes</SelectItem>
+                          <SelectItem value="price_asc">Menor preço</SelectItem>
+                          <SelectItem value="price_desc">Maior preço</SelectItem>
+                          <SelectItem value="popular">Mais populares</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Active filters */}

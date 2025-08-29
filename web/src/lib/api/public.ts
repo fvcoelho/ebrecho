@@ -4,7 +4,7 @@ export interface PublicStore {
   id: string
   name: string
   slug: string
-  publicDescription?: string
+  description?: string
   publicEmail?: string
   whatsappNumber?: string
   whatsappName?: string

@@ -40,7 +40,7 @@ import { prisma } from '../../prisma';
  *                     name:
  *                       type: string
  *                       example: Eco Fashion
- *                     publicDescription:
+ *                     description:
  *                       type: string
  *                       nullable: true
  *                       example: Sustainable fashion for conscious consumers
@@ -163,7 +163,7 @@ export const getPublicStoreBySlug = async (req: Request, res: Response) => {
         id: true,
         slug: true,
         name: true,
-        publicDescription: true,
+        description: true,
         publicBanner: true,
         publicLogo: true,
         whatsappNumber: true,
