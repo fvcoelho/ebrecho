@@ -184,6 +184,12 @@ model Partner {
   socialLinks       Json?
   pixKey            String?
   
+  // Bot integration fields
+  aiInstructions           Json?    // Stores bot behavior instructions, FAQs, tone, etc.
+  whatsappBotEnabled       Boolean  @default(false)
+  evolutionInstanceId      String?
+  whatsappConnectionStatus String?  // "disconnected", "connecting", "connected"
+  
   address      Address?
   users        User[]
   products     Product[]

@@ -19,7 +19,8 @@ import {
   UserPlus,
   Calendar,
   TrendingUp,
-  Gift
+  Gift,
+  MessageSquare
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -43,6 +44,7 @@ const storeOwnerNavItems = [
   { icon: BarChart3, label: 'Vendas', href: '/vendas' },
   { icon: TrendingUp, label: 'Análises', href: '/dashboard/analytics' },
   { icon: Users, label: 'Clientes', href: '/dashboard/clientes' },
+  { icon: MessageSquare, label: 'Robô WhatsApp', href: '/dashboard/bot-config' },
   { icon: Settings, label:'Configurações', href: '/dashboard/configuracoes' },
 ];
 

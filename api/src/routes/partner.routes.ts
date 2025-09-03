@@ -10,6 +10,7 @@ import {
   deletePartner,
   uploadPartnerLogo
 } from '../controllers/partner.controller';
+import { updateAiInstructions } from '../controllers/public/bot-integration.controller';
 import {
   createPartnerSchema,
   updatePartnerSchema,
@@ -349,6 +350,9 @@ router.post('/', validate(createPartnerSchema), authorize(['ADMIN']), createPart
  *         $ref: '#/components/responses/NotFoundError'
  */
 router.put('/:id', validate(partnerParamsSchema), validate(updatePartnerSchema), authorize(['ADMIN', 'PARTNER_ADMIN']), updatePartner);
+
+// Update AI instructions for bot integration
+router.put('/:partnerId/ai-instructions', authorize(['PARTNER_ADMIN', 'ADMIN']), updateAiInstructions);
 
 /**
  * @swagger

@@ -1,3 +1,4 @@
+export { Alert, AlertTitle, AlertDescription } from './alert';
 export { Badge } from './badge';
 export { Button } from './button';
 export { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
@@ -12,6 +13,7 @@ export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, Tabl
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 export { Textarea } from './textarea';
 export { Separator } from './separator';
+export { Switch } from './switch';
 export { Combobox } from './combobox';
 export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator } from './command';
 export { Popover, PopoverTrigger, PopoverContent } from './popover';

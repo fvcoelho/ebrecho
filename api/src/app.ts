@@ -28,6 +28,7 @@ import testBlobRoutes from './routes/test-blob.routes';
 import pixTransactionRoutes from './routes/pix-transaction.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import placesRoutes from './routes/places.routes';
+import whatsappBotRoutes from './routes/whatsapp-bot.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 // Load environment variables
@@ -488,6 +489,9 @@ app.use('/api/pix-transactions', pixTransactionRoutes);
 
 // Places API routes
 app.use('/api/places', placesRoutes);
+
+// WhatsApp Bot routes
+app.use('/api', whatsappBotRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
