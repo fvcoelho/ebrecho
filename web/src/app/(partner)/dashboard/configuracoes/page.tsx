@@ -20,7 +20,7 @@ import {
   SelectValue,
   Checkbox
 } from '@/components/ui';
-import { Store, MapPin, Globe, AlertCircle, CheckCircle2, ExternalLink, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Store, MapPin, Globe, AlertCircle, CheckCircle2, ExternalLink, Upload, X, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { 
   maskCEP, 
@@ -47,6 +47,7 @@ interface StoreConfigData {
   isPublicActive: boolean;
   hasPhysicalStore: boolean;
   pixKey: string;
+  whatsappBotEnabled: boolean;
   address: {
     street: string;
     number: string;
@@ -87,6 +88,7 @@ function StoreConfigForm() {
     isPublicActive: true,
     hasPhysicalStore: true,
     pixKey: '',
+    whatsappBotEnabled: false,
     address: {
       street: '',
       number: '',
@@ -202,6 +204,7 @@ function StoreConfigForm() {
         isPublicActive: partnerData.isPublicActive ?? true,
         hasPhysicalStore: partnerData.hasPhysicalStore ?? true,
         pixKey: partnerData.pixKey || '',
+        whatsappBotEnabled: partnerData.whatsappBotEnabled ?? false,
         address: {
           street: partnerData.address?.street || '',
           number: partnerData.address?.number || '',
@@ -373,6 +376,7 @@ function StoreConfigForm() {
         isPublicActive: Boolean(formData.isPublicActive),
         hasPhysicalStore: Boolean(formData.hasPhysicalStore),
         pixKey: formData.pixKey || undefined,
+        whatsappBotEnabled: Boolean(formData.whatsappBotEnabled),
         address: formData.hasPhysicalStore ? {
           street: formData.address.street,
           number: formData.address.number,
@@ -861,9 +865,55 @@ function StoreConfigForm() {
                 <p className="text-xs text-gray-500 ml-6">
                   Quando ativada, sua loja ficará visível na URL personalizada
                 </p>
-              </div> 
+              </div>
             </CardContent>
           </Card>
+
+          {/* WhatsApp Bot */}
+          {/* <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MessageCircle className="h-5 w-5 mr-2 text-green-600" />
+                Robô de Atendimento WhatsApp
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="whatsappBotEnabled"
+                    checked={formData.whatsappBotEnabled || false}
+                    onCheckedChange={(checked) => handleInputChange('whatsappBotEnabled', checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="whatsappBotEnabled" 
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    Ativar robô de atendimento WhatsApp
+                  </Label>
+                </div>
+                <p className="text-xs text-gray-500 ml-6">
+                  Quando ativado, um robô responderá automaticamente às mensagens dos clientes
+                </p>
+              </div>
+              
+              {formData.whatsappBotEnabled && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800 mb-3">
+                    Configure o WhatsApp Bot na seção específica para este recurso.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push('/dashboard/bot-config')}
+                    className="text-sm"
+                  >
+                    Configurar WhatsApp Bot
+                  </Button>
+                </div>
+              )} 
+            </CardContent>
+          </Card> */}
 
           {/* Botões */}
           <div className="flex justify-end space-x-4">

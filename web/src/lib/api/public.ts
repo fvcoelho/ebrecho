@@ -1,4 +1,52 @@
-import { api } from '@/lib/api'
+import axios from 'axios';
+import { getApiBaseUrl } from '@/lib/api-config';
+
+// Create a separate API client for public endpoints that doesn't add auth headers
+const API_BASE = getApiBaseUrl();
+
+export const publicApi = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add debugging interceptors for public API
+publicApi.interceptors.request.use(
+  (config) => {
+    console.log('[DEBUG] Public API Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`
+    });
+    return config;
+  },
+  (error) => {
+    console.error('[DEBUG] Public API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+publicApi.interceptors.response.use(
+  (response) => {
+    console.log('[DEBUG] Public API Response Success:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.error('[DEBUG] Public API Response Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      data: error.response?.data,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
+);
 
 export interface PublicStore {
   id: string
@@ -75,7 +123,7 @@ export async function getPublicStore(slug: string): Promise<PublicStore> {
   console.log('[DEBUG] Making request to:', `/api/public/store/${slug}`)
   
   try {
-    const response = await api.get(`/api/public/store/${slug}`)
+    const response = await publicApi.get(`/api/public/store/${slug}`)
     console.log('[DEBUG] getPublicStore response status:', response.status)
     console.log('[DEBUG] getPublicStore response data:', JSON.stringify(response.data, null, 2))
     return response.data.data
@@ -90,7 +138,7 @@ export async function getPublicStore(slug: string): Promise<PublicStore> {
 
 // Get store categories
 export async function getStoreCategories(slug: string): Promise<Array<{ category: string; count: number }>> {
-  const response = await api.get(`/api/public/store/${slug}/categories`)
+  const response = await publicApi.get(`/api/public/store/${slug}/categories`)
   return response.data.data
 }
 
@@ -109,7 +157,7 @@ export async function getPublicProducts(
   if (query?.min_price) params.append('min_price', query.min_price.toString())
   if (query?.max_price) params.append('max_price', query.max_price.toString())
   
-  const response = await api.get(`/api/public/store/${slug}/products?${params.toString()}`)
+  const response = await publicApi.get(`/api/public/store/${slug}/products?${params.toString()}`)
   return response.data.data
 }
 
@@ -129,16 +177,16 @@ export async function getPublicProduct(storeSlug: string, productSlug: string): 
     images: Array<{ thumbnailUrl?: string }>
   }>
 }> {
-  const response = await api.get(`/api/public/store/${storeSlug}/product/${productSlug}`)
+  const response = await publicApi.get(`/api/public/store/${storeSlug}/product/${productSlug}`)
   return response.data.data
 }
 
 // Register store view (analytics)
 export async function registerStoreView(slug: string): Promise<void> {
-  await api.post(`/api/public/store/${slug}/view`)
+  await publicApi.post(`/api/public/store/${slug}/view`)
 }
 
 // Register product view (analytics)
 export async function registerProductView(storeSlug: string, productId: string): Promise<void> {
-  await api.post(`/api/public/store/${storeSlug}/product/${productId}/view`)
+  await publicApi.post(`/api/public/store/${storeSlug}/product/${productId}/view`)
 }

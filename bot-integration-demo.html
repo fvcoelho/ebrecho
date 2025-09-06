@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Integration API - Loja Banana</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .robot-emoji {
+            font-size: 1.2em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8fafc;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .json-container {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .json-key {
+            color: #94a3b8;
+        }
+        
+        .json-string {
+            color: #10b981;
+        }
+        
+        .json-number {
+            color: #f59e0b;
+        }
+        
+        .json-boolean {
+            color: #8b5cf6;
+        }
+        
+        .api-info {
+            background: #ecfdf5;
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .api-endpoint {
+            font-family: monospace;
+            background: #374151;
+            color: #10b981;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: inline-block;
+        }
+        
+        .success-badge {
+            background: #10b981;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .button:hover {
+            background: #1d4ed8;
+        }
+        
+        .button.secondary {
+            background: #6b7280;
+        }
+        
+        .button.secondary:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span class="robot-emoji">🤖</span>
+                Bot Integration API
+            </h1>
+            <p>Endpoint de integração para FABIO VARGAS COELHO</p>
+            <span class="success-badge">API v1.0 - ATIVA</span>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">1.0</div>
+                <div class="stat-label">Versão</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">2</div>
+                <div class="stat-label">Produtos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Categorias</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">Tempo Real</div>
+                <div class="stat-label">Atualização</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>📡 Informações da API</h2>
+                <div class="api-info">
+                    <p><strong>Endpoint:</strong></p>
+                    <div class="api-endpoint">
+                        GET http://dev.ebrecho.com.br:3001/api/public/store/banana/bot-integration
+                    </div>
+                    <p><strong>Método:</strong> GET</p>
+                    <p><strong>Autenticação:</strong> Não requerida</p>
+                    <p><strong>Cache:</strong> 5 minutos</p>
+                </div>
+                
+                <button class="button" onclick="copyEndpoint()">📋 Copiar Endpoint</button>
+                <button class="button secondary" onclick="downloadJSON()">💾 Baixar JSON</button>
+            </div>
+            
+            <div class="section">
+                <h2>🏪 Informações da Loja</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div>
+                        <strong>Nome:</strong> FABIO VARGAS COELHO<br>
+                        <strong>Slug:</strong> banana<br>
+                        <strong>WhatsApp:</strong> 11963166165
+                    </div>
+                    <div>
+                        <strong>Produtos:</strong> 2 disponíveis<br>
+                        <strong>Status:</strong> Loja ativa<br>
+                        <strong>PIX:</strong> Configurado
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>🤖 Instruções Padrão do Robô</h2>
+                <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb;">
+                    <p><strong>Saudação:</strong> "Olá! Bem-vindo à nossa loja! Como posso ajudá-lo hoje?"</p>
+                    <p><strong>Tom de Voz:</strong> Profissional e amigável</p>
+                    <p><strong>Recursos:</strong></p>
+                    <ul>
+                        <li>✅ Recomendações de produtos</li>
+                        <li>✅ FAQ automatizada</li>
+                        <li>✅ Informações de horário</li>
+                        <li>✅ Dados de contato</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>📄 JSON de Resposta</h2>
+                <p>Exemplo da estrutura de dados retornada pela API:</p>
+                
+                <div class="json-container">
+<pre id="jsonContent">{
+  <span class="json-key">"success"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"data"</span>: {
+    <span class="json-key">"version"</span>: <span class="json-string">"1.0"</span>,
+    <span class="json-key">"lastUpdated"</span>: <span class="json-string">"2025-01-15T10:30:00.000Z"</span>,
+    <span class="json-key">"store"</span>: {
+      <span class="json-key">"name"</span>: <span class="json-string">"FABIO VARGAS COELHO"</span>,
+      <span class="json-key">"slug"</span>: <span class="json-string">"banana"</span>,
+      <span class="json-key">"contacts"</span>: {
+        <span class="json-key">"whatsapp"</span>: <span class="json-string">"11963166165"</span>,
+        <span class="json-key">"whatsappName"</span>: <span class="json-string">"eBrecho Production"</span>
+      },
+      <span class="json-key">"address"</span>: {
+        <span class="json-key">"street"</span>: <span class="json-string">"Leonardo mota"</span>,
+        <span class="json-key">"number"</span>: <span class="json-string">"100"</span>,
+        <span class="json-key">"city"</span>: <span class="json-string">"São Paulo"</span>
+      },
+      <span class="json-key">"businessHours"</span>: {
+        <span class="json-key">"monday"</span>: { <span class="json-key">"open"</span>: <span class="json-string">"09:00"</span>, <span class="json-key">"close"</span>: <span class="json-string">"18:00"</span> }
+      },
+      <span class="json-key">"paymentMethods"</span>: {
+        <span class="json-key">"pix"</span>: { <span class="json-key">"enabled"</span>: <span class="json-boolean">true</span> }
+      }
+    },
+    <span class="json-key">"products"</span>: [
+      {
+        <span class="json-key">"id"</span>: <span class="json-string">"prod123"</span>,
+        <span class="json-key">"name"</span>: <span class="json-string">"Vestido Vintage"</span>,
+        <span class="json-key">"price"</span>: <span class="json-number">89.90</span>,
+        <span class="json-key">"category"</span>: <span class="json-string">"Vestidos"</span>,
+        <span class="json-key">"condition"</span>: <span class="json-string">"LIKE_NEW"</span>,
+        <span class="json-key">"images"</span>: [...]
+      }
+    ],
+    <span class="json-key">"aiInstructions"</span>: {
+      <span class="json-key">"greeting"</span>: <span class="json-string">"Olá! Bem-vindo à nossa loja!"</span>,
+      <span class="json-key">"tone"</span>: <span class="json-string">"profissional e amigável"</span>,
+      <span class="json-key">"faq"</span>: [...]
+    },
+    <span class="json-key">"metadata"</span>: {
+      <span class="json-key">"totalProducts"</span>: <span class="json-number">2</span>,
+      <span class="json-key">"dataVersion"</span>: <span class="json-string">"1.0.0"</span>
+    }
+  }
+}</pre>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>🔗 Como Usar</h2>
+                <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <h3>Para Integrar com Chatbots:</h3>
+                    <ol>
+                        <li>Faça uma requisição GET para o endpoint</li>
+                        <li>Parse o JSON de resposta</li>
+                        <li>Use os dados para configurar o comportamento do robô</li>
+                        <li>Implemente as instruções de AI para personalizar respostas</li>
+                    </ol>
+                    
+                    <h3>Exemplo de uso em JavaScript:</h3>
+                    <div class="json-container" style="margin-top: 10px;">
+<pre>fetch('http://dev.ebrecho.com.br:3001/api/public/store/banana/bot-integration')
+  .then(response => response.json())
+  .then(data => {
+    const store = data.data.store;
+    const products = data.data.products;
+    const instructions = data.data.aiInstructions;
+    
+    // Configure seu chatbot aqui
+    console.log('Loja:', store.name);
+    console.log('Produtos:', products.length);
+  });</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function copyEndpoint() {
+            const endpoint = 'http://dev.ebrecho.com.br:3001/api/public/store/banana/bot-integration';
+            navigator.clipboard.writeText(endpoint).then(() => {
+                alert('Endpoint copiado para a área de transferência!');
+            });
+        }
+        
+        function downloadJSON() {
+            const jsonData = {
+                message: 'Esta seria a estrutura JSON real da API',
+                endpoint: 'http://dev.ebrecho.com.br:3001/api/public/store/banana/bot-integration',
+                note: 'Faça uma requisição GET real para obter os dados atuais'
+            };
+            
+            const blob = new Blob([JSON.stringify(jsonData, null, 2)], 
+                                 { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'banana-bot-integration.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

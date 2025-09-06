@@ -10,6 +10,7 @@ import {
   deletePartner,
   uploadPartnerLogo
 } from '../controllers/partner.controller';
+import { getAiInstructions, updateAiInstructions, deleteAiInstructions } from '../controllers/ai-instructions.controller';
 import {
   createPartnerSchema,
   updatePartnerSchema,
@@ -349,6 +350,104 @@ router.post('/', validate(createPartnerSchema), authorize(['ADMIN']), createPart
  *         $ref: '#/components/responses/NotFoundError'
  */
 router.put('/:id', validate(partnerParamsSchema), validate(updatePartnerSchema), authorize(['ADMIN', 'PARTNER_ADMIN']), updatePartner);
+
+/**
+ * @swagger
+ * /api/partners/{partnerId}/ai-instructions:
+ *   get:
+ *     summary: Get AI instructions for partner
+ *     description: Retrieve AI instructions for a partner's WhatsApp bot integration
+ *     tags: [Partners]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partnerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Partner ID
+ *     responses:
+ *       200:
+ *         description: AI instructions retrieved successfully
+ *       404:
+ *         description: AI instructions not found
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ */
+router.get('/:partnerId/ai-instructions', authorize(['PARTNER_ADMIN', 'ADMIN']), getAiInstructions);
+
+/**
+ * @swagger
+ * /api/partners/{partnerId}/ai-instructions:
+ *   put:
+ *     summary: Update AI instructions for partner
+ *     description: Create or update AI instructions for a partner's WhatsApp bot integration
+ *     tags: [Partners]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partnerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Partner ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - prompt
+ *             properties:
+ *               prompt:
+ *                 type: string
+ *                 description: AI instructions in markdown format with template variables
+ *     responses:
+ *       200:
+ *         description: AI instructions updated successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         description: Partner not found
+ */
+router.put('/:partnerId/ai-instructions', authorize(['PARTNER_ADMIN', 'ADMIN']), updateAiInstructions);
+
+/**
+ * @swagger
+ * /api/partners/{partnerId}/ai-instructions:
+ *   delete:
+ *     summary: Delete AI instructions for partner
+ *     description: Delete AI instructions for a partner (will fallback to default instructions)
+ *     tags: [Partners]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partnerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Partner ID
+ *     responses:
+ *       200:
+ *         description: AI instructions deleted successfully
+ *       404:
+ *         description: AI instructions not found
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ */
+router.delete('/:partnerId/ai-instructions', authorize(['PARTNER_ADMIN', 'ADMIN']), deleteAiInstructions);
 
 /**
  * @swagger

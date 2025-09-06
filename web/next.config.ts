@@ -13,10 +13,10 @@ console.log('');
 
 console.log('🌐 API Endpoints:');
 console.log(`   NEXT_PUBLIC_API_URL: ${process.env.NEXT_PUBLIC_API_URL || '❌ Not set (using default)'}`);
-console.log(`   API_URL (SSR): ${process.env.API_URL || '❌ Not set (using default)'}`);
+console.log(`   API_URL (SSR): ${process.env.NEXT_PUBLIC_API_URL || '❌ Not set (using default)'}`);
 
 const clientApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-const serverApiUrl = process.env.API_URL || 'http://localhost:3001/api';
+const serverApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 console.log('');
 console.log('📍 Resolved URLs:');

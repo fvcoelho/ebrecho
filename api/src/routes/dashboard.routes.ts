@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as dashboardController from '../controllers/dashboard.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { AuthRequest } from '../types';
+import { getAiInstructions, updateAiInstructions, deleteAiInstructions, createAiInstructions } from '../controllers/dashboard-ai-instructions.controller';
 
 const router = Router();
 
@@ -31,5 +32,11 @@ router.get('/insights/customers', dashboardController.getPartnerCustomerInsights
 router.get('/partner', dashboardController.getCurrentPartner as any);
 
 router.put('/partner', dashboardController.updateCurrentPartner as any);
+
+// AI Instructions management
+router.get('/ai-instructions', getAiInstructions as any);
+router.post('/ai-instructions', createAiInstructions as any);
+router.put('/ai-instructions', updateAiInstructions as any);
+router.delete('/ai-instructions', deleteAiInstructions as any);
 
 export default router;

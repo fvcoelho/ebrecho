@@ -184,6 +184,12 @@ model Partner {
   socialLinks       Json?
   pixKey            String?
   
+  // Bot integration fields
+  aiInstructions           Json?    // Stores bot behavior instructions, FAQs, tone, etc.
+  whatsappBotEnabled       Boolean  @default(false)
+  evolutionInstanceId      String?
+  whatsappConnectionStatus String?  // "disconnected", "connecting", "connected"
+  
   address      Address?
   users        User[]
   products     Product[]
@@ -204,6 +210,9 @@ model Partner {
   userSessions       UserSession[]
   pageViews          PageView[]
   userActivities     UserActivity[]
+  
+  // AI Instructions relation
+  aiInstructionsModel AiInstructions?
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -875,4 +884,15 @@ model UserActivity {
   @@index([page])
   @@index([elementType])
   @@index([createdAt])
+}
+
+model AiInstructions {
+  id        String   @id @default(cuid())
+  prompt    String
+  partnerId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId])
 }
