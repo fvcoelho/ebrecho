@@ -1,110 +1,120 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Bot, Plus, Trash2, Info, Copy, ExternalLink } from 'lucide-react'
-import { api } from '@/lib/api'
-import { toast } from 'sonner'
-
-interface FAQ {
-  question: string
-  answer: string
-}
-
-interface BotInstructions {
-  greeting: string
-  tone: string
-  specialInstructions: string
-  faq: FAQ[]
-  productRecommendations: {
-    enabled: boolean
-    maxSuggestions: number
-    basedOn: string[]
-  }
-  priceNegotiation: {
-    enabled: boolean
-    maxDiscount: number
-    requiresApproval: boolean
-  }
-}
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Bot, Save, Trash2, AlertCircle, CheckCircle, Copy, Eye, Info, ExternalLink } from 'lucide-react'
+import { aiInstructionsService, type AiInstructions } from '@/lib/api'
+import toast from 'react-hot-toast'
 
 interface BotConfigurationProps {
   partnerId: string
   slug: string
-  initialInstructions?: BotInstructions
+  initialInstructions?: any // Legacy prop, no longer used
 }
 
-export function BotConfiguration({ partnerId, slug, initialInstructions }: BotConfigurationProps) {
-  const [loading, setLoading] = useState(false)
-  const [instructions, setInstructions] = useState<BotInstructions>(initialInstructions || {
-    greeting: 'Olá! Bem-vindo à nossa loja! Como posso ajudá-lo hoje?',
-    tone: 'profissional e amigável',
-    specialInstructions: '',
-    faq: [
-      { question: 'Quais são os horários de funcionamento?', answer: '' },
-      { question: 'Como posso fazer uma compra?', answer: '' }
-    ],
-    productRecommendations: {
-      enabled: true,
-      maxSuggestions: 3,
-      basedOn: ['category', 'price']
-    },
-    priceNegotiation: {
-      enabled: false,
-      maxDiscount: 0,
-      requiresApproval: true
+export function BotConfiguration({ partnerId, slug }: BotConfigurationProps) {
+  const [aiInstructions, setAiInstructions] = useState<AiInstructions | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [prompt, setPrompt] = useState('')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  const integrationUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/public/store/${slug}/bot-integration`
+  const aiInstructionsUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/${slug}/ai-instructions`
+
+  // Load AI instructions on component mount
+  useEffect(() => {
+    loadAiInstructions()
+  }, [])
+
+  // Track changes to prompt
+  useEffect(() => {
+    if (aiInstructions) {
+      setHasUnsavedChanges(prompt !== aiInstructions.prompt)
+    } else {
+      setHasUnsavedChanges(prompt.length > 0)
     }
-  })
+  }, [prompt, aiInstructions])
 
-  const integrationUrl = `${process.env.NEXT_PUBLIC_API_URL}/public/store/${slug}/bot-integration`
-  const frontendUrl = `${window.location.origin}/${slug}/bot-integration`
-
-  const handleSave = async () => {
-    setLoading(true)
+  const loadAiInstructions = async () => {
     try {
-      await api.put(`/partners/${partnerId}/ai-instructions`, {
-        aiInstructions: instructions
-      })
-      toast.success('Configurações do robô salvas com sucesso!')
-    } catch (error) {
-      console.error('Error saving bot configuration:', error)
-      toast.error('Erro ao salvar configurações do robô')
+      setLoading(true)
+      const instructions = await aiInstructionsService.getAiInstructions()
+      setAiInstructions(instructions)
+      setPrompt(instructions.prompt)
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // No AI instructions found, this is normal for new partners
+        setAiInstructions(null)
+        setPrompt('')
+      } else {
+        console.error('Error loading AI instructions:', error)
+        toast.error('Erro ao carregar instruções do bot')
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const addFAQ = () => {
-    setInstructions(prev => ({
-      ...prev,
-      faq: [...prev.faq, { question: '', answer: '' }]
-    }))
+  const handleSave = async () => {
+    if (!prompt.trim()) {
+      toast.error('As instruções não podem estar vazias')
+      return
+    }
+
+    try {
+      setSaving(true)
+      let savedInstructions: AiInstructions
+
+      if (aiInstructions) {
+        // Update existing instructions
+        savedInstructions = await aiInstructionsService.updateAiInstructions({ prompt })
+        toast.success('Instruções atualizadas com sucesso')
+      } else {
+        // Create new instructions
+        savedInstructions = await aiInstructionsService.createAiInstructions({ prompt })
+        toast.success('Instruções criadas com sucesso')
+      }
+
+      setAiInstructions(savedInstructions)
+      setHasUnsavedChanges(false)
+    } catch (error: any) {
+      console.error('Error saving AI instructions:', error)
+      toast.error('Erro ao salvar instruções do bot')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const removeFAQ = (index: number) => {
-    setInstructions(prev => ({
-      ...prev,
-      faq: prev.faq.filter((_, i) => i !== index)
-    }))
-  }
+  const handleDelete = async () => {
+    if (!aiInstructions) return
 
-  const updateFAQ = (index: number, field: 'question' | 'answer', value: string) => {
-    setInstructions(prev => ({
-      ...prev,
-      faq: prev.faq.map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
-      )
-    }))
+    if (!confirm('Tem certeza que deseja excluir as instruções do bot? Esta ação não pode ser desfeita.')) {
+      return
+    }
+
+    try {
+      setDeleting(true)
+      await aiInstructionsService.deleteAiInstructions()
+      setAiInstructions(null)
+      setPrompt('')
+      setHasUnsavedChanges(false)
+      toast.success('Instruções excluídas com sucesso')
+    } catch (error: any) {
+      console.error('Error deleting AI instructions:', error)
+      toast.error('Erro ao excluir instruções do bot')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const copyToClipboard = (text: string) => {
@@ -112,224 +122,217 @@ export function BotConfiguration({ partnerId, slug, initialInstructions }: BotCo
     toast.success('Copiado para a área de transferência!')
   }
 
+  const copyDefaultTemplate = () => {
+    const defaultTemplate = `# Instruções do Assistente Virtual
+
+## Função
+Você é um agente virtual de atendimento ao cliente de uma loja. Seu papel é atender clientes de forma educada, clara e eficiente, ajudando em dúvidas sobre produtos, pedidos, prazos de entrega, formas de pagamento, promoções e políticas da loja.
+
+## Instruções principais
+
+- Sempre cumprimente o cliente de forma simpática e acolhedora
+- Responda de maneira objetiva, mas cordial, adaptando o tom conforme a conversa
+- Caso não tenha certeza sobre uma resposta, explique a limitação e ofereça ajuda alternativa
+
+## Produtos da loja:
+{{products.map(product => \`- [\${product.name}](\${product.url}): R$ \${product.price} (\${product.condition})\`).join('\\\\n')}}
+
+## Horários de funcionamento:
+{{Object.entries(store.businessHours).map(([day, hours]) => \`\${day}: \${hours.open || 'Fechado'} - \${hours.close || ''}\`).join('\\\\n')}}
+
+## Endereço:
+{{\`\${store.address.street}, \${store.address.number} - \${store.address.city}/\${store.address.state}\`}}
+
+## Perguntas frequentes:
+{{aiInstructions.faq.map(item => \`**Q: \${item.question}**\\\\nA: \${item.answer}\`).join('\\\\n\\\\n')}}
+
+## Exemplo de início de conversa:
+👋 Olá! Bem-vindo(a) à {{store.name}}. Como posso ajudar você hoje?
+
+- Deseja informações sobre um produto?
+- Consultar o status de um pedido?
+- Ou conhecer nossas promoções atuais?`
+
+    setPrompt(defaultTemplate)
+    toast.success('Template padrão copiado para o editor')
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-96" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            <CardTitle>Configurações do Robô de Atendimento</CardTitle>
-          </div>
-          <CardDescription>
-            Configure como o robô de atendimento deve interagir com seus clientes
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="general">Geral</TabsTrigger>
-              <TabsTrigger value="faq">FAQ</TabsTrigger>
-              {/* <TabsTrigger value="features">Recursos</TabsTrigger> */}
-              {/* <TabsTrigger value="integration">Integração</TabsTrigger> */}
-            </TabsList>
+      {hasUnsavedChanges && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Você tem alterações não salvas. Não esqueça de salvar suas modificações.
+          </AlertDescription>
+        </Alert>
+      )}
 
-            <TabsContent value="general" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="greeting">Mensagem de Boas-Vindas</Label>
+      <Tabs defaultValue="editor" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="editor">Editor</TabsTrigger>
+          <TabsTrigger value="help">Ajuda & Templates</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value="integration">Integração</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="editor" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" />
+                  <div>
+                    <CardTitle>Instruções do Bot</CardTitle>
+                    <CardDescription>
+                      Configure como seu assistente virtual deve se comportar e responder aos clientes
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {aiInstructions && (
+                    <Badge variant="secondary">
+                      Criado em {new Date(aiInstructions.createdAt).toLocaleDateString()}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="prompt">Prompt de Instruções (Markdown)</Label>
                 <Textarea
-                  id="greeting"
-                  value={instructions.greeting}
-                  onChange={(e) => setInstructions(prev => ({ ...prev, greeting: e.target.value }))}
-                  placeholder="Ex: Olá! Bem-vindo à nossa loja..."
-                  rows={3}
+                  id="prompt"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Digite as instruções do seu bot aqui..."
+                  className="min-h-[400px] font-mono text-sm"
                 />
               </div>
 
-              {/* <div className="space-y-2">
-                <Label htmlFor="tone">Tom de Voz do Robô</Label>
-                <Select
-                  value={instructions.tone}
-                  onValueChange={(value) => setInstructions(prev => ({ ...prev, tone: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tom de voz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="profissional">Profissional</SelectItem>
-                    <SelectItem value="profissional e amigável">Profissional e Amigável</SelectItem>
-                    <SelectItem value="casual">Casual</SelectItem>
-                    <SelectItem value="divertido">Divertido</SelectItem>
-                    <SelectItem value="formal">Formal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div> */}
-
-              <div className="space-y-2">
-                <Label htmlFor="special">Instruções Especiais</Label>
-                <Textarea
-                  id="special"
-                  value={instructions.specialInstructions}
-                  onChange={(e) => setInstructions(prev => ({ ...prev, specialInstructions: e.target.value }))}
-                  placeholder="Ex: Sempre mencione nossa promoção atual, seja enfático sobre a qualidade dos produtos..."
-                  rows={4}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="faq" className="space-y-4">
-              <div className="flex justify-between items-center mb-4">
-                <Label>Perguntas Frequentes</Label>
-                <Button onClick={addFAQ} size="sm" variant="outline">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Adicionar Pergunta
-                </Button>
-              </div>
-
-              {instructions.faq.map((item, index) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 space-y-2">
-                        <Input
-                          placeholder="Pergunta"
-                          value={item.question}
-                          onChange={(e) => updateFAQ(index, 'question', e.target.value)}
-                        />
-                        <Textarea
-                          placeholder="Resposta"
-                          value={item.answer}
-                          onChange={(e) => updateFAQ(index, 'answer', e.target.value)}
-                          rows={2}
-                        />
-                      </div>
-                      <Button
-                        onClick={() => removeFAQ(index)}
-                        size="sm"
-                        variant="ghost"
-                        className="ml-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </TabsContent>
-            
-            {/* <TabsContent value="features" className="space-y-4">
-              <Card className="p-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Recomendações de Produtos</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Permitir que o robô sugira produtos aos clientes
-                      </p>
-                    </div>
-                    <Switch
-                      checked={instructions.productRecommendations.enabled}
-                      onCheckedChange={(checked) => 
-                        setInstructions(prev => ({
-                          ...prev,
-                          productRecommendations: { ...prev.productRecommendations, enabled: checked }
-                        }))
-                      }
-                    />
-                  </div>
-
-                  {instructions.productRecommendations.enabled && (
-                    <div className="space-y-2 pl-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="maxSuggestions">Máximo de Sugestões</Label>
-                        <Input
-                          id="maxSuggestions"
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={instructions.productRecommendations.maxSuggestions}
-                          onChange={(e) => 
-                            setInstructions(prev => ({
-                              ...prev,
-                              productRecommendations: { 
-                                ...prev.productRecommendations, 
-                                maxSuggestions: parseInt(e.target.value) 
-                              }
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-                  )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={copyDefaultTemplate}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Usar Template Padrão
+                  </Button>
                 </div>
-              </Card>
 
-              <Card className="p-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Negociação de Preços</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Permitir que o robô negocie descontos
-                      </p>
-                    </div>
-                    <Switch
-                      checked={instructions.priceNegotiation.enabled}
-                      onCheckedChange={(checked) => 
-                        setInstructions(prev => ({
-                          ...prev,
-                          priceNegotiation: { ...prev.priceNegotiation, enabled: checked }
-                        }))
-                      }
-                    />
-                  </div>
-
-                  {instructions.priceNegotiation.enabled && (
-                    <div className="space-y-2 pl-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="maxDiscount">Desconto Máximo (%)</Label>
-                        <Input
-                          id="maxDiscount"
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={instructions.priceNegotiation.maxDiscount}
-                          onChange={(e) => 
-                            setInstructions(prev => ({
-                              ...prev,
-                              priceNegotiation: { 
-                                ...prev.priceNegotiation, 
-                                maxDiscount: parseInt(e.target.value) 
-                              }
-                            }))
-                          }
-                        />
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="approval"
-                          checked={instructions.priceNegotiation.requiresApproval}
-                          onCheckedChange={(checked) => 
-                            setInstructions(prev => ({
-                              ...prev,
-                              priceNegotiation: { 
-                                ...prev.priceNegotiation, 
-                                requiresApproval: checked 
-                              }
-                            }))
-                          }
-                        />
-                        <Label htmlFor="approval">Requer aprovação manual</Label>
-                      </div>
-                    </div>
+                <div className="flex items-center gap-2">
+                  {aiInstructions && (
+                    <Button
+                      onClick={handleDelete}
+                      variant="destructive"
+                      size="sm"
+                      disabled={deleting}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deleting ? 'Excluindo...' : 'Excluir'}
+                    </Button>
                   )}
+                  
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving || !hasUnsavedChanges}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? 'Salvando...' : 'Salvar'}
+                  </Button>
                 </div>
-              </Card>
-            </TabsContent>
-             */}
-            
-            
-            {/* <TabsContent value="integration" className="space-y-4">
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="help" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Variáveis de Template</CardTitle>
+              <CardDescription>
+                Use estas variáveis para personalizar dinamicamente as instruções
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Informações da Loja</h4>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p><code>{'{'}{'{'}{'{'}store.name{'}'}{'}'}{'}'}</code> - Nome da loja</p>
+                    <p><code>{'{'}{'{'}{'{'}store.address.street{'}'}, {'{'}store.address.number{'}'}{'}'}{'}'}</code> - Endereço</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Lista de Produtos</h4>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p><code>{'{'}{'{'}{'{'}products.map(product =&gt; \`- [\${'{'}product.name{'}'}](\${'{'}product.url{'}'}): R$ \${'{'}product.price{'}'}\`).join('\\n'){'}'}{'}'}{'}'}</code></p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Horários de Funcionamento</h4>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p><code>{'{'}{'{'}{'{'}Object.entries(store.businessHours).map([day, hours]) =&gt; \`\${'{'}day{'}'}: \${'{'}hours.open{'}'} - \${'{'}hours.close{'}'}\`).join('\\n'){'}'}{'}'}{'}'}</code></p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="preview" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Preview das Instruções</CardTitle>
+              <CardDescription>
+                Visualize como as instruções aparecerão para o bot
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {prompt ? (
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-lg">
+                    {prompt}
+                  </pre>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-center py-8">
+                  Nenhuma instrução configurada ainda
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integration" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integração</CardTitle>
+              <CardDescription>
+                URLs e endpoints para integração com plataformas de chatbot
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
@@ -339,9 +342,13 @@ export function BotConfiguration({ partnerId, slug, initialInstructions }: BotCo
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Endpoint da API</Label>
+                  <Label>Endpoint da API (JSON)</Label>
                   <div className="flex gap-2">
-                    <Input value={integrationUrl} readOnly />
+                    <input 
+                      value={integrationUrl} 
+                      readOnly 
+                      className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
+                    />
                     <Button 
                       size="icon" 
                       variant="outline"
@@ -353,13 +360,24 @@ export function BotConfiguration({ partnerId, slug, initialInstructions }: BotCo
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Visualizar JSON</Label>
+                  <Label>Instruções Processadas (Texto)</Label>
                   <div className="flex gap-2">
-                    <Input value={frontendUrl} readOnly />
+                    <input 
+                      value={aiInstructionsUrl} 
+                      readOnly 
+                      className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
+                    />
                     <Button 
                       size="icon" 
                       variant="outline"
-                      onClick={() => window.open(frontendUrl, '_blank')}
+                      onClick={() => copyToClipboard(aiInstructionsUrl)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="outline"
+                      onClick={() => window.open(aiInstructionsUrl, '_blank')}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -386,16 +404,10 @@ export function BotConfiguration({ partnerId, slug, initialInstructions }: BotCo
                   </AlertDescription>
                 </Alert>
               </div>
-            </TabsContent> */}
-          </Tabs>
-
-          <div className="flex justify-end mt-6">
-            <Button onClick={handleSave} disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar Configurações'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

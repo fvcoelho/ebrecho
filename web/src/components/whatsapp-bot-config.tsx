@@ -64,7 +64,14 @@ export function WhatsAppBotConfig({ partnerId, whatsappNumber, onBotStatusChange
       const response = await api.get(`/api/partners/${partnerId}/whatsapp-bot/status`);
       
       if (response.data.success) {
-        setStatus(response.data.data);
+        const statusData = response.data.data;
+        console.log('Bot status received:', {
+          botEnabled: statusData.botEnabled,
+          connectionStatus: statusData.connectionStatus,
+          evolutionState: statusData.evolutionState,
+          instanceId: statusData.instanceId
+        });
+        setStatus(statusData);
       } else {
         setError(response.data.error || 'Erro ao carregar status do bot');
       }
@@ -288,6 +295,11 @@ export function WhatsAppBotConfig({ partnerId, whatsappNumber, onBotStatusChange
                   {getStatusText(status.connectionStatus)}
                 </div>
               </Badge>
+              {status.evolutionState && status.evolutionState !== status.connectionStatus && (
+                <Badge variant="outline" className="text-xs text-gray-500">
+                  Evolution: {status.evolutionState}
+                </Badge>
+              )}
               {status.instanceId && (
                 <Badge variant="outline" className="text-xs">
                   ID: {status.instanceId}

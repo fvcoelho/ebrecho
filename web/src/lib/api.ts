@@ -900,3 +900,41 @@ export const pixTransactionService = {
     return response.data;
   }
 };
+
+// AI Instructions Service
+export interface AiInstructions {
+  id: string;
+  prompt: string;
+  partnerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAiInstructionsData {
+  prompt: string;
+}
+
+export interface UpdateAiInstructionsData {
+  prompt: string;
+}
+
+export const aiInstructionsService = {
+  async getAiInstructions(): Promise<AiInstructions> {
+    const response = await api.get('/api/dashboard/ai-instructions');
+    return response.data.data;
+  },
+
+  async createAiInstructions(data: CreateAiInstructionsData): Promise<AiInstructions> {
+    const response = await api.post('/api/dashboard/ai-instructions', data);
+    return response.data.data;
+  },
+
+  async updateAiInstructions(data: UpdateAiInstructionsData): Promise<AiInstructions> {
+    const response = await api.put('/api/dashboard/ai-instructions', data);
+    return response.data.data;
+  },
+
+  async deleteAiInstructions(): Promise<void> {
+    await api.delete('/api/dashboard/ai-instructions');
+  }
+};

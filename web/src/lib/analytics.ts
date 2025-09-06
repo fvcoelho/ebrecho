@@ -382,7 +382,7 @@ class AnalyticsTracker {
     }
 
     // Check for common button/link classes
-    const className = element.className.toLowerCase()
+    const className = element.className?.toString().toLowerCase() || ''
     if (trackableClasses.some(cls => className.includes(cls))) {
       return true
     }
@@ -529,8 +529,8 @@ class AnalyticsTracker {
     }
     
     // Use full API URL for backend requests
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const fullUrl = url.startsWith('http') ? url : `${apiUrl}/api${url}`
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+    const fullUrl = url.startsWith('http') ? url : `${apiUrl}${url}`
     
     const response = await fetch(fullUrl, {
       method,

@@ -24,7 +24,7 @@ export default function BotIntegrationPage({ params }: StorePageProps) {
 
   const fetchIntegrationData = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/public/store/${slug}/bot-integration`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/store/${slug}/bot-integration`)
       if (!response.ok) {
         throw new Error('Failed to fetch integration data')
       }
@@ -248,12 +248,12 @@ export default function BotIntegrationPage({ params }: StorePageProps) {
               <p className="font-medium mb-2">Endpoint</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-muted px-3 py-2 rounded text-sm">
-                  {`${process.env.NEXT_PUBLIC_API_URL}/public/store/${slug}/bot-integration`}
+                  {`${process.env.NEXT_PUBLIC_API_URL}/api/public/store/${slug}/bot-integration`}
                 </code>
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => copyToClipboard(`${process.env.NEXT_PUBLIC_API_URL}/public/store/${slug}/bot-integration`)}
+                  onClick={() => copyToClipboard(`${process.env.NEXT_PUBLIC_API_URL}/api/public/store/${slug}/bot-integration`)}
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
@@ -268,7 +268,7 @@ export default function BotIntegrationPage({ params }: StorePageProps) {
             <div>
               <p className="font-medium mb-2">Exemplo de Uso</p>
               <pre className="bg-muted p-3 rounded overflow-x-auto">
-                <code>{`fetch('${process.env.NEXT_PUBLIC_API_URL}/public/store/${slug}/bot-integration')
+                <code>{`fetch('${process.env.NEXT_PUBLIC_API_URL}/api/public/store/${slug}/bot-integration')
   .then(res => res.json())
   .then(data => console.log(data));`}</code>
               </pre>

@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
-import { BotConfiguration } from '@/components/dashboard/bot-configuration'
-import { WhatsAppBotConfig } from '@/components/whatsapp-bot-config'
+import { WhatsAppBotTabs } from '@/components/whatsapp-bot-tabs'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { api } from '@/lib/api'
@@ -82,23 +81,19 @@ export default function BotConfigPage() {
   return (
     <ProtectedRoute allowedRoles={['PARTNER_ADMIN']}>
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Configuração do WhatsApp Bot</h1>
             <p className="text-gray-600 mt-2">
-              Configure e gerencie o robô de atendimento via WhatsApp
+              Configure, teste e gerencie o robô de atendimento via WhatsApp
             </p>
           </div>
 
-          <WhatsAppBotConfig 
+          <WhatsAppBotTabs
             partnerId={partner.id}
             whatsappNumber={partner.whatsappNumber}
-          />
-
-          <BotConfiguration 
-            partnerId={partner.id}
             slug={partner.slug || partner.id}
-            initialInstructions={partner.aiInstructions}
+            aiInstructions={partner.aiInstructions}
           />
         </div>
       </DashboardLayout>

@@ -6,26 +6,38 @@
 /**
  * Gets the correct API base URL based on environment
  * This function works both on server and client side
+ * Returns the base URL without /api path to avoid double /api/ issues
  */
 export function getApiBaseUrl(): string {
+  let baseUrl: string;
+  
   // Check if we're on client side
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
     // Environment-based URL detection
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3001';
+      baseUrl = 'http://localhost:3001';
     } else if (hostname === 'dev.ebrecho.com.br') {
-      return 'http://dev.ebrecho.com.br:3001';
+      baseUrl = 'http://dev.ebrecho.com.br:3001';
     } else if (hostname === 'www.ebrecho.com.br' || hostname === 'ebrecho.com.br') {
-      return 'https://api.ebrecho.com.br';
+      baseUrl = 'https://api.ebrecho.com.br';
     } else if (hostname.includes('vercel.app')) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.ebrecho.com.br';
+      baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.ebrecho.com.br';
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.ebrecho.com.br';
     }
+  } else {
+    // Server-side or fallback
+    baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.ebrecho.com.br';
   }
   
-  // Server-side or fallback
-  return process.env.NEXT_PUBLIC_API_URL || 'https://api.ebrecho.com.br';
+  // Remove trailing /api if present to avoid double /api/ in URLs
+  if (baseUrl.endsWith('/api')) {
+    baseUrl = baseUrl.slice(0, -4);
+  }
+  
+  return baseUrl;
 }
 
 /**

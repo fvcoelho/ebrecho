@@ -870,7 +870,7 @@ function StoreConfigForm() {
           </Card>
 
           {/* WhatsApp Bot */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <MessageCircle className="h-5 w-5 mr-2 text-green-600" />
@@ -913,7 +913,7 @@ function StoreConfigForm() {
                 </div>
               )} 
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Botões */}
           <div className="flex justify-end space-x-4">
