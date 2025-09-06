@@ -32,13 +32,23 @@ export function WhatsAppBotTabs({
   const [botStatus, setBotStatus] = useState({
     enabled: false,
     connected: false,
-    instanceId: ''
+    instanceId: '',
+    connectionStatus: 'disconnected'
   });
+  const [loading, setLoading] = useState(true);
 
   // Load initial bot status
   useEffect(() => {
     loadBotStatus();
-  }, [partnerId]);
+    // Poll for status updates every 5 seconds when bot is enabled but not connected
+    const interval = setInterval(() => {
+      if (botStatus.enabled && !botStatus.connected) {
+        loadBotStatus();
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [partnerId, botStatus.enabled, botStatus.connected]);
 
   const loadBotStatus = async () => {
     try {
@@ -47,12 +57,15 @@ export function WhatsAppBotTabs({
         const status = response.data.data;
         setBotStatus({
           enabled: status.botEnabled,
-          connected: status.connectionStatus === 'connected',
-          instanceId: status.instanceId || ''
+          connected: status.connectionStatus === 'connected' || status.connectionStatus === 'conectado',
+          instanceId: status.instanceId || '',
+          connectionStatus: status.connectionStatus || 'disconnected'
         });
       }
     } catch (error) {
       console.error('Error loading bot status:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,22 +74,46 @@ export function WhatsAppBotTabs({
     loadBotStatus();
   };
 
+  // Check if tabs should be disabled
+  const isTabDisabled = !botStatus.connected || botStatus.connectionStatus !== 'connected';
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs 
+      value={activeTab} 
+      onValueChange={(value) => {
+        // Only allow tab change if connection tab or if connected
+        if (value === 'connection' || !isTabDisabled) {
+          setActiveTab(value);
+        }
+      }} 
+      className="w-full"
+    >
       <TabsList className="grid w-full grid-cols-4 mb-6">
         <TabsTrigger value="connection" className="flex items-center gap-2">
-          <Wifi className="h-4 w-4" />
+          <Wifi className={`h-4 w-4 ${botStatus.connected ? 'text-green-600' : ''}`} />
           <span className="hidden sm:inline">Conexão</span>
         </TabsTrigger>
-        <TabsTrigger value="test" className="flex items-center gap-2">
+        <TabsTrigger 
+          value="test" 
+          className={`flex items-center gap-2 ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isTabDisabled}
+        >
           <TestTube className="h-4 w-4" />
           <span className="hidden sm:inline">Testar Chat</span>
         </TabsTrigger>
-        <TabsTrigger value="config" className="flex items-center gap-2">
+        <TabsTrigger 
+          value="config" 
+          className={`flex items-center gap-2 ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isTabDisabled}
+        >
           <Settings className="h-4 w-4" />
           <span className="hidden sm:inline">Configurações</span>
         </TabsTrigger>
-        <TabsTrigger value="templates" className="flex items-center gap-2">
+        <TabsTrigger 
+          value="templates" 
+          className={`flex items-center gap-2 ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isTabDisabled}
+        >
           <FileText className="h-4 w-4" />
           <span className="hidden sm:inline">Templates</span>
         </TabsTrigger>
