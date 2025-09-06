@@ -77,8 +77,61 @@ export function WhatsAppBotTabs({
   // Check if tabs should be disabled
   const isTabDisabled = !botStatus.connected || botStatus.connectionStatus !== 'connected';
 
+  // Get status color and text
+  const getStatusIndicator = () => {
+    if (botStatus.connected) {
+      return {
+        color: 'bg-green-500',
+        text: 'Conectado',
+        pulse: false
+      };
+    } else if (botStatus.enabled) {
+      return {
+        color: 'bg-yellow-500',
+        text: 'Conectando...',
+        pulse: true
+      };
+    } else {
+      return {
+        color: 'bg-gray-400',
+        text: 'Desconectado',
+        pulse: false
+      };
+    }
+  };
+
+  const statusIndicator = getStatusIndicator();
+
   return (
-    <Tabs 
+    <div className="space-y-4">
+      {/* Connection Status Header */}
+      {/* <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className={`h-3 w-3 rounded-full ${statusIndicator.color}`} />
+            {statusIndicator.pulse && (
+              <div className={`absolute inset-0 h-3 w-3 rounded-full ${statusIndicator.color} animate-ping`} />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">
+              Status do WhatsApp: <span className={botStatus.connected ? 'text-green-600' : 'text-gray-600'}>{statusIndicator.text}</span>
+            </p>
+            {botStatus.instanceId && (
+              <p className="text-xs text-gray-500">
+                Instância: {botStatus.instanceId}
+              </p>
+            )}
+          </div>
+        </div>
+        {!botStatus.connected && botStatus.enabled && (
+          <p className="text-xs text-yellow-600">
+            Aguardando leitura do QR Code...
+          </p>
+        )}
+      </div> */}
+
+      <Tabs 
       value={activeTab} 
       onValueChange={(value) => {
         // Only allow tab change if connection tab or if connected
@@ -198,6 +251,7 @@ export function WhatsAppBotTabs({
         )}
       </TabsContent>
     </Tabs>
+    </div>
   );
 }
 

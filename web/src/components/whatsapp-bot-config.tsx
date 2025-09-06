@@ -13,7 +13,7 @@ import {
   Switch,
   Label
 } from '@/components/ui';
-import { MessageCircle, QrCode, CheckCircle2, AlertCircle, RefreshCw, Power, Settings } from 'lucide-react';
+import { MessageCircle, QrCode, CheckCircle2, AlertCircle, RefreshCw, Power, Settings, Bot, Sparkles } from 'lucide-react';
 import { SpinningLogo } from '@/components/ui/spinning-logo';
 import { api } from '@/lib/api';
 
@@ -245,23 +245,67 @@ export function WhatsAppBotConfig({ partnerId, whatsappNumber, onBotStatusChange
             <MessageCircle className="h-5 w-5 mr-2 text-green-600" />
             WhatsApp Bot
           </div>
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={status.botEnabled}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  enableBot();
-                } else {
-                  disableBot();
-                }
-              }}
-              disabled={loading}
-            />
-            <Label>Bot Ativo</Label>
-          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Prominent Bot Activation Switch */}
+        <div className={`p-4 rounded-lg border-2 ${status.botEnabled ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-300'} transition-all duration-300`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-start gap-3 flex-1">
+              <div className={`p-2 rounded-lg ${status.botEnabled ? 'bg-green-100' : 'bg-gray-200'} transition-colors`}>
+                {status.botEnabled ? (
+                  <Bot className="h-6 w-6 text-green-600" />
+                ) : (
+                  <Bot className="h-6 w-6 text-gray-500" />
+                )}
+              </div>
+              <div className="flex-1">
+                <Label htmlFor="bot-activation" className="text-lg font-semibold cursor-pointer flex items-center gap-2">
+                  Ativar Robô de Atendimento
+                  {status.botEnabled && <Sparkles className="h-4 w-4 text-yellow-500" />}
+                </Label>
+                <p className="text-sm text-gray-600 mt-1">
+                  {status.botEnabled 
+                    ? 'O robô está ativo e pronto para atender seus clientes no WhatsApp' 
+                    : 'Ative o robô para começar a atender automaticamente no WhatsApp'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {loading && (
+                <RefreshCw className="h-4 w-4 animate-spin text-gray-500" />
+              )}
+              <Switch
+                id="bot-activation"
+                checked={status.botEnabled}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    enableBot();
+                  } else {
+                    disableBot();
+                  }
+                }}
+                disabled={loading}
+                className="data-[state=checked]:bg-green-600 scale-125"
+              />
+            </div>
+          </div>
+          {status.botEnabled && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="flex items-center gap-2 text-sm">
+                {getStatusIcon(status.connectionStatus)}
+                <span className={`font-medium ${
+                  status.connectionStatus === 'connected' ? 'text-green-700' : 
+                  status.connectionStatus === 'connecting' ? 'text-yellow-700' : 
+                  'text-gray-700'
+                }`}>
+                  Status: {getStatusText(status.connectionStatus)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
