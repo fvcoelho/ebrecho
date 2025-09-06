@@ -88,19 +88,19 @@ export function WhatsAppBotTabs({
       }} 
       className="w-full"
     >
-      <TabsList className="grid w-full grid-cols-4 mb-6">
+      <TabsList className="grid w-full grid-cols-3 mb-6">
         <TabsTrigger value="connection" className="flex items-center gap-2">
           <Wifi className={`h-4 w-4 ${botStatus.connected ? 'text-green-600' : ''}`} />
           <span className="hidden sm:inline">Conexão</span>
         </TabsTrigger>
-        <TabsTrigger 
+        {/* <TabsTrigger 
           value="test" 
           className={`flex items-center gap-2 ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           disabled={isTabDisabled}
         >
           <TestTube className="h-4 w-4" />
           <span className="hidden sm:inline">Testar Chat</span>
-        </TabsTrigger>
+        </TabsTrigger> */}
         <TabsTrigger 
           value="config" 
           className={`flex items-center gap-2 ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -119,6 +119,21 @@ export function WhatsAppBotTabs({
         </TabsTrigger>
       </TabsList>
 
+      {/* Show warning when tabs are disabled */}
+      {isTabDisabled && activeTab !== 'connection' && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center gap-2 text-yellow-800">
+            <Wifi className="h-5 w-5" />
+            <p className="text-sm font-medium">
+              WhatsApp não conectado
+            </p>
+          </div>
+          <p className="text-sm text-yellow-700 mt-1">
+            Para acessar as outras funcionalidades, você precisa primeiro conectar o WhatsApp na aba Conexão.
+          </p>
+        </div>
+      )}
+
       <TabsContent value="connection" className="space-y-4">
         <WhatsAppBotConfig
           partnerId={partnerId}
@@ -128,23 +143,59 @@ export function WhatsAppBotTabs({
       </TabsContent>
 
       <TabsContent value="test" className="space-y-4">
-        <WhatsAppChatTest
-          partnerId={partnerId}
-          instanceId={botStatus.instanceId}
-          whatsappNumber={whatsappNumber}
-        />
+        {isTabDisabled ? (
+          <div className="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <Wifi className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              WhatsApp não conectado
+            </h3>
+            <p className="text-gray-600">
+              Conecte o WhatsApp na aba Conexão para testar o chat.
+            </p>
+          </div>
+        ) : (
+          <WhatsAppChatTest
+            partnerId={partnerId}
+            instanceId={botStatus.instanceId}
+            whatsappNumber={whatsappNumber}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="config" className="space-y-4">
-        <BotConfiguration
-          partnerId={partnerId}
-          slug={slug}
-          initialInstructions={aiInstructions}
-        />
+        {isTabDisabled ? (
+          <div className="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              WhatsApp não conectado
+            </h3>
+            <p className="text-gray-600">
+              Conecte o WhatsApp na aba Conexão para configurar o bot.
+            </p>
+          </div>
+        ) : (
+          <BotConfiguration
+            partnerId={partnerId}
+            slug={slug}
+            initialInstructions={aiInstructions}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="templates" className="space-y-4">
-        <MessageTemplates partnerId={partnerId} />
+        {isTabDisabled ? (
+          <div className="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              WhatsApp não conectado
+            </h3>
+            <p className="text-gray-600">
+              Conecte o WhatsApp na aba Conexão para gerenciar templates.
+            </p>
+          </div>
+        ) : (
+          <MessageTemplates partnerId={partnerId} />
+        )}
       </TabsContent>
     </Tabs>
   );
