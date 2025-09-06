@@ -211,6 +211,9 @@ model Partner {
   pageViews          PageView[]
   userActivities     UserActivity[]
   
+  // AI Instructions relation
+  aiInstructionsModel AiInstructions?
+  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -881,4 +884,15 @@ model UserActivity {
   @@index([page])
   @@index([elementType])
   @@index([createdAt])
+}
+
+model AiInstructions {
+  id        String   @id @default(cuid())
+  prompt    String
+  partnerId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId])
 }

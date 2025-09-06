@@ -50,7 +50,8 @@ export const enableWhatsAppBot = async (req: Request<{ partnerId: string }>, res
       where: { id: partnerId },
       select: { 
         id: true, 
-        name: true, 
+        name: true,
+        slug: true,
         whatsappNumber: true, 
         whatsappBotEnabled: true,
         evolutionInstanceId: true 
@@ -79,20 +80,20 @@ export const enableWhatsAppBot = async (req: Request<{ partnerId: string }>, res
     }
 
     // Generate instance name and webhook URL
-    const instanceName = EvolutionApiService.generateInstanceName(partnerId, partner.whatsappNumber);
+    const instanceName = EvolutionApiService.generateInstanceName(partner.slug, partner.whatsappNumber);
     const webhookUrl = EvolutionApiService.generateWebhookUrl(partnerId, partner.whatsappNumber);
 
     console.log(`Creating Evolution API instance: ${instanceName}`);
     console.log(`Webhook URL: ${webhookUrl}`);
 
-    // Create instance in Evolution API (temporarily without webhook to avoid server crash)
+    // Create instance in Evolution API with webhook configuration
     const createResult = await evolutionApiService.createInstance({
       instanceName,
       token: 'default-token', // Evolution API requires a token
       qrcode: true,
       integration: 'WHATSAPP-BAILEYS', // Required parameter
       number: partner.whatsappNumber, // Phone number for the instance
-      // webhookUrl // Temporarily disabled due to Evolution API server crash
+      webhookUrl // Enable webhook with proper configuration
     });
 
     if (!createResult.success) {
@@ -101,6 +102,10 @@ export const enableWhatsAppBot = async (req: Request<{ partnerId: string }>, res
         error: `Failed to create Evolution API instance: ${createResult.error}`
       });
     }
+
+    // Optional: Set webhook separately if needed (as a fallback)
+    // This can be useful if the webhook wasn't set during instance creation
+    // await evolutionApiService.setWebhook(instanceName, webhookUrl);
 
     // Connect to instance to get QR code
     const connectResult = await evolutionApiService.connectInstance(instanceName);
@@ -198,17 +203,26 @@ export const disableWhatsAppBot = async (req: Request<{ partnerId: string }>, re
 
     // Logout and delete instance if exists
     if (partner.evolutionInstanceId) {
-      console.log(`Deleting Evolution API instance: ${partner.evolutionInstanceId}`);
+      console.log(`Disabling Evolution API instance: ${partner.evolutionInstanceId}`);
       
-      // Try to logout first
-      await evolutionApiService.logoutInstance(partner.evolutionInstanceId);
+      // Step 1: Logout instance (disconnect WhatsApp session)
+      console.log('Step 1: Logging out WhatsApp session...');
+      const logoutResult = await evolutionApiService.logoutInstance(partner.evolutionInstanceId);
+      if (!logoutResult.success) {
+        console.warn(`Failed to logout Evolution API instance: ${logoutResult.error}`);
+        // Continue anyway - instance might already be logged out
+      } else {
+        console.log('✅ WhatsApp session logged out successfully');
+      }
       
-      // Then delete the instance
+      // Step 2: Delete the instance completely
+      console.log('Step 2: Deleting instance from Evolution API...');
       const deleteResult = await evolutionApiService.deleteInstance(partner.evolutionInstanceId);
-      
       if (!deleteResult.success) {
         console.warn(`Failed to delete Evolution API instance: ${deleteResult.error}`);
         // Continue anyway to disable bot in database
+      } else {
+        console.log('✅ Instance deleted successfully from Evolution API');
       }
     }
 
@@ -304,13 +318,19 @@ export const getWhatsAppBotStatus = async (req: Request<{ partnerId: string }>, 
         }
 
         // Update database with current status
+        // Evolution API v2 states: 'open' = connected, 'close' = disconnected
         const statusMap: { [key: string]: string } = {
           'open': 'connected',
           'close': 'disconnected',
-          'connecting': 'connecting'
+          'connecting': 'connecting',
+          'connected': 'connected',  // Handle if API returns 'connected' directly
+          'disconnected': 'disconnected'  // Handle if API returns 'disconnected' directly
         };
 
-        const newStatus = statusMap[connectionState] || 'disconnected';
+        // Log the state mapping for debugging
+        console.log(`Mapping Evolution state '${connectionState}' to '${statusMap[connectionState] || 'disconnected'}'`);
+
+        const newStatus = statusMap[connectionState?.toLowerCase()] || 'disconnected';
         
         if (newStatus !== partner.whatsappConnectionStatus) {
           await prisma.partner.update({
@@ -493,6 +513,335 @@ export const restartWhatsAppBot = async (req: Request<{ partnerId: string }>, re
     return res.status(500).json({
       success: false,
       error: 'Failed to restart WhatsApp bot'
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/partners/{partnerId}/whatsapp-bot/test-message:
+ *   post:
+ *     tags:
+ *       - WhatsApp Bot
+ *     summary: Send a test message via WhatsApp bot
+ *     description: Send a test message to validate bot configuration and connectivity
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partnerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Partner ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               to:
+ *                 type: string
+ *                 description: WhatsApp number to send message to (with country code)
+ *                 example: "5511999999999"
+ *               message:
+ *                 type: string
+ *                 description: Message content
+ *                 example: "This is a test message from your WhatsApp bot!"
+ *               messageType:
+ *                 type: string
+ *                 enum: [text, image, document]
+ *                 default: text
+ *               mediaUrl:
+ *                 type: string
+ *                 description: URL of media file (for image/document messages)
+ *               caption:
+ *                 type: string
+ *                 description: Caption for media messages
+ */
+export const sendTestMessage = async (req: Request<{ partnerId: string }>, res: Response) => {
+  try {
+    const { partnerId } = req.params;
+    const { to, message, messageType = 'text', mediaUrl, caption } = req.body;
+
+    // Validate input
+    if (!to || (!message && messageType === 'text')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to and message are required for text messages'
+      });
+    }
+
+    if ((messageType === 'image' || messageType === 'document') && !mediaUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Media URL is required for image/document messages'
+      });
+    }
+
+    // Get partner details
+    const partner = await prisma.partner.findUnique({
+      where: { id: partnerId },
+      select: { 
+        id: true,
+        whatsappBotEnabled: true,
+        evolutionInstanceId: true,
+        whatsappConnectionStatus: true
+      }
+    });
+
+    if (!partner) {
+      return res.status(404).json({
+        success: false,
+        error: 'Partner not found'
+      });
+    }
+
+    if (!partner.whatsappBotEnabled || !partner.evolutionInstanceId) {
+      return res.status(400).json({
+        success: false,
+        error: 'WhatsApp bot is not enabled for this partner'
+      });
+    }
+
+    if (partner.whatsappConnectionStatus !== 'connected') {
+      return res.status(400).json({
+        success: false,
+        error: 'WhatsApp bot is not connected. Please connect the bot first.'
+      });
+    }
+
+    // Send message based on type
+    let result;
+    if (messageType === 'text') {
+      result = await evolutionApiService.sendTextMessage(
+        partner.evolutionInstanceId,
+        to,
+        message
+      );
+    } else if (messageType === 'image' || messageType === 'document') {
+      result = await evolutionApiService.sendMediaMessage(
+        partner.evolutionInstanceId,
+        to,
+        mediaUrl,
+        messageType as 'image' | 'document',
+        caption || message
+      );
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid message type. Supported types: text, image, document'
+      });
+    }
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to send test message'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Test message sent successfully',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Error sending test message:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send test message'
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/partners/{partnerId}/whatsapp-bot/messages:
+ *   get:
+ *     tags:
+ *       - WhatsApp Bot
+ *     summary: Get WhatsApp bot messages
+ *     description: Retrieve message history from a WhatsApp chat
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partnerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Partner ID
+ *       - in: query
+ *         name: chatId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Chat ID or phone number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           default: 50
+ *         description: Maximum number of messages to retrieve
+ */
+export const getBotMessages = async (req: Request<{ partnerId: string }>, res: Response) => {
+  try {
+    const { partnerId } = req.params;
+    const { chatId, limit = 50 } = req.query;
+
+    if (!chatId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chat ID is required'
+      });
+    }
+
+    // Get partner details
+    const partner = await prisma.partner.findUnique({
+      where: { id: partnerId },
+      select: { 
+        id: true,
+        whatsappBotEnabled: true,
+        evolutionInstanceId: true
+      }
+    });
+
+    if (!partner) {
+      return res.status(404).json({
+        success: false,
+        error: 'Partner not found'
+      });
+    }
+
+    if (!partner.whatsappBotEnabled || !partner.evolutionInstanceId) {
+      return res.status(400).json({
+        success: false,
+        error: 'WhatsApp bot is not enabled for this partner'
+      });
+    }
+
+    // Get messages from Evolution API
+    const result = await evolutionApiService.getMessages(
+      partner.evolutionInstanceId,
+      chatId as string,
+      Number(limit)
+    );
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to get messages'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Error getting bot messages:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get messages'
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/partners/{partnerId}/whatsapp-bot/send-typing:
+ *   post:
+ *     tags:
+ *       - WhatsApp Bot
+ *     summary: Send typing indicator
+ *     description: Show typing indicator in WhatsApp chat
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partnerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Partner ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               to:
+ *                 type: string
+ *                 description: WhatsApp number to show typing to
+ *               duration:
+ *                 type: number
+ *                 description: Duration in milliseconds
+ *                 default: 3000
+ */
+export const sendTypingIndicator = async (req: Request<{ partnerId: string }>, res: Response) => {
+  try {
+    const { partnerId } = req.params;
+    const { to, duration = 3000 } = req.body;
+
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        error: 'Recipient number is required'
+      });
+    }
+
+    const partner = await prisma.partner.findUnique({
+      where: { id: partnerId },
+      select: { 
+        id: true,
+        whatsappBotEnabled: true,
+        evolutionInstanceId: true
+      }
+    });
+
+    if (!partner) {
+      return res.status(404).json({
+        success: false,
+        error: 'Partner not found'
+      });
+    }
+
+    if (!partner.whatsappBotEnabled || !partner.evolutionInstanceId) {
+      return res.status(400).json({
+        success: false,
+        error: 'WhatsApp bot is not enabled for this partner'
+      });
+    }
+
+    const result = await evolutionApiService.sendTyping(
+      partner.evolutionInstanceId,
+      to,
+      duration
+    );
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to send typing indicator'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Typing indicator sent',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Error sending typing indicator:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send typing indicator'
     });
   }
 };

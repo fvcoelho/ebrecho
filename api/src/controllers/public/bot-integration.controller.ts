@@ -316,6 +316,7 @@ export const getBotIntegration = async (req: Request<{ slug: string }>, res: Res
       },
       include: {
         address: true,
+        aiInstructionsModel: true,
         products: {
           where: {
             status: 'AVAILABLE'
@@ -393,7 +394,44 @@ export const getBotIntegration = async (req: Request<{ slug: string }>, res: Res
       }
     };
 
-    const aiInstructions = store.aiInstructions || defaultAiInstructions;
+    // Use database AiInstructions model if available, otherwise fall back to JSON field or default
+    let aiInstructions;
+    if (store.aiInstructionsModel?.prompt) {
+      // Use database model with structured data
+      aiInstructions = {
+        prompt: store.aiInstructionsModel.prompt,
+        greeting: `Olá! Bem-vindo à ${store.name}! Como posso ajudá-lo hoje?`,
+        tone: 'profissional e amigável', 
+        specialInstructions: 'Seja prestativo e informativo sobre os produtos disponíveis.',
+        faq: [
+          {
+            question: 'Quais são os horários de funcionamento?',
+            answer: store.businessHours ? 'Nossos horários estão disponíveis na seção de informações da loja.' : 'Entre em contato para saber nossos horários.'
+          },
+          {
+            question: 'Como posso fazer uma compra?',
+            answer: 'Você pode entrar em contato conosco pelo WhatsApp ou visitar nossa loja física.'
+          },
+          {
+            question: 'Vocês aceitam devoluções?',
+            answer: 'Sim, aceitamos devoluções conforme nossa política. Entre em contato para mais informações.'
+          }
+        ],
+        productRecommendations: {
+          enabled: true,
+          maxSuggestions: 3,
+          basedOn: ['category', 'price', 'condition']
+        },
+        priceNegotiation: {
+          enabled: false,
+          maxDiscount: 0,
+          requiresApproval: true
+        }
+      };
+    } else {
+      // Fall back to JSON field or default instructions
+      aiInstructions = store.aiInstructions || defaultAiInstructions;
+    }
 
     const botIntegrationData = {
       version: '1.0',
@@ -471,7 +509,7 @@ export const getBotIntegration = async (req: Request<{ slug: string }>, res: Res
         availableProducts: store.products.length,
         storeCreatedAt: store.createdAt,
         dataVersion: '1.0.0',
-        apiEndpoint: `${process.env.API_URL || 'http://localhost:3001'}/api/public/store/${store.slug}/bot-integration`,
+        apiEndpoint: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/public/store/${store.slug}/bot-integration`,
         updateFrequency: 'realtime'
       }
     };
@@ -738,12 +776,13 @@ export const getBotIntegrationByWhatsApp = async (req: Request<{ whatsappNumber:
         whatsappNumber: {
           contains: cleanNumber
         },
-        isActive: true,
+        isActive: true, 
         isPublicActive: true,
         whatsappBotEnabled: true
       },
       include: {
         address: true,
+        aiInstructionsModel: true,
         products: {
           where: {
             status: 'AVAILABLE'
@@ -792,6 +831,42 @@ export const getBotIntegrationByWhatsApp = async (req: Request<{ whatsappNumber:
     }));
 
     const defaultAiInstructions = {
+      prompt: `Função:
+Você é um agente virtual de atendimento ao cliente de uma loja. Seu papel é atender clientes de forma educada, clara e eficiente, ajudando em dúvidas sobre produtos, pedidos, prazos de entrega, formas de pagamento, promoções e políticas da loja.
+
+Instruções principais:
+
+Sempre cumprimente o cliente de forma simpática e acolhedora.
+
+Responda de maneira objetiva, mas cordial, adaptando o tom conforme a conversa.
+
+Caso não tenha certeza sobre uma resposta, explique a limitação e ofereça ajuda alternativa (ex: "posso encaminhar para um atendente humano").
+
+Priorize:
+
+Informações sobre produtos disponíveis (descrição, variações, preços, promoções).
+
+Status de pedidos (pagamento, envio, prazo de entrega, rastreamento).
+
+Políticas da loja (trocas, devoluções, garantia, formas de pagamento).
+
+Atendimento personalizado (recomendar produtos, auxiliar na finalização da compra).
+
+Seja sempre educado e positivo, mesmo diante de reclamações.
+
+Utilize linguagem simples e próxima, evitando termos técnicos desnecessários.
+
+Quando possível, faça perguntas para entender melhor a necessidade do cliente.
+
+Exemplo de início de conversa:
+👋 Olá! Bem-vindo(a) à ${store.name}. Como posso ajudar você hoje?
+
+Deseja informações sobre um produto?
+
+Consultar o status de um pedido?
+
+Ou conhecer nossas promoções atuais?`,
+
       greeting: `Olá! Bem-vindo à ${store.name}! Como posso ajudá-lo hoje?`,
       tone: 'profissional e amigável',
       specialInstructions: 'Seja prestativo e informativo sobre os produtos disponíveis.',
@@ -899,7 +974,7 @@ export const getBotIntegrationByWhatsApp = async (req: Request<{ whatsappNumber:
         availableProducts: store.products.length,
         storeCreatedAt: store.createdAt,
         dataVersion: '1.0.0',
-        apiEndpoint: `${process.env.API_URL || 'http://localhost:3001'}/api/public/store-by-whatsapp/${whatsappNumber}/bot-integration`,
+        apiEndpoint: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/public/store-by-whatsapp/${whatsappNumber}/bot-integration`,
         updateFrequency: 'realtime'
       }
     };
